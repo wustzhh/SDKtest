@@ -1,0 +1,362 @@
+$ D:\pyProj\SDKtest\demo\ybaf-mesher\test_runner_ui\build.bat
+[killed after timeout]
+============================================
+  test_runner_ui Build + Pack
+============================================
+
+[OK] MinGW g++ 13.1.0  +  cmake
+
+[1/3] Configure with Ninja...
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Test Runner UI — build done
+--   Config: D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/Release/config/test_config.json
+--   Edit the config to point at your test binary
+-- Configuring done (0.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build
+[OK]
+
+[2/3] Build Release...
+[1/9] Automatic MOC for target test_runner_ui
+[2/9] Building CXX object CMakeFiles/test_runner_ui.dir/src/core/TestLoader.cpp.obj
+FAILED: CMakeFiles/test_runner_ui.dir/src/core/TestLoader.cpp.obj 
+C:\Qt\Tools\mingw1310_64\bin\g++.exe -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -ID:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/include -ID:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src -isystem C:/Qt/6.11.1/mingw_64/include/QtWidgets -isystem C:/Qt/6.11.1/mingw_64/include -isystem C:/Qt/6.11.1/mingw_64/include/QtCore -isystem C:/Qt/6.11.1/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.11.1/mingw_64/include/QtGui -O3 -DNDEBUG -std=gnu++17 -MD -MT CMakeFiles/test_runner_ui.dir/src/core/TestLoader.cpp.obj -MF CMakeFiles\test_runner_ui.dir\src\core\TestLoader.cpp.obj.d -o CMakeFiles/test_runner_ui.dir/src/core/TestLoader.cpp.obj -c D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:20:38: error: macro "LOG" passed 3 arguments, but takes just 2
+   20 |     LOG("LDR", "Starting", binaryPath);
+      |                                      ^
+In file included from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:5:
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:21:38: error: macro "LOG" passed 3 arguments, but takes just 2
+   21 |     LOG("LDR", "Args", args.join(" "));
+      |                                      ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:26:39: error: macro "LOG" passed 3 arguments, but takes just 2
+   26 |         LOG("LDR", "START FAILED", err);
+      |                                       ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:39:61: error: macro "LOG" passed 3 arguments, but takes just 2
+   39 |     LOG("LDR", "Exit code", QString::number(proc.exitCode()));
+      |                                                             ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:40:72: error: macro "LOG" passed 3 arguments, but takes just 2
+   40 |     LOG("LDR", "Stdout size", QString::number(output.size()) + " bytes");
+      |                                                                        ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:42:58: error: macro "LOG" passed 3 arguments, but takes just 2
+   42 |         LOG("LDR", "Stderr (first 500)", stderr.left(500));
+      |                                                          ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:43:50: error: macro "LOG" passed 3 arguments, but takes just 2
+   43 |     LOG("LDR", "Stdout preview", output.left(300));
+      |                                                  ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp: In member function 'bool TestLoader::load(const QString&, const QStringList&, const QString&)':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:20:5: error: 'LOG' was not declared in this scope
+   20 |     LOG("LDR", "Starting", binaryPath);
+      |     ^~~
+In file included from C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cwchar:44,
+                 from C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/postypes.h:40,
+                 from C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/iosfwd:42,
+                 from C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/stream_iterator.h:35,
+                 from C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/iterator:65,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qcontainertools_impl.h:21,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qarraydataops.h:10,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qarraydatapointer.h:8,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qbytearray.h:12,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qstringview.h:11,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qchar.h:730,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:15,
+                 from C:/Qt/6.11.1/mingw_64/include/QtCore/QString:1,
+                 from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/models/TestResult.h:3,
+                 from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.h:3,
+                 from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:1:
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:36:13: error: no matching function for call to 'QString::QString(FILE*)'
+   36 |     QString stderr = QString::fromLocal8Bit(proc.readAllStandardError());
+      |             ^~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1136:14: note: candidate: 'QString::QString(DataPointer&&)'
+ 1136 |     explicit QString(DataPointer &&dd) : d(std::move(dd)) {}
+      |              ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1136:36: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'QString::DataPointer&&' {aka 'QArrayDataPointer<char16_t>&&'}
+ 1136 |     explicit QString(DataPointer &&dd) : d(std::move(dd)) {}
+      |                      ~~~~~~~~~~~~~~^~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1135:5: note: candidate: 'QString::QString(qsizetype, Qt::Initialization)'
+ 1135 |     QString(qsizetype size, Qt::Initialization);
+      |     ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1135:5: note:   candidate expects 2 arguments, 1 provided
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:977:31: note: candidate: 'QString::QString(const QByteArray&)'
+  977 |     QT_ASCII_CAST_WARN inline QString(const QByteArray &a)
+      |                               ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:977:57: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'const QByteArray&'
+  977 |     QT_ASCII_CAST_WARN inline QString(const QByteArray &a)
+      |                                       ~~~~~~~~~~~~~~~~~~^
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:974:31: note: candidate: 'QString::QString(const char*)'
+  974 |     QT_ASCII_CAST_WARN inline QString(const char *ch)
+      |                               ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:974:51: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'const char*'
+  974 |     QT_ASCII_CAST_WARN inline QString(const char *ch)
+      |                                       ~~~~~~~~~~~~^~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:264:12: note: candidate: 'QString::QString(QString&&)'
+  264 |     inline QString(QString &&other) noexcept
+      |            ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:264:30: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'QString&&'
+  264 |     inline QString(QString &&other) noexcept
+      |                    ~~~~~~~~~~^~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1391:1: note: candidate: 'QString::QString(const QString&)'
+ 1391 | QString::QString(const QString &other) noexcept : d(other.d)
+      | ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1391:33: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'const QString&'
+ 1391 | QString::QString(const QString &other) noexcept : d(other.d)
+      |                  ~~~~~~~~~~~~~~~^~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:252:14: note: candidate: 'QString::QString(QStringView)'
+  252 |     explicit QString(QStringView sv) : QString(sv.data(), sv.size()) {}
+      |              ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:252:34: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'QStringView'
+  252 |     explicit QString(QStringView sv) : QString(sv.data(), sv.size()) {}
+      |                      ~~~~~~~~~~~~^~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1361:1: note: candidate: 'QString::QString(QLatin1StringView)'
+ 1361 | QString::QString(QLatin1StringView latin1)
+      | ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1361:36: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'QLatin1StringView' {aka 'QLatin1String'}
+ 1361 | QString::QString(QLatin1StringView latin1)
+      |                  ~~~~~~~~~~~~~~~~~~^~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:250:5: note: candidate: 'QString::QString(qsizetype, QChar)'
+  250 |     QString(qsizetype size, QChar c);
+      |     ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:250:5: note:   candidate expects 2 arguments, 1 provided
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:249:5: note: candidate: 'QString::QString(QChar)'
+  249 |     QString(QChar c);
+      |     ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:249:19: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'QChar'
+  249 |     QString(QChar c);
+      |             ~~~~~~^
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:248:14: note: candidate: 'QString::QString(const QChar*, qsizetype)'
+  248 |     explicit QString(const QChar *unicode, qsizetype size = -1);
+      |              ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:248:35: note:   no known conversion for argument 1 from 'FILE*' {aka '_iobuf*'} to 'const QChar*'
+  248 |     explicit QString(const QChar *unicode, qsizetype size = -1);
+      |                      ~~~~~~~~~~~~~^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1461:11: note: candidate: 'constexpr QString::QString()'
+ 1461 | constexpr QString::QString() noexcept {}
+      |           ^~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtCore/qstring.h:1461:11: note:   candidate expects 0 arguments, 1 provided
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp:41:17: error: request for member 'isEmpty' in '__acrt_iob_func(2)', which is of pointer type 'FILE*' {aka '_iobuf*'} (maybe you meant to use '->' ?)
+   41 |     if (!stderr.isEmpty())
+      |                 ^~~~~~~
+[3/9] Building CXX object CMakeFiles/test_runner_ui.dir/src/core/Logger.cpp.obj
+[4/9] Building CXX object CMakeFiles/test_runner_ui.dir/src/core/TestRunner.cpp.obj
+FAILED: CMakeFiles/test_runner_ui.dir/src/core/TestRunner.cpp.obj 
+C:\Qt\Tools\mingw1310_64\bin\g++.exe -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -ID:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/include -ID:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src -isystem C:/Qt/6.11.1/mingw_64/include/QtWidgets -isystem C:/Qt/6.11.1/mingw_64/include -isystem C:/Qt/6.11.1/mingw_64/include/QtCore -isystem C:/Qt/6.11.1/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.11.1/mingw_64/include/QtGui -O3 -DNDEBUG -std=gnu++17 -MD -MT CMakeFiles/test_runner_ui.dir/src/core/TestRunner.cpp.obj -MF CMakeFiles\test_runner_ui.dir\src\core\TestRunner.cpp.obj.d -o CMakeFiles/test_runner_ui.dir/src/core/TestRunner.cpp.obj -c D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:89:40: error: macro "LOG" passed 3 arguments, but takes just 2
+   89 |     LOG("RUN", "Starting", m_binaryPath);
+      |                                        ^
+In file included from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:6:
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:90:32: error: macro "LOG" passed 3 arguments, but takes just 2
+   90 |     LOG("RUN", "Filter", filter);
+      |                                ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:91:40: error: macro "LOG" passed 3 arguments, but takes just 2
+   91 |     LOG("RUN", "XmlOut", m_gtestXmlPath);
+      |                                        ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:92:39: error: macro "LOG" passed 3 arguments, but takes just 2
+   92 |     LOG("RUN", "WorkDir", m_workingDir);
+      |                                       ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:99:39: error: macro "LOG" passed 3 arguments, but takes just 2
+   99 |         LOG("RUN", "START FAILED", err);
+      |                                       ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:126:54: error: macro "LOG" passed 3 arguments, but takes just 2
+  126 |     LOG("RUN", "Exit code", QString::number(exitCode));
+      |                                                      ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:165:49: error: macro "LOG" passed 3 arguments, but takes just 2
+  165 |         LOG("XML", "No XML file", m_gtestXmlPath);
+      |                                                 ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:168:41: error: macro "LOG" passed 3 arguments, but takes just 2
+  168 |     LOG("XML", "Parsing", m_gtestXmlPath);
+      |                                         ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp: In member function 'void TestRunner::parseNextTest()':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:89:5: error: 'LOG' was not declared in this scope
+   89 |     LOG("RUN", "Starting", m_binaryPath);
+      |     ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp: In member function 'void TestRunner::onProcessFinished(int)':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:126:5: error: 'LOG' was not declared in this scope
+  126 |     LOG("RUN", "Exit code", QString::number(exitCode));
+      |     ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp: In member function 'void TestRunner::parseGtestXmlProperties(QMap<QString, QString>&)':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:165:9: error: 'LOG' was not declared in this scope
+  165 |         LOG("XML", "No XML file", m_gtestXmlPath);
+      |         ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp:168:5: error: 'LOG' was not declared in this scope
+  168 |     LOG("XML", "Parsing", m_gtestXmlPath);
+      |     ^~~
+[5/9] Building CXX object CMakeFiles/test_runner_ui.dir/src/ui/Model3DViewer.cpp.obj
+[6/9] Building CXX object CMakeFiles/test_runner_ui.dir/src/main.cpp.obj
+[7/9] Building CXX object CMakeFiles/test_runner_ui.dir/src/ui/MainWindow.cpp.obj
+FAILED: CMakeFiles/test_runner_ui.dir/src/ui/MainWindow.cpp.obj 
+C:\Qt\Tools\mingw1310_64\bin\g++.exe -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -ID:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/include -ID:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src -isystem C:/Qt/6.11.1/mingw_64/include/QtWidgets -isystem C:/Qt/6.11.1/mingw_64/include -isystem C:/Qt/6.11.1/mingw_64/include/QtCore -isystem C:/Qt/6.11.1/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.11.1/mingw_64/include/QtGui -O3 -DNDEBUG -std=gnu++17 -MD -MT CMakeFiles/test_runner_ui.dir/src/ui/MainWindow.cpp.obj -MF CMakeFiles\test_runner_ui.dir\src\ui\MainWindow.cpp.obj.d -o CMakeFiles/test_runner_ui.dir/src/ui/MainWindow.cpp.obj -c D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:33:58: error: macro "LOG" passed 3 arguments, but takes just 2
+   33 |         LOG("CFG", "Config loaded", m_config.configPath());
+      |                                                          ^
+In file included from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:18:
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:34:56: error: macro "LOG" passed 3 arguments, but takes just 2
+   34 |         LOG("CFG", "test_binary", m_config.testBinary());
+      |                                                        ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:35:56: error: macro "LOG" passed 3 arguments, but takes just 2
+   35 |         LOG("CFG", "working_dir", m_config.workingDir());
+      |                                                        ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:37:61: error: macro "LOG" passed 3 arguments, but takes just 2
+   37 |         LOG("CFG", "Config not found", m_config.configPath());
+      |                                                             ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:92:38: error: macro "LOG" passed 3 arguments, but takes just 2
+   92 |             LOG("MODEL", "Open", path);
+      |                                      ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:196:33: error: macro "LOG" passed 3 arguments, but takes just 2
+  196 |     LOG("LOAD", "Binary", binary);
+      |                                 ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:197:49: error: macro "LOG" passed 3 arguments, but takes just 2
+  197 |     LOG("LOAD", "WorkDir", m_config.workingDir());
+      |                                                 ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:204:63: error: macro "LOG" passed 3 arguments, but takes just 2
+  204 |         LOG("LOAD", "OK, found", QString::number(n) + " tests");
+      |                                                               ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:210:51: error: macro "LOG" passed 3 arguments, but takes just 2
+  210 |         LOG("LOAD", "FAILED", m_loader.lastError());
+      |                                                   ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:224:66: error: macro "LOG" passed 3 arguments, but takes just 2
+  224 |     LOG("RUN", "Selected", QString::number(sel.size()) + " tests");
+      |                                                                  ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:276:33: error: macro "LOG" passed 3 arguments, but takes just 2
+  276 |     LOG("CFG", "Binary set", bin);
+      |                                 ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:292:85: error: macro "LOG" passed 3 arguments, but takes just 2
+  292 |         LOG("PROP", "Got", QString::number(parsed.properties.size()) + " properties");
+      |                                                                                     ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:306:68: error: macro "LOG" passed 3 arguments, but takes just 2
+  306 |     LOG("RUN", "Done", QString("passed=%1 failed=%1").arg(p).arg(f));
+      |                                                                    ^
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h:23: note: macro "LOG" defined here
+   23 | #define LOG(tag, msg)    Logger::write(tag, msg)
+      | 
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In constructor 'MainWindow::MainWindow(QWidget*)':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:33:9: error: 'LOG' was not declared in this scope
+   33 |         LOG("CFG", "Config loaded", m_config.configPath());
+      |         ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:37:9: error: 'LOG' was not declared in this scope
+   37 |         LOG("CFG", "Config not found", m_config.configPath());
+      |         ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In lambda function:
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:92:13: error: 'LOG' was not declared in this scope
+   92 |             LOG("MODEL", "Open", path);
+      |             ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In member function 'void MainWindow::setupMenu()':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:147:31: warning: 'typename std::enable_if<((! std::is_same<const char*, Func1>::value) && QtPrivate::IsPointerToTypeDerivedFromQObject<T*>::Value), QAction*>::type QMenu::addAction(const QString&, const Obj*, Func1, const QKeySequence&) [with Obj = MainWindow; Func1 = void (MainWindow::*)(); typename std::enable_if<((! std::is_same<const char*, Func1>::value) && QtPrivate::IsPointerToTypeDerivedFromQObject<T*>::Value), QAction*>::type = QAction*]' is deprecated: Use addAction(text, shortcut, object, slot) instead. [-Wdeprecated-declarations]
+  147 |     m_actRun    = f->addAction("Run Selected",  this, &MainWindow::onRunSelected, QKeySequence("Ctrl+R"));
+      |                   ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from C:/Qt/6.11.1/mingw_64/include/QtWidgets/qmenubar.h:9,
+                 from C:/Qt/6.11.1/mingw_64/include/QtWidgets/QMenuBar:1,
+                 from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.h:6,
+                 from D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:1:
+C:/Qt/6.11.1/mingw_64/include/QtWidgets/qmenu.h:79:9: note: declared here
+   79 |         addAction(const QString &text, const Obj *object, Func1 slot,
+      |         ^~~~~~~~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:153:17: warning: 'typename std::enable_if<((! std::is_same<const char*, Func1>::value) && QtPrivate::IsPointerToTypeDerivedFromQObject<T*>::Value), QAction*>::type QMenu::addAction(const QString&, const Obj*, Func1, const QKeySequence&) [with Obj = QApplication; Func1 = void (*)(); typename std::enable_if<((! std::is_same<const char*, Func1>::value) && QtPrivate::IsPointerToTypeDerivedFromQObject<T*>::Value), QAction*>::type = QAction*]' is deprecated: Use addAction(text, shortcut, object, slot) instead. [-Wdeprecated-declarations]
+  153 |     f->addAction("Quit", qApp, &QApplication::quit, QKeySequence::Quit);
+      |     ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:/Qt/6.11.1/mingw_64/include/QtWidgets/qmenu.h:79:9: note: declared here
+   79 |         addAction(const QString &text, const Obj *object, Func1 slot,
+      |         ^~~~~~~~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In member function 'void MainWindow::onLoadTests()':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:196:5: error: 'LOG' was not declared in this scope
+  196 |     LOG("LOAD", "Binary", binary);
+      |     ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In member function 'void MainWindow::onRunSelected()':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:224:5: error: 'LOG' was not declared in this scope
+  224 |     LOG("RUN", "Selected", QString::number(sel.size()) + " tests");
+      |     ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In member function 'void MainWindow::onEditConfig()':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:276:5: error: 'LOG' was not declared in this scope
+  276 |     LOG("CFG", "Binary set", bin);
+      |     ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In member function 'void MainWindow::onTestFinished(const TestRunResult&)':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:292:9: error: 'LOG' was not declared in this scope
+  292 |         LOG("PROP", "Got", QString::number(parsed.properties.size()) + " properties");
+      |         ^~~
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp: In member function 'void MainWindow::onAllFinished()':
+D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp:306:5: error: 'LOG' was not declared in this scope
+  306 |     LOG("RUN", "Done", QString("passed=%1 failed=%1").arg(p).arg(f));
+      |     ^~~
+[8/9] Building CXX object CMakeFiles/test_runner_ui.dir/test_runner_ui_autogen/mocs_compilation.cpp.obj
+ninja: build stopped: subcommand failed.
+[ERROR] Build failed 
+Press any key to continue . . . 

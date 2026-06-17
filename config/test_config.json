@@ -1,0 +1,23 @@
+{
+  "test_binary": "build/Release/ybaf-mesher-test.exe",
+  "working_dir": ".",
+  "extra_args": ["--gtest_also_run_disabled_tests"],
+  "categories": [
+    {
+      "name": "🧊 网格测试",
+      "prefixes": ["meshhelper", "MeshTest", "surface"]
+    },
+    {
+      "name": "🔧 几何测试",
+      "prefixes": ["FixtureTest", "TestBase", "ut_geometry"]
+    },
+    {
+      "name": "📐 2DM/3DM 对比",
+      "prefixes": ["Compare2D3D", "testhelp"]
+    },
+    {
+      "name": "📋 接口示例",
+      "prefixes": ["test_example", "Example"]
+    }
+  ]
+}
