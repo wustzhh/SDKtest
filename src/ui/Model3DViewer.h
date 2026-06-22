@@ -15,8 +15,8 @@ class GLViewer : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
 public:
     explicit GLViewer(QWidget* parent = nullptr);
-    void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& indices);
-    void resetView();  // 自适应视角
+    void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& indices, const QVector<int>& triangles = {});
+    void resetView();
     void clear();
 
 protected:
@@ -30,9 +30,16 @@ protected:
 private:
     QVector<QVector3D> m_verts;
     QVector<int> m_idx;
+    QVector<int> m_tri;  // 三角面索引（深度填充）
     float m_rotX = 30, m_rotY = -30;
     float m_zoom = 1.0f;
-    float m_modelRadius = 1.0f;  // 模型包围球半径
+    float m_modelSize = 1.0f;
+    float m_bboxDX = 1, m_bboxDY = 1, m_bboxDZ = 1;
+    float m_panX = 0, m_panY = 0;
+    QVector3D m_anchor;
+    bool m_hasAnchor = false;
+    bool m_pendingPick = false;  // 等待 paintGL 处理锚点拾取
+    QPointF m_pickPos;
     QPoint m_lastPos;
     bool m_dragging = false;
 };

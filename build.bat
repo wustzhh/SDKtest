@@ -77,4 +77,3 @@ echo   1. Extract test_runner_ui.zip anywhere
 echo   2. Edit config/test_config.json
 echo   3. Run test_runner_ui.exe
 echo.
-pause

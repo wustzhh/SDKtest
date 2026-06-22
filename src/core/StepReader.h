@@ -13,7 +13,8 @@
 // ────────────────────────────────────────────────────────────
 struct StepMesh {
     QVector<QVector3D> vertices;
-    QVector<int> indices;
+    QVector<int> indices;     // 线框（每2个一组 = 一条边）
+    QVector<int> triangles;   // 三角面（每3个一组 = 一个三角）
     bool success = false;
     QString error;
 };
