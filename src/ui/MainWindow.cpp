@@ -82,12 +82,12 @@ void MainWindow::setupUi() {
     connect(btnRHide, &QPushButton::clicked, this, [=]() {
         rightW->setVisible(!rightW->isVisible());
     });
-    auto* btnOpen = new QPushButton("Open Model");
+    auto* btnOpen = new QPushButton("\U0001F4C2 打开模型");
     btnOpen->setFixedHeight(22);
     connect(btnOpen, &QPushButton::clicked, this, [this]() {
         QString path = QFileDialog::getOpenFileName(
-            this, "Open Model",
-            QString(), "Models (*.step *.stp *.iges *.igs *.brep);;All (*)");
+            this, "选择模型文件",
+            QString(), "模型文件 (*.step *.stp *.iges *.igs *.brep);;所有文件 (*)");
         if (!path.isEmpty()) {
             LOG("MODEL", "Open: " + path);
             m_modelInfo->showModelInfo(nullptr);
@@ -118,10 +118,10 @@ void MainWindow::setupUi() {
     auto* bar = new QWidget;
     auto* bl = new QHBoxLayout(bar);
     bl->setContentsMargins(4, 2, 4, 2);
-    auto* bCfg = new QPushButton("Config");
-    auto* bLd  = new QPushButton("Load Tests");
-    auto* bExp = new QPushButton("Export");
-    auto* bRun = new QPushButton("Run Selected");
+    auto* bCfg = new QPushButton("\u2699 配置");
+    auto* bLd  = new QPushButton("\U0001F4C2 加载");
+    auto* bExp = new QPushButton("\U0001F4CA 导出");
+    auto* bRun = new QPushButton("\u25B6 运行");
     bRun->setStyleSheet(
         "QPushButton { background:#4CAF50; color:white; border:none; "
         "border-radius:4px; padding:6px 20px; font-size:13px; font-weight:bold; }"
@@ -142,17 +142,17 @@ void MainWindow::setupUi() {
 }
 
 void MainWindow::setupMenu() {
-    auto* f = menuBar()->addMenu("File");
-    m_actLoad   = f->addAction("Load Tests",    this, &MainWindow::onLoadTests);
-    m_actRun    = f->addAction("Run Selected",  this, &MainWindow::onRunSelected, QKeySequence("Ctrl+R"));
-    m_actCancel = f->addAction("Cancel Run",    this, &MainWindow::onCancelRun);
-    m_actExport = f->addAction("Export Report", this, &MainWindow::onExportReport);
+    auto* f = menuBar()->addMenu("\u6587\u4EF6(&F)");  // 文件(&F)
+    m_actLoad   = f->addAction("\U0001F4C2 加载用例",    this, &MainWindow::onLoadTests);
+    m_actRun    = f->addAction("\u25B6 运行选中",        this, &MainWindow::onRunSelected, QKeySequence("Ctrl+R"));
+    m_actCancel = f->addAction("\u274C 取消运行",        this, &MainWindow::onCancelRun);
+    m_actExport = f->addAction("\U0001F4CA 导出报告",    this, &MainWindow::onExportReport);
     f->addSeparator();
-    m_actConfig = f->addAction("Config",        this, &MainWindow::onEditConfig);
+    m_actConfig = f->addAction("\u2699 配置",            this, &MainWindow::onEditConfig);
     f->addSeparator();
-    f->addAction("Quit", qApp, &QApplication::quit, QKeySequence::Quit);
-    auto* h = menuBar()->addMenu("Help");
-    h->addAction("About", this, &MainWindow::onAbout);
+    f->addAction("\u9000\u51FA(&Q)", qApp, &QApplication::quit, QKeySequence::Quit);  // 退出(&Q)
+    auto* h = menuBar()->addMenu("\u5E2E\u52A9(&H)");  // 帮助(&H)
+    h->addAction("\u5173\u4E8E", this, &MainWindow::onAbout);  // 关于
 }
 
 void MainWindow::setupConnections() {
@@ -172,6 +172,11 @@ void MainWindow::setupConnections() {
         m_modelInfo->showModelInfo(&r);
         if (r.properties.contains("model"))
             m_model3D->loadFile(r.properties["model"]);
+    });
+
+    // ModelInfo 的 "Open" 按钮 → 加载到 3D 查看器
+    connect(m_modelInfo, &ModelInfoPanel::openFileRequested, this, [this](const QString& path) {
+        m_model3D->loadFile(path);
     });
 }
 
@@ -288,8 +293,13 @@ void MainWindow::onTestFinished(const TestRunResult& result) {
     auto parsed = ResultParser::parse(
         result.testCase, result.rawStdout, result.rawStderr,
         result.durationMs, result.status);
-    if (!parsed.properties.isEmpty())
-        LOG("PROP", "Got", QString::number(parsed.properties.size()) + " properties");
+    // 复制 TestRunner 从 XML 解析出的 RecordProperty
+    parsed.properties = result.properties;
+    if (!parsed.properties.isEmpty()) {
+        LOG("PROP", "Copied " + QString::number(parsed.properties.size()) + " properties");
+        for (auto it = parsed.properties.begin(); it != parsed.properties.end(); ++it)
+            LOG("PROP", "  " + it.key() + " = " + it.value());
+    }
     m_report.results.append(parsed);
 }
 
@@ -305,7 +315,7 @@ void MainWindow::onAllFinished() {
     int p = m_report.passed(), f = m_report.failed();
     LOG("RUN", "Done: passed=" + QString::number(p) + " failed=" + QString::number(f));
     statusBar()->showMessage(
-        QString("Done! Passed=%1 Failed=%1 Total=%2 ms")
+        QString("Done! Passed=%1 Failed=%2 Total=%3 ms")
             .arg(p).arg(f).arg(m_report.totalDurationMs(), 0, 'f', 0), 10000);
     updateButtonStates();
     if (f > 0) m_progress->appendLog(QString("\n%1 tests failed.").arg(f));

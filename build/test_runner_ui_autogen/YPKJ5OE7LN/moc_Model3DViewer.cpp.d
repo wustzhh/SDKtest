@@ -1,6 +1,11 @@
-D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/YPKJ5OE7LN/moc_Model3DViewer.cpp: D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/Model3DViewer.h \
-  D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/moc_predefs.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/QFileInfo \
+D:/pyProj/SDKtest/build/test_runner_ui_autogen/YPKJ5OE7LN/moc_Model3DViewer.cpp: D:/pyProj/SDKtest/src/ui/Model3DViewer.h \
+  D:/pyProj/SDKtest/build/test_runner_ui_autogen/moc_predefs.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/QList \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/QObject \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/QRect \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/QSize \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/QSizeF \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/QVector \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q17memory.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q20bit.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q20functional.h \
@@ -10,6 +15,7 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/6.11.1/mingw_64/include/QtCore/q20utility.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q23type_traits.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q23utility.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qabstracteventdispatcher.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qalgorithms.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qalloc.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qanystringview.h \
@@ -20,12 +26,12 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/6.11.1/mingw_64/include/QtCore/qatomic.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qatomic_cxx11.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qbasicatomic.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qbasictimer.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qbindingstorage.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qbytearray.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qbytearrayalgorithms.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qbytearraylist.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qbytearrayview.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/qcalendar.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qchar.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qcheckedint_impl.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qcompare.h \
@@ -38,15 +44,16 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/6.11.1/mingw_64/include/QtCore/qcontainerinfo.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qcontainertools_impl.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qcontiguouscache.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qcoreapplication.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qcoreapplication_platform.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qcoreevent.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qdarwinhelpers.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qdatastream.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/qdatetime.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qdeadlinetimer.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qdebug.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qendian.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qeventloop.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qexceptionhandling.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/qfile.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/qfiledevice.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/qfileinfo.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qflags.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qfloat16.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qforeach.h \
@@ -74,6 +81,7 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/6.11.1/mingw_64/include/QtCore/qmetatype.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qminmax.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qnamespace.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qnativeinterface.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qnumeric.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qobject.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qobject_impl.h \
@@ -120,7 +128,6 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/6.11.1/mingw_64/include/QtCore/qtenvironmentvariables.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qtextstream.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qtformat_impl.h \
-  C:/Qt/6.11.1/mingw_64/include/QtCore/qtimezone.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qtmetamacros.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qtnoop.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qtpreprocessorsupport.h \
@@ -135,37 +142,65 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/6.11.1/mingw_64/include/QtCore/qutf8stringview.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qvariant.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qvarlengtharray.h \
+  C:/Qt/6.11.1/mingw_64/include/QtCore/qvector.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qversiontagging.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qxptype_traits.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/qyieldcpu.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/QMouseEvent \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/QOpenGLFunctions \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/QSurfaceFormat \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/QTransform \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/QVector3D \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/QWheelEvent \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qaction.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qbitmap.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qbrush.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qcolor.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qcursor.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qevent.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qeventpoint.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qfont.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qfontinfo.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qfontmetrics.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qfontvariableaxis.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qguiapplication.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qguiapplication_platform.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qicon.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qimage.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qinputdevice.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qinputmethod.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qkeysequence.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qopengl.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qopenglcontext.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qopenglcontext_platform.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qopenglext.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qopenglfunctions.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qpaintdevice.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qpalette.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qpicture.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qpixelformat.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qpixmap.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qpointingdevice.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qpolygon.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qregion.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qrgb.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qrgba64.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qscreen.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qscreen_platform.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qsurfaceformat.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qtextdocument.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qtgui-config.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qtguiexports.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qtguiglobal.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qtransform.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qvector2d.h \
+  C:/Qt/6.11.1/mingw_64/include/QtGui/qvectornd.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qwindowdefs.h \
   C:/Qt/6.11.1/mingw_64/include/QtGui/qwindowdefs_win.h \
+  C:/Qt/6.11.1/mingw_64/include/QtOpenGLWidgets/QOpenGLWidget \
+  C:/Qt/6.11.1/mingw_64/include/QtOpenGLWidgets/qopenglwidget.h \
+  C:/Qt/6.11.1/mingw_64/include/QtOpenGLWidgets/qtopenglwidgetsexports.h \
+  C:/Qt/6.11.1/mingw_64/include/QtOpenGLWidgets/qtopenglwidgetsglobal.h \
   C:/Qt/6.11.1/mingw_64/include/QtWidgets/QLabel \
   C:/Qt/6.11.1/mingw_64/include/QtWidgets/QPushButton \
   C:/Qt/6.11.1/mingw_64/include/QtWidgets/QVBoxLayout \
@@ -196,14 +231,11 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/allocator.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/atomic_base.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/atomic_lockfree_defines.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/basic_ios.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/basic_ios.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/basic_string.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/basic_string.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/char_traits.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/charconv.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/chrono.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/codecvt.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/concept_check.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/cpp_type_traits.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/cxxabi_forced.h \
@@ -213,10 +245,6 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/exception.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/exception_defines.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/exception_ptr.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/fs_dir.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/fs_fwd.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/fs_ops.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/fs_path.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/functexcept.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/functional_hash.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/hash_bytes.h \
@@ -224,15 +252,9 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/hashtable_policy.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/invoke.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/ios_base.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/istream.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/list.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_classes.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_classes.tcc \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_conv.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_facets.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_facets.tcc \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_facets_nonio.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/locale_facets_nonio.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/localefwd.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/memory_resource.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/memoryfwd.h \
@@ -240,13 +262,11 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/nested_exception.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/new_allocator.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/node_handle.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/ostream.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/ostream_insert.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/parse_numbers.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/postypes.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/predefined_ops.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/ptr_traits.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/quoted_string.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/range_access.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/refwrap.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/requires_hosted.h \
@@ -254,7 +274,6 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/shared_ptr_atomic.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/shared_ptr_base.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/specfun.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/sstream.tcc \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/std_abs.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/std_function.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/stl_algo.h \
@@ -299,7 +318,6 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/climits \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/clocale \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cmath \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/codecvt \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/compare \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cstddef \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cstdint \
@@ -308,7 +326,6 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cstring \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ctime \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cwchar \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/cwctype \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/debug/assertions.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/debug/debug.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/exception \
@@ -319,23 +336,17 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ext/numeric_traits.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ext/string_conversions.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ext/type_traits.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/filesystem \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/functional \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/initializer_list \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/iomanip \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ios \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/iosfwd \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/istream \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/iterator \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/limits \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/list \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/locale \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/map \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/memory \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/new \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/numeric \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/optional \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ostream \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/pstl/execution_defs.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/pstl/glue_algorithm_defs.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/pstl/glue_memory_defs.h \
@@ -343,7 +354,6 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/pstl/pstl_config.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/ratio \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/set \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/sstream \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/stdexcept \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/stdlib.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/streambuf \
@@ -376,20 +386,17 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/c++locale.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/ctype_base.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/ctype_inline.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/error_constants.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/gthr-default.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/gthr.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/messages_members.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
-  C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32/bits/time_members.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/limits.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdarg.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdbool.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stddef.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdint.h \
   C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/syslimits.h \
+  C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/GL/gl.h \
   C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/_mingw.h \
   C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/_mingw_mac.h \
   C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/_mingw_off_t.h \
@@ -424,5 +431,4 @@ D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/Y
   C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/sys/types.h \
   C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/time.h \
   C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/vadefs.h \
-  C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/wchar.h \
-  C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/wctype.h
+  C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/wchar.h

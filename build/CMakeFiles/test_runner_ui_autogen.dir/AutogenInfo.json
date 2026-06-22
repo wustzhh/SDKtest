@@ -1,17 +1,17 @@
 {
 	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
-	"BUILD_DIR" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen",
-	"CMAKE_BINARY_DIR" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build",
-	"CMAKE_CURRENT_BINARY_DIR" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build",
-	"CMAKE_CURRENT_SOURCE_DIR" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui",
+	"BUILD_DIR" : "D:/pyProj/SDKtest/build/test_runner_ui_autogen",
+	"CMAKE_BINARY_DIR" : "D:/pyProj/SDKtest/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "D:/pyProj/SDKtest/build",
+	"CMAKE_CURRENT_SOURCE_DIR" : "D:/pyProj/SDKtest",
 	"CMAKE_EXECUTABLE" : "C:/Program Files/CMake/bin/cmake.exe",
 	"CMAKE_LIST_FILES" : 
 	[
-		"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/CMakeLists.txt",
-		"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/CMakeFiles/3.31.7/CMakeSystem.cmake",
+		"D:/pyProj/SDKtest/CMakeLists.txt",
+		"D:/pyProj/SDKtest/build/CMakeFiles/3.31.7/CMakeSystem.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/Platform/Windows-Initialize.cmake",
-		"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/CMakeFiles/3.31.7/CMakeCXXCompiler.cmake",
+		"D:/pyProj/SDKtest/build/CMakeFiles/3.31.7/CMakeCXXCompiler.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeGenericSystem.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake",
@@ -24,7 +24,7 @@
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/Platform/Windows-GNU-CXX.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/Platform/Windows-GNU.cmake",
-		"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/CMakeFiles/3.31.7/CMakeRCCompiler.cmake",
+		"D:/pyProj/SDKtest/build/CMakeFiles/3.31.7/CMakeRCCompiler.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeRCInformation.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/Platform/Windows-windres.cmake",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/Platform/Windows-GNU-CXX-ABI.cmake",
@@ -273,108 +273,142 @@
 		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6Widgets/Qt6QModernWindowsStylePluginTargets.cmake",
 		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6Widgets/Qt6QModernWindowsStylePluginTargets-relwithdebinfo.cmake",
 		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6Widgets/Qt6QModernWindowsStylePluginAdditionalTargetInfo.cmake",
-		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6Widgets/Qt6WidgetsVersionlessAliasTargets.cmake"
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6Widgets/Qt6WidgetsVersionlessAliasTargets.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfigVersion.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfigVersionImpl.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsConfig.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeFindDependencyMacro.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsDependencies.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLConfigVersion.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLConfigVersionImpl.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLConfig.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeFindDependencyMacro.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLDependencies.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6/FindWrapVulkanHeaders.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/FindVulkan.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/FindPackageMessage.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake",
+		"C:/Program Files/CMake/share/cmake-3.31/Modules/FindPackageMessage.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLTargetsPrecheck.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLTargets.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLTargets-relwithdebinfo.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLAdditionalTargetInfo.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGL/Qt6OpenGLVersionlessAliasTargets.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargetsPrecheck.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargets.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsTargets-relwithdebinfo.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsAdditionalTargetInfo.cmake",
+		"C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsVersionlessAliasTargets.cmake"
 	],
-	"CMAKE_SOURCE_DIR" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui",
+	"CMAKE_SOURCE_DIR" : "D:/pyProj/SDKtest",
 	"CROSS_CONFIG" : false,
-	"DEP_FILE" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/deps",
+	"DEP_FILE" : "D:/pyProj/SDKtest/build/test_runner_ui_autogen/deps",
 	"DEP_FILE_RULE_NAME" : "test_runner_ui_autogen/timestamp",
 	"HEADERS" : 
 	[
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/ConfigManager.h",
+			"D:/pyProj/SDKtest/src/core/ConfigManager.h",
 			"Mu",
 			"PRMOGMWJPH/moc_ConfigManager.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.h",
+			"D:/pyProj/SDKtest/src/core/Logger.h",
 			"Mu",
 			"PRMOGMWJPH/moc_Logger.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/ReportExporter.h",
+			"D:/pyProj/SDKtest/src/core/ReportExporter.h",
 			"Mu",
 			"PRMOGMWJPH/moc_ReportExporter.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/ResultParser.h",
+			"D:/pyProj/SDKtest/src/core/ResultParser.h",
 			"Mu",
 			"PRMOGMWJPH/moc_ResultParser.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.h",
+			"D:/pyProj/SDKtest/src/core/StepReader.h",
+			"Mu",
+			"PRMOGMWJPH/moc_StepReader.cpp",
+			null
+		],
+		[
+			"D:/pyProj/SDKtest/src/core/TestLoader.h",
 			"Mu",
 			"PRMOGMWJPH/moc_TestLoader.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.h",
+			"D:/pyProj/SDKtest/src/core/TestRunner.h",
 			"Mu",
 			"PRMOGMWJPH/moc_TestRunner.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/XlsxWriter.h",
+			"D:/pyProj/SDKtest/src/core/XlsxWriter.h",
 			"Mu",
 			"PRMOGMWJPH/moc_XlsxWriter.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/models/TestResult.h",
+			"D:/pyProj/SDKtest/src/models/TestResult.h",
 			"Mu",
 			"M4YTXQ7V2H/moc_TestResult.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.h",
+			"D:/pyProj/SDKtest/src/ui/MainWindow.h",
 			"Mu",
 			"YPKJ5OE7LN/moc_MainWindow.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/Model3DViewer.h",
+			"D:/pyProj/SDKtest/src/ui/Model3DViewer.h",
 			"Mu",
 			"YPKJ5OE7LN/moc_Model3DViewer.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/ModelInfoPanel.h",
+			"D:/pyProj/SDKtest/src/ui/ModelInfoPanel.h",
 			"Mu",
 			"YPKJ5OE7LN/moc_ModelInfoPanel.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/ModelRenderView.h",
+			"D:/pyProj/SDKtest/src/ui/ModelRenderView.h",
 			"Mu",
 			"YPKJ5OE7LN/moc_ModelRenderView.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/TestListPanel.h",
+			"D:/pyProj/SDKtest/src/ui/TestListPanel.h",
 			"Mu",
 			"YPKJ5OE7LN/moc_TestListPanel.cpp",
 			null
 		],
 		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/TestProgressPanel.h",
+			"D:/pyProj/SDKtest/src/ui/TestProgressPanel.h",
 			"Mu",
 			"YPKJ5OE7LN/moc_TestProgressPanel.cpp",
 			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
-	"INCLUDE_DIR" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/include",
-	"MOC_COMPILATION_FILE" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/mocs_compilation.cpp",
+	"INCLUDE_DIR" : "D:/pyProj/SDKtest/build/test_runner_ui_autogen/include",
+	"MOC_COMPILATION_FILE" : "D:/pyProj/SDKtest/build/test_runner_ui_autogen/mocs_compilation.cpp",
 	"MOC_DEFINITIONS" : 
 	[
 		"MINGW_HAS_SECURE_API=1",
 		"QT_CORE_LIB",
 		"QT_GUI_LIB",
 		"QT_NO_DEBUG",
+		"QT_OPENGLWIDGETS_LIB",
+		"QT_OPENGL_LIB",
 		"QT_WIDGETS_LIB",
 		"UNICODE",
 		"WIN32",
@@ -392,12 +426,14 @@
 	],
 	"MOC_INCLUDES" : 
 	[
-		"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src",
+		"D:/pyProj/SDKtest/src",
 		"C:/Qt/6.11.1/mingw_64/include/QtWidgets",
 		"C:/Qt/6.11.1/mingw_64/include",
 		"C:/Qt/6.11.1/mingw_64/include/QtCore",
 		"C:/Qt/6.11.1/mingw_64/mkspecs/win32-g++",
 		"C:/Qt/6.11.1/mingw_64/include/QtGui",
+		"C:/Qt/6.11.1/mingw_64/include/QtOpenGLWidgets",
+		"C:/Qt/6.11.1/mingw_64/include/QtOpenGL",
 		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++",
 		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32",
 		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/backward",
@@ -425,89 +461,34 @@
 		"-c",
 		"C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp"
 	],
-	"MOC_PREDEFS_FILE" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/moc_predefs.h",
+	"MOC_PREDEFS_FILE" : "D:/pyProj/SDKtest/build/test_runner_ui_autogen/moc_predefs.h",
 	"MOC_RELAXED_MODE" : false,
 	"MOC_SKIP" : [],
 	"MULTI_CONFIG" : false,
 	"PARALLEL" : 6,
-	"PARSE_CACHE_FILE" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/CMakeFiles/test_runner_ui_autogen.dir/ParseCache.txt",
+	"PARSE_CACHE_FILE" : "D:/pyProj/SDKtest/build/CMakeFiles/test_runner_ui_autogen.dir/ParseCache.txt",
 	"QT_MOC_EXECUTABLE" : "C:/Qt/6.11.1/mingw_64/bin/moc.exe",
 	"QT_UIC_EXECUTABLE" : "",
 	"QT_VERSION_MAJOR" : 6,
 	"QT_VERSION_MINOR" : 11,
-	"SETTINGS_FILE" : "D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/CMakeFiles/test_runner_ui_autogen.dir/AutogenUsed.txt",
+	"SETTINGS_FILE" : "D:/pyProj/SDKtest/build/CMakeFiles/test_runner_ui_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/ConfigManager.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/Logger.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/ReportExporter.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/ResultParser.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestLoader.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/TestRunner.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/core/XlsxWriter.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/main.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/MainWindow.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/Model3DViewer.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/ModelInfoPanel.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/ModelRenderView.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/TestListPanel.cpp",
-			"Mu",
-			null
-		],
-		[
-			"D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/TestProgressPanel.cpp",
-			"Mu",
-			null
-		]
+		[ "D:/pyProj/SDKtest/src/core/ConfigManager.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/Logger.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/ReportExporter.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/ResultParser.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/StepReader.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/TestLoader.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/TestRunner.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/core/XlsxWriter.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/main.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/ui/MainWindow.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/ui/Model3DViewer.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/ui/ModelInfoPanel.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/ui/ModelRenderView.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/ui/TestListPanel.cpp", "Mu", null ],
+		[ "D:/pyProj/SDKtest/src/ui/TestProgressPanel.cpp", "Mu", null ]
 	],
 	"USE_BETTER_GRAPH" : true,
 	"VERBOSITY" : 0

@@ -1,28 +1,51 @@
 #pragma once
 
 #include <QWidget>
+#include <QOpenGLWidget>
+#include <QOpenGLFunctions>
+#include <QMouseEvent>
+#include <QWheelEvent>
+#include <QVector>
+#include <QVector3D>
 #include <QLabel>
-#include <QVBoxLayout>
 #include <QPushButton>
-#include <QFileInfo>
+#include <QVBoxLayout>
 
-// ────────────────────────────────────────────────────────────
-//  3D 模型查看器占位（后续接入 Qt3D / OpenCASCADE）
-//  当前功能：显示模型文件信息 + 鼠标操作提示
-// ────────────────────────────────────────────────────────────
+class GLViewer : public QOpenGLWidget, protected QOpenGLFunctions {
+    Q_OBJECT
+public:
+    explicit GLViewer(QWidget* parent = nullptr);
+    void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& indices);
+    void resetView();  // 自适应视角
+    void clear();
+
+protected:
+    void initializeGL() override;
+    void resizeGL(int w, int h) override;
+    void paintGL() override;
+    void mousePressEvent(QMouseEvent* e) override;
+    void mouseMoveEvent(QMouseEvent* e) override;
+    void wheelEvent(QWheelEvent* e) override;
+
+private:
+    QVector<QVector3D> m_verts;
+    QVector<int> m_idx;
+    float m_rotX = 30, m_rotY = -30;
+    float m_zoom = 1.0f;
+    float m_modelRadius = 1.0f;  // 模型包围球半径
+    QPoint m_lastPos;
+    bool m_dragging = false;
+};
+
 class Model3DViewer : public QWidget {
     Q_OBJECT
 public:
     explicit Model3DViewer(QWidget* parent = nullptr);
-
-    // 加载模型文件（显示文件信息）
     void loadFile(const QString& filePath);
     void clear();
 
-signals:
-    void openFileRequested();
-
 private:
-    QVBoxLayout* m_layout;
-    QLabel*      m_display;   // 显示模型信息或提示
+    GLViewer*    m_gl;
+    QLabel*      m_status;
+    QPushButton* m_btnResetView;
 };

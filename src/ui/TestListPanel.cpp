@@ -23,11 +23,11 @@ TestListPanel::TestListPanel(QWidget* parent)
     auto* headerRow = new QHBoxLayout();
     m_btnCollapsePanel = new QPushButton("\u25C0", this);
     m_btnCollapsePanel->setFixedSize(18, 22);
-    m_btnCollapsePanel->setToolTip("Hide panel");
+    m_btnCollapsePanel->setToolTip("隐藏面板");
     connect(m_btnCollapsePanel, &QPushButton::clicked, this, &TestListPanel::collapseRequested);
 
     m_searchEdit = new QLineEdit(this);
-    m_searchEdit->setPlaceholderText("Search...");
+    m_searchEdit->setPlaceholderText("搜索用例...");
     m_searchEdit->setClearButtonEnabled(true);
     connect(m_searchEdit, &QLineEdit::textChanged, this, &TestListPanel::onFilterChanged);
 
@@ -40,10 +40,10 @@ TestListPanel::TestListPanel(QWidget* parent)
     auto* tb = new QHBoxLayout(m_toolbar);
     tb->setContentsMargins(0, 0, 0, 0);
     tb->setSpacing(1);
-    m_btnExpand   = new QPushButton("Expand", this);
-    m_btnCollapse = new QPushButton("Fold", this);
-    m_btnSelectAll   = new QPushButton("All", this);
-    m_btnDeselectAll = new QPushButton("None", this);
+    m_btnExpand   = new QPushButton("展开", this);
+    m_btnCollapse = new QPushButton("折叠", this);
+    m_btnSelectAll   = new QPushButton("全选", this);
+    m_btnDeselectAll = new QPushButton("全消", this);
     m_lblStats = new QLabel("0", this);
     tb->addWidget(m_btnExpand);
     tb->addWidget(m_btnCollapse);

@@ -1,5 +1,5 @@
-D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/YPKJ5OE7LN/moc_TestProgressPanel.cpp: D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/src/ui/TestProgressPanel.h \
-  D:/pyProj/SDKtest/demo/ybaf-mesher/test_runner_ui/build/test_runner_ui_autogen/moc_predefs.h \
+D:/pyProj/SDKtest/build/test_runner_ui_autogen/YPKJ5OE7LN/moc_TestProgressPanel.cpp: D:/pyProj/SDKtest/src/ui/TestProgressPanel.h \
+  D:/pyProj/SDKtest/build/test_runner_ui_autogen/moc_predefs.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q17memory.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q20bit.h \
   C:/Qt/6.11.1/mingw_64/include/QtCore/q20functional.h \

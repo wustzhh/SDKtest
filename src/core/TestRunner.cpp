@@ -23,25 +23,46 @@ void TestRunner::run(const QString& binaryPath,
                      const QString& workingDir)
 {
     if (isRunning()) {
-        emit errorOccurred("A test run is already in progress.");
+        emit errorOccurred("Already running.");
         return;
     }
 
-    m_binaryPath  = binaryPath;
-    m_extraArgs   = extraArgs;
-    m_workingDir  = workingDir;
-    m_pendingCases = cases;
-    m_doneCount   = 0;
-    m_totalCount  = cases.size();
-    m_inTest      = false;
+    m_binaryPath = binaryPath;
+    m_workingDir = workingDir;
+    m_totalCount = cases.size();
+    m_doneCount  = 0;
 
-    if (m_totalCount == 0) {
-        emit allFinished();
-        return;
-    }
+    if (m_totalCount == 0) { emit allFinished(); return; }
+
+    // 合并 filter: Suite1.Case1:Suite1.Case2:Suite2.Case3
+    QStringList filters;
+    for (const auto& tc : cases)
+        filters << tc.fullName();
+    QString filter = filters.join(":");
+
+    m_gtestXmlPath = QDir::tempPath() + "/gtest_batch.xml";
+    m_accumulatedStdout.clear();
+
+    QStringList args;
+    args << "--gtest_filter=" + filter
+         << "--gtest_also_run_disabled_tests"
+         << "--gtest_output=xml:" + m_gtestXmlPath
+         << extraArgs;
+
+    LOG("RUN", "Batch: " + filter);
+    LOG("RUN", "XmlOut: " + m_gtestXmlPath);
+    emit rawOutput(QString("▶ Running %1 tests in one batch...\n").arg(m_totalCount));
+
+    if (!m_workingDir.isEmpty())
+        m_process->setWorkingDirectory(m_workingDir);
 
     m_elapsed.start();
-    parseNextTest();
+    m_process->start(m_binaryPath, args);
+    if (!m_process->waitForStarted(10000)) {
+        LOG("RUN", "Start FAILED: " + m_process->errorString());
+        emit errorOccurred("Cannot start: " + m_process->errorString());
+        emit allFinished();
+    }
 }
 
 void TestRunner::cancel() {
@@ -49,139 +70,152 @@ void TestRunner::cancel() {
         m_process->kill();
         m_process->waitForFinished(3000);
     }
-    m_pendingCases.clear();
 }
 
-void TestRunner::parseNextTest() {
-    if (m_pendingCases.isEmpty()) {
-        emit allFinished();
-        return;
-    }
-
-    TestCase tc = m_pendingCases.takeFirst();
-
-    // 构建 filter
-    // 如果有多个 pending，分批运行——这里一次只跑一个用例
-    // 但为了效率可以把相邻的同 suite 合并，先跑单个
-    QString filter = tc.fullName();
-
-    // 重置当前累积
-    m_currentResult = TestRunResult{};
-    m_currentResult.testCase = tc;
-    m_currentResult.status = "RUNNING";
-    m_accumulatedStdout.clear();
-    m_inTest = true;
-
-    // gtest XML output for RecordProperty
-    m_gtestXmlPath = QDir::tempPath() + "/gtest_out_" + QString::number(m_doneCount) + ".xml";
-
-    QStringList args;
-    args << "--gtest_filter=" + filter
-         << "--gtest_also_run_disabled_tests"
-         << "--gtest_output=xml:" + m_gtestXmlPath
-         << m_extraArgs;
-
-    emit rawOutput(QString("▶ [%1/%2] %3\n")
-                       .arg(m_doneCount + 1)
-                       .arg(m_totalCount)
-                       .arg(tc.fullName()));
-
-    LOG("RUN", "Start: " + m_binaryPath + "  filter=" + filter);
-    LOG("RUN", "XmlOut: " + m_gtestXmlPath);
-    LOG("RUN", "WorkDir: " + m_workingDir);
-
-    if (!m_workingDir.isEmpty())
-        m_process->setWorkingDirectory(m_workingDir);
-    m_process->start(m_binaryPath, args);
-    if (!m_process->waitForStarted(5000)) {
-        QString err = m_process->errorString();
-        LOG("RUN", "START FAILED: " + err);
-        m_currentResult.status = "ERROR";
-        m_currentResult.rawStderr = err;
-        m_inTest = false;
-        m_doneCount++;
-        emit testFinished(m_currentResult);
-        emit progressUpdated(m_doneCount, m_totalCount);
-        parseNextTest();
-    } else {
-        LOG("RUN", "Started OK");
-    }
+bool TestRunner::isRunning() const {
+    return m_process && m_process->state() != QProcess::NotRunning;
 }
 
 void TestRunner::onReadyReadStdout() {
-    QByteArray data = m_process->readAllStandardOutput();
-    QString text = QString::fromLocal8Bit(data);
+    QString text = QString::fromLocal8Bit(m_process->readAllStandardOutput());
     m_accumulatedStdout += text;
     emit rawOutput(text);
 }
 
 void TestRunner::onReadyReadStderr() {
     QString text = QString::fromLocal8Bit(m_process->readAllStandardError());
-    m_currentResult.rawStderr += text;
     emit rawOutput("[STDERR] " + text);
 }
 
-void TestRunner::onProcessFinished(int exitCode) {
-    LOG("RUN", "Exit code: " + QString::number(exitCode));
+void TestRunner::onProcessFinished(int exitCode, QProcess::ExitStatus status) {
+    Q_UNUSED(exitCode);
+    Q_UNUSED(status);
 
-    // 解析当前用例的 gtest 输出
-    static QRegularExpression okRe(R"(\[       OK \] (.+?) \((\d+) ms\))");
-    static QRegularExpression failRe(R"(\[  FAILED  \] (.+?)(?: \((\d+) ms\))?)");
+    LOG("RUN", "Process exit, stdout size: " + QString::number(m_accumulatedStdout.size()));
 
-    m_currentResult.rawStdout = m_accumulatedStdout;
-
-    auto matchOK   = okRe.match(m_accumulatedStdout);
-    auto matchFail = failRe.match(m_accumulatedStdout);
-
-    if (matchOK.hasMatch()) {
-        m_currentResult.status = "PASSED";
-        m_currentResult.durationMs = matchOK.captured(2).toDouble();
-    } else if (matchFail.hasMatch()) {
-        m_currentResult.status = "FAILED";
-        m_currentResult.durationMs = matchFail.captured(2).toDouble();
-    } else if (m_inTest) {
-        // 进程异常退出，未产生有效 gtest 结果
-        m_currentResult.status = "ERROR";
-        m_currentResult.durationMs = m_elapsed.elapsed();
+    // 1. 解析 XML 获取 RecordProperty（整体）
+    QMap<QString, QMap<QString, QString>> allProps;  // fullName → {key→val}
+    {
+        QFile f(m_gtestXmlPath);
+        if (f.open(QIODevice::ReadOnly)) {
+            QString xml = QString::fromUtf8(f.readAll());
+            f.close(); f.remove();
+            LOG("XML", "XML size: " + QString::number(xml.size()) + " bytes");
+            LOG("XML", "XML preview: " + xml.left(300));
+            // 每个 testcase 的 properties
+            // <testcase name="Case1" classname="Suite1"> ... <property name="k" value="v"/> ...
+            QRegularExpression tcRe(
+                R"tc(<testcase\s+name="([^"]+)"[^>]*classname="([^"]+)"[^>]*>)tc"
+                R"tc((.*?)</testcase>)tc",
+                QRegularExpression::DotMatchesEverythingOption);
+            QRegularExpression propRe(
+                R"pr(<property name="([^"]+)" value="([^"]+)"/?>)pr",
+                QRegularExpression::DotMatchesEverythingOption);
+            auto tcIt = tcRe.globalMatch(xml);
+            while (tcIt.hasNext()) {
+                auto m = tcIt.next();
+                QString caseName = m.captured(1);
+                QString suiteName = m.captured(2);
+                QString body = m.captured(3);
+                QString full = suiteName + "." + caseName;
+                auto pIt = propRe.globalMatch(body);
+                while (pIt.hasNext()) {
+                    auto pm = pIt.next();
+                    allProps[full][pm.captured(1)] = pm.captured(2);
+                }
+            }
+            LOG("XML", "Parsed " + QString::number(allProps.size()) + " testcases with properties");
+        } else {
+            LOG("XML", "No XML: " + m_gtestXmlPath);
+        }
     }
 
-    // 从 gtest XML 提取 RecordProperty
-    parseGtestXmlProperties(m_currentResult.properties);
+    // 2. 按 [RUN] 切分 stdout 得到每个用例的输出
+    auto blocks = parseCombinedOutput(m_accumulatedStdout);
+    LOG("RUN", "Parsed " + QString::number(blocks.size()) + " test blocks from stdout");
 
-    m_inTest = false;
-    m_doneCount++;
+    // 3. 逐个发射结果
+    for (const auto& b : blocks) {
+        TestRunResult res;
+        res.testCase.suiteName = b.suite;
+        res.testCase.caseName  = b.name;
+        res.status    = b.status;
+        res.durationMs = b.durationMs;
+        res.rawStdout = b.output;
+        res.properties = allProps.value(res.testCase.fullName());
 
-    emit testFinished(m_currentResult);
-    emit progressUpdated(m_doneCount, m_totalCount);
+        m_doneCount++;
+        emit testFinished(res);
+        emit progressUpdated(m_doneCount, m_totalCount);
+    }
 
-    // 继续下一个
-    parseNextTest();
+    emit allFinished();
 }
 
-void TestRunner::parseGtestXmlProperties(QMap<QString, QString>& props) {
-    QFile file(m_gtestXmlPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        LOG("XML", "No XML file: " + m_gtestXmlPath);
-        return;
-    }
-    LOG("XML", "Parsing: " + m_gtestXmlPath);
+QVector<TestRunner::ParsedBlock> TestRunner::parseCombinedOutput(const QString& allOutput) {
+    QVector<ParsedBlock> blocks;
 
-    QString xml = QString::fromUtf8(file.readAll());
-    file.close();
-    file.remove();
-    LOG("XML", "File size: " + QString::number(xml.size()) + " bytes");
-    LOG("XML", "Content: " + xml.left(1000));
+    // 按 [ RUN      ] Suite.Case 切分
+    // [^ \r\n]+ = 匹配除空格/换行/回车外的任何字符（停在行尾）
+    static QRegularExpression splitRe(R"(\[ RUN      \] ([^ \r\n]+)\.([^ \r\n]+))");
+    // 状态行
+    static QRegularExpression okRe(R"(\[       OK \] [^ ]+ \((\d+) ms\))");
+    static QRegularExpression failRe(R"(\[  FAILED  \] [^ ]+ \((\d+) ms\))");
 
-    // 解析 <property name="..." value="..."/>
-    // gtest XML 格式: <property name="interface" value="SearchBoss"/>
-    static QRegularExpression propRe(
-        R"xml(<property name="([^"]+)" value="([^"]+)"/?>)xml");
-    auto it = propRe.globalMatch(xml);
+    // 找到所有 [RUN] 位置
+    auto it = splitRe.globalMatch(allOutput);
+    int lastPos = 0;
+    QString lastSuite, lastName;
+
     while (it.hasNext()) {
         auto m = it.next();
-        props[m.captured(1)] = m.captured(2);
+        int pos = m.capturedStart();
+
+        // 如果有上一个用例，结算它
+        if (!lastSuite.isEmpty()) {
+            ParsedBlock block;
+            block.suite = lastSuite;
+            block.name  = lastName;
+            block.output = allOutput.mid(lastPos, pos - lastPos);
+            // 解析状态
+            auto okM = okRe.match(block.output);
+            auto fM  = failRe.match(block.output);
+            if (okM.hasMatch()) {
+                block.status = "PASSED";
+                block.durationMs = okM.captured(1).toDouble();
+            } else if (fM.hasMatch()) {
+                block.status = "FAILED";
+                block.durationMs = fM.captured(1).toDouble();
+            } else {
+                block.status = "ERROR";
+            }
+            blocks.append(block);
+        }
+
+        lastSuite = m.captured(1).remove('\r').remove('\n').trimmed();
+        lastName  = m.captured(2).remove('\r').remove('\n').trimmed();
+        lastPos   = pos;
     }
-    LOG("XML", "Found " + QString::number(props.size()) + " properties");
-    for (auto i = props.begin(); i != props.end(); ++i)
-        LOG("XML", "  " + i.key() + " = " + i.value());
+
+    // 最后一个用例
+    if (!lastSuite.isEmpty()) {
+        ParsedBlock block;
+        block.suite = lastSuite;
+        block.name  = lastName;
+        block.output = allOutput.mid(lastPos);
+        auto okM = okRe.match(block.output);
+        auto fM  = failRe.match(block.output);
+        if (okM.hasMatch()) {
+            block.status = "PASSED";
+            block.durationMs = okM.captured(1).toDouble();
+        } else if (fM.hasMatch()) {
+            block.status = "FAILED";
+            block.durationMs = fM.captured(1).toDouble();
+        } else {
+            block.status = "ERROR";
+        }
+        blocks.append(block);
+    }
+
+    return blocks;
 }

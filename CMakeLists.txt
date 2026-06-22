@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
 # ── Qt ──────────────────────────────────────────────────
-find_package(Qt6 REQUIRED COMPONENTS Widgets Core)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core OpenGLWidgets)
 
 # ── Sources ──────────────────────────────────────────────
 set(SOURCES
@@ -19,6 +19,7 @@ set(SOURCES
     src/core/XlsxWriter.h         src/core/XlsxWriter.cpp
     src/core/ReportExporter.h     src/core/ReportExporter.cpp
     src/core/Logger.h             src/core/Logger.cpp
+    src/core/StepReader.h         src/core/StepReader.cpp
     src/ui/MainWindow.h           src/ui/MainWindow.cpp
     src/ui/Model3DViewer.h        src/ui/Model3DViewer.cpp
     src/ui/TestListPanel.h        src/ui/TestListPanel.cpp
@@ -37,7 +38,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Widgets
     Qt6::Core
+    Qt6::OpenGLWidgets
+    ${CMAKE_DL_LIBS}
 )
+
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE opengl32)
+endif()
 
 # ── Copy config beside the exe ──
 # $<TARGET_FILE_DIR> 兼容 Ninja 和 VS 两种输出目录

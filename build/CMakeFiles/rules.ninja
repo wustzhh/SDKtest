@@ -42,7 +42,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SD:\pyProj\SDKtest\demo\ybaf-mesher\test_runner_ui -BD:\pyProj\SDKtest\demo\ybaf-mesher\test_runner_ui\build
+  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SD:\pyProj\SDKtest -BD:\pyProj\SDKtest\build
   description = Re-running CMake...
   generator = 1
 

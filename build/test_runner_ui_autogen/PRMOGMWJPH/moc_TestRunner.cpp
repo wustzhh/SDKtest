@@ -54,7 +54,9 @@ template <> constexpr inline auto TestRunner::qt_create_metaobjectdata<qt_meta_t
         "onReadyReadStdout",
         "onReadyReadStderr",
         "onProcessFinished",
-        "exitCode"
+        "exitCode",
+        "QProcess::ExitStatus",
+        "status"
     };
 
     QtMocHelpers::UintData qt_methods {
@@ -81,8 +83,8 @@ template <> constexpr inline auto TestRunner::qt_create_metaobjectdata<qt_meta_t
         // Slot 'onReadyReadStderr'
         QtMocHelpers::SlotData<void()>(14, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onProcessFinished'
-        QtMocHelpers::SlotData<void(int)>(15, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { QMetaType::Int, 16 },
+        QtMocHelpers::SlotData<void(int, QProcess::ExitStatus)>(15, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 16 }, { 0x80000000 | 17, 18 },
         }}),
     };
     QtMocHelpers::UintData qt_properties {
@@ -114,7 +116,7 @@ void TestRunner::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 4: _t->rawOutput((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
         case 5: _t->onReadyReadStdout(); break;
         case 6: _t->onReadyReadStderr(); break;
-        case 7: _t->onProcessFinished((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 7: _t->onProcessFinished((*reinterpret_cast<std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast<std::add_pointer_t<QProcess::ExitStatus>>(_a[2]))); break;
         default: ;
         }
     }

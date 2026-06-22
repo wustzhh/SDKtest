@@ -32,6 +32,65 @@ QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 QT_WARNING_DISABLE_GCC("-Wuseless-cast")
 namespace {
+struct qt_meta_tag_ZN8GLViewerE_t {};
+} // unnamed namespace
+
+template <> constexpr inline auto GLViewer::qt_create_metaobjectdata<qt_meta_tag_ZN8GLViewerE_t>()
+{
+    namespace QMC = QtMocConstants;
+    QtMocHelpers::StringRefStorage qt_stringData {
+        "GLViewer"
+    };
+
+    QtMocHelpers::UintData qt_methods {
+    };
+    QtMocHelpers::UintData qt_properties {
+    };
+    QtMocHelpers::UintData qt_enums {
+    };
+    return QtMocHelpers::metaObjectData<GLViewer, qt_meta_tag_ZN8GLViewerE_t>(QMC::MetaObjectFlag{}, qt_stringData,
+            qt_methods, qt_properties, qt_enums);
+}
+Q_CONSTINIT const QMetaObject GLViewer::staticMetaObject = { {
+    QMetaObject::SuperData::link<QOpenGLWidget::staticMetaObject>(),
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN8GLViewerE_t>.stringdata,
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN8GLViewerE_t>.data,
+    qt_static_metacall,
+    nullptr,
+    qt_staticMetaObjectRelocatingContent<qt_meta_tag_ZN8GLViewerE_t>.metaTypes,
+    nullptr
+} };
+
+void GLViewer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    auto *_t = static_cast<GLViewer *>(_o);
+    (void)_t;
+    (void)_c;
+    (void)_id;
+    (void)_a;
+}
+
+const QMetaObject *GLViewer::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *GLViewer::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN8GLViewerE_t>.strings))
+        return static_cast<void*>(this);
+    if (!strcmp(_clname, "QOpenGLFunctions"))
+        return static_cast< QOpenGLFunctions*>(this);
+    return QOpenGLWidget::qt_metacast(_clname);
+}
+
+int GLViewer::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QOpenGLWidget::qt_metacall(_c, _id, _a);
+    return _id;
+}
+namespace {
 struct qt_meta_tag_ZN13Model3DViewerE_t {};
 } // unnamed namespace
 
@@ -39,14 +98,10 @@ template <> constexpr inline auto Model3DViewer::qt_create_metaobjectdata<qt_met
 {
     namespace QMC = QtMocConstants;
     QtMocHelpers::StringRefStorage qt_stringData {
-        "Model3DViewer",
-        "openFileRequested",
-        ""
+        "Model3DViewer"
     };
 
     QtMocHelpers::UintData qt_methods {
-        // Signal 'openFileRequested'
-        QtMocHelpers::SignalData<void()>(1, 2, QMC::AccessPublic, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -68,16 +123,10 @@ Q_CONSTINIT const QMetaObject Model3DViewer::staticMetaObject = { {
 void Model3DViewer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
 {
     auto *_t = static_cast<Model3DViewer *>(_o);
-    if (_c == QMetaObject::InvokeMetaMethod) {
-        switch (_id) {
-        case 0: _t->openFileRequested(); break;
-        default: ;
-        }
-    }
-    if (_c == QMetaObject::IndexOfMethod) {
-        if (QtMocHelpers::indexOfMethod<void (Model3DViewer::*)()>(_a, &Model3DViewer::openFileRequested, 0))
-            return;
-    }
+    (void)_t;
+    (void)_c;
+    (void)_id;
+    (void)_a;
 }
 
 const QMetaObject *Model3DViewer::metaObject() const
@@ -96,24 +145,6 @@ void *Model3DViewer::qt_metacast(const char *_clname)
 int Model3DViewer::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QWidget::qt_metacall(_c, _id, _a);
-    if (_id < 0)
-        return _id;
-    if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
-            qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
-    }
-    if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 1)
-            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 1;
-    }
     return _id;
-}
-
-// SIGNAL 0
-void Model3DViewer::openFileRequested()
-{
-    QMetaObject::activate(this, &staticMetaObject, 0, nullptr);
 }
 QT_WARNING_POP

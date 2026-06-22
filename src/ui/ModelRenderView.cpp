@@ -45,7 +45,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     auto* toolbar = new QHBoxLayout();
     m_btnCollapsePanel = new QPushButton("\u25BC", m_content);  // ▼
     m_btnCollapsePanel->setFixedSize(20, 22);
-    m_btnCollapsePanel->setToolTip("Collapse panel");
+    m_btnCollapsePanel->setToolTip("隐藏右侧面板");
     m_btnCollapsePanel->setStyleSheet(
         "QPushButton { background:#e0e0e0; border:none; border-radius:3px; font-weight:bold; }"
         "QPushButton:hover { background:#ccc; }");
@@ -53,16 +53,16 @@ ModelRenderView::ModelRenderView(QWidget* parent)
             this, &ModelRenderView::collapseRequested);
 
     m_searchEdit = new QLineEdit(m_content);
-    m_searchEdit->setPlaceholderText("Search model data...");
+    m_searchEdit->setPlaceholderText("搜索模型数据...");
     m_searchEdit->setStyleSheet("padding:2px 4px; font-size:12px;");
     connect(m_searchEdit, &QLineEdit::textChanged, this, &ModelRenderView::onSearchChanged);
     m_filterCombo = new QComboBox(m_content);
-    m_filterCombo->addItems({"All", "Passed", "Failed", "Skipped"});
+    m_filterCombo->addItems({"全部", "通过", "失败", "跳过"});
     connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ModelRenderView::onFilterChanged);
-    m_btnExpand = new QPushButton("Expand", m_content);
+    m_btnExpand = new QPushButton("展开", m_content);
     connect(m_btnExpand, &QPushButton::clicked, this, &ModelRenderView::onExpandAll);
-    m_btnCollapse = new QPushButton("Fold", m_content);
+    m_btnCollapse = new QPushButton("折叠", m_content);
     connect(m_btnCollapse, &QPushButton::clicked, this, &ModelRenderView::onCollapseAll);
     m_lblStats = new QLabel("", m_content);
     m_lblStats->setStyleSheet("color:#666; font-size:11px;");
@@ -114,6 +114,7 @@ void ModelRenderView::showResults(const QVector<TestRunResult>& results) {
     for (auto& r : m_results)
         m_resultMap[r.testCase.fullName()] = &r;
 
+    m_stack->setCurrentIndex(1);  // 切换到内容页
     buildResultTree(results);
 
     int passed = 0, failed = 0, skipped = 0;
@@ -143,6 +144,7 @@ void ModelRenderView::clear() {
     m_resultMap.clear();
     m_lblStats->setText("");
     m_searchEdit->clear();
+    m_stack->setCurrentIndex(0);  // 切回占位页
 }
 
 void ModelRenderView::buildResultTree(const QVector<TestRunResult>& results) {
