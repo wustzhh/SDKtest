@@ -1,5 +1,0 @@
-D:/pyProj/SDKtest/build/CMakeFiles/test_runner_ui.dir
-D:/pyProj/SDKtest/build/CMakeFiles/edit_cache.dir
-D:/pyProj/SDKtest/build/CMakeFiles/rebuild_cache.dir
-D:/pyProj/SDKtest/build/CMakeFiles/test_runner_ui_autogen_timestamp_deps.dir
-D:/pyProj/SDKtest/build/CMakeFiles/test_runner_ui_autogen.dir

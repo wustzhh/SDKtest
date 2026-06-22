@@ -36,10 +36,6 @@ private:
     float m_modelSize = 1.0f;
     float m_bboxDX = 1, m_bboxDY = 1, m_bboxDZ = 1;
     float m_panX = 0, m_panY = 0;
-    QVector3D m_anchor;
-    bool m_hasAnchor = false;
-    bool m_pendingPick = false;  // 等待 paintGL 处理锚点拾取
-    QPointF m_pickPos;
     QPoint m_lastPos;
     bool m_dragging = false;
 };
