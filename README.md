@@ -1,76 +1,112 @@
-# YbMesher SDK 测试运行器
-
-基于 Qt6 的 gtest 图形化测试工具，可自由选择、运行、渲染和导出测试结果。
+# Test Runner UI — 华为 SDK gtest Qt GUI 前端
 
 ## 功能
 
-- ✅ **自动发现** — 通过 `--gtest_list_tests` 加载所有用例
-- ✅ **按需运行** — 树形勾选 → `--gtest_filter` 单独执行指定用例
-- ✅ **模型渲染** — 结构化结果树（拓扑统计、特征识别、计时等）可搜索/高亮/筛选
-- ✅ **结果导出** — XLSX 报告（概要 + 统计 + 失败详情）
-- ✅ **通用适配** — JSON 配置化，换套测试改路径即可
+- 加载 gtest 测试 binary，列出所有用例
+- 全量运行或指定运行（`--gtest_filter`）
+- 实时进度显示 + 日志
+- 结果树查看 + 模型属性显示
+- XLSX 报告导出
+- 3D 模型查看（STEP 文件）
 
-## 构建
+---
 
-### 前置条件
+## 编译方法
 
-- **Qt 6.x**（Widgets 模块）
-- **CMake ≥ 3.16**
-- **MSVC 2019+** 或 **MinGW**
-
-### 编译
+### 方法一：MinGW + OpenGL（推荐）
 
 ```bash
-cd ybaf-mesher/test_runner_ui
-
-# 生成 VS 工程
-cmake -B build -G "Visual Studio 17 2022"
-
-# 编译 Release
-cmake --build build --config Release
+.\build.bat
 ```
 
-编译产物：
+编译产物：`build/test_runner_ui.exe`
+运行：将 `build/` 下的 exe + DLL 复制到任意目录执行。
 
-```
-build/Release/test_runner_ui.exe
-build/Release/config/test_config.json
-```
+### 方法二：MSVC + OCCT（实体 3D 渲染）
 
-### 配置
+需要 vcpkg + MSVC Qt6。
 
-编辑 `config/test_config.json`：
+#### 1. 安装 vcpkg
 
-```json
-{
-  "test_binary": "build/Release/ybaf-mesher-test.exe",
-  "extra_args": ["--gtest_also_run_disabled_tests"],
-  "categories": [
-    { "name": "网格测试", "prefixes": ["meshhelper", "MeshTest"] },
-    { "name": "几何测试", "prefixes": ["FixtureTest", "ut_geometry"] }
-  ]
-}
+```bash
+git clone https://github.com/microsoft/vcpkg D:\vcpkg
+D:\vcpkg\bootstrap-vcpkg.bat
 ```
 
-`prefixes` 匹配 Suite 名前缀，用于用例树分类。
+#### 2. 安装 OCCT
 
-## 使用流程
-
-```
-1. 启动 → 文件 → 编辑配置 → 填入测试 exe 路径
-2. 文件 → 加载用例 → 自动发现所有 TEST/TEST_F
-3. 勾选想跑的用例 → 点"▶ 运行选中"
-4. 实时查看进度和日志
-5. 运行完成 → 结果模型树中浏览/搜索/高亮
-6. 点"📊 导出报告" → 生成 .xlsx
+```bash
+D:\vcpkg\vcpkg.exe install opencascade:x64-windows
 ```
 
-## 适配其他测试
+#### 3. 编译
 
-换一套 gtest 测试，只需改 `test_config.json`：
+```batch
+call "C:\Program Files\Microsoft Visual Studio\17\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+cmake -B build -G Ninja ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_TOOLCHAIN_FILE="D:/vcpkg/scripts/buildsystems/vcpkg.cmake" ^
+    -DQt6_DIR="C:/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6"
+cmake --build build
+```
 
-| 字段 | 说明 |
-|------|------|
-| `test_binary` | 测试 exe 路径 |
-| `extra_args` | 额外参数（如 `--gtest_also_run_disabled_tests`） |
-| `categories[x].prefixes` | Suite 名前缀，自动分类 |
+> **注意：** Qt6_DIR 路径请根据你安装的 Qt 版本调整。
+> MSVC Qt6 需要用 Qt Online Installer 单独安装（选择 MSVC 2022 64-bit 组件）。
+
+#### 4. 运行
+
+编译完成后，将 `build/` 目录下的所有 `.dll` 文件复制到 exe 同目录，直接运行 `test_runner_ui.exe`。
+
+### 方法三：VTK + OCCT（完整方案，参考 cae-preprocessor）
+
+```bash
+D:\vcpkg\vcpkg.exe install vtk[qt]:x64-windows opencascade:x64-windows
+cmake -B build -DCMAKE_TOOLCHAIN_FILE="D:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+cmake --build build
+```
+
+---
+
+## 使用方法
+
+1. **配置测试 binary：** 编辑 `config/test_config.json`，设置 `test_binary` 为你的 gtest exe 路径
+2. **加载测试：** 点击「加载测试」或 `Ctrl+L`
+3. **运行测试：** 选择用例 → 点击「运行选中」或 `Ctrl+R`
+4. **查看结果：** 左侧用例树勾选，右侧显示详情
+5. **导出报告：** 点击「导出」或 `Ctrl+E`，生成 `.xlsx` 文件
+6. **3D 模型查看：**
+   - 打开 STEP 文件（右键结果树或菜单）
+   - 左键拖拽旋转
+   - 中键拖拽平移
+   - 滚轮缩放
+   - Ctrl+左键点击模型表面设置旋转锚点
+   - 复位视角按钮恢复默认视角
+
+---
+
+## 项目结构
+
+```
+├── build.bat              MinGW 一键编译脚本
+├── CMakeLists.txt         构建配置
+├── config/
+│   └── test_config.json   测试 binary 配置
+├── src/
+│   ├── main.cpp           入口
+│   ├── core/              核心逻辑
+│   │   ├── ConfigManager   配置管理
+│   │   ├── TestLoader      用例加载
+│   │   ├── TestRunner      测试执行
+│   │   ├── ResultParser    结果解析
+│   │   ├── XlsxWriter      Excel 导出
+│   │   └── ReportExporter  报告导出
+│   └── ui/                界面
+│       ├── MainWindow      主窗口
+│       ├── TestListPanel   用例列表
+│       ├── TestProgressPanel 进度
+│       ├── ModelRenderView 结果树
+│       ├── ModelInfoPanel  模型信息
+│       └── Model3DViewer   3D 查看器
+├── models/                测试 STEP 文件
+└── README.md
+```

@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QStyleFactory>
+#include <QTimer>
 #include "core/Logger.h"
 #include "ui/MainWindow.h"
 
@@ -24,6 +25,12 @@ int main(int argc, char* argv[]) {
 
     MainWindow w;
     w.show();
+
+    // 命令行参数：自动加载模型
+    if (argc > 1) {
+        QString modelPath = QString::fromUtf8(argv[1]);
+        QTimer::singleShot(500, [&w, modelPath](){ w.openModelFile(modelPath); });
+    }
 
     return app.exec();
 }

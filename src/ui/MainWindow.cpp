@@ -179,6 +179,7 @@ void MainWindow::setupConnections() {
     });
 }
 
+
 void MainWindow::updateButtonStates() {
     bool running = m_runner->isRunning();
     m_actRun->setEnabled(!running && !m_loader.testCases().isEmpty());

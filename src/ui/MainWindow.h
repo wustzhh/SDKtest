@@ -37,6 +37,11 @@ private slots:
     void onRawOutput(const QString& line);
     void onSelectionChanged(int count);
 
+public:
+    void openModelFile(const QString& path) {
+        if (m_model3D) m_model3D->loadFile(path);
+    }
+
 private:
     void setupUi();
     void setupMenu();

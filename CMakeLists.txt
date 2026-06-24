@@ -28,6 +28,7 @@ endif()
 
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE opengl32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
