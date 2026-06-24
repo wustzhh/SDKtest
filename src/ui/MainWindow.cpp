@@ -47,22 +47,26 @@ void MainWindow::setupUi() {
     mainLayout->setSpacing(4);
 
     m_mainSplitter = new QSplitter(Qt::Horizontal, central);
+    m_mainSplitter->setHandleWidth(5);
+    m_mainSplitter->setChildrenCollapsible(false);
+    m_mainSplitter->setCollapsible(0, true);
+    m_mainSplitter->setCollapsible(2, true);
 
     // ═══ 左：用例列表 ═══
-    auto* leftW = new QWidget;
-    auto* leftL = new QVBoxLayout(leftW);
+    m_leftPanel = new QWidget;
+    m_leftPanel->setMinimumWidth(0);
+    auto* leftL = new QVBoxLayout(m_leftPanel);
     leftL->setContentsMargins(0, 0, 0, 0);
-    m_testList = new TestListPanel(leftW);
+    m_testList = new TestListPanel(m_leftPanel);
     leftL->addWidget(m_testList, 1);
     connect(m_testList, &TestListPanel::collapseRequested, this, [=]() {
-        leftW->setVisible(!leftW->isVisible());
+        m_leftPanel->setVisible(!m_leftPanel->isVisible());
     });
 
     // ═══ 中：进度(上) + 结果树(下) ═══
     auto* centerSplitter = new QSplitter(Qt::Vertical);
     m_progress = new TestProgressPanel;
     m_progress->setMinimumHeight(100);
-    // ModelRenderView 现在在中栏下方，显示运行结果（原来的位置）
     m_centerResultView = new ModelRenderView;
     centerSplitter->addWidget(m_progress);
     centerSplitter->addWidget(m_centerResultView);
@@ -70,20 +74,17 @@ void MainWindow::setupUi() {
     centerSplitter->setStretchFactor(1, 1);
 
     // ═══ 右：ModelInfo(上) + Model3DViewer(下) ═══
-    auto* rightW = new QWidget;
-    auto* rightL = new QVBoxLayout(rightW);
+    m_rightPanel = new QWidget;
+    m_rightPanel->setMinimumWidth(0);
+    auto* rightL = new QVBoxLayout(m_rightPanel);
     rightL->setContentsMargins(0, 0, 0, 0);
     rightL->setSpacing(2);
 
-    // 右栏顶栏：折叠 + 打开模型
-    auto* rh = new QHBoxLayout;
-    auto* btnRHide = new QPushButton("\u25B6");
-    btnRHide->setFixedSize(18, 22);
-    connect(btnRHide, &QPushButton::clicked, this, [=]() {
-        rightW->setVisible(!rightW->isVisible());
-    });
-    auto* btnOpen = new QPushButton("\U0001F4C2 打开模型");
-    btnOpen->setFixedHeight(22);
+    // 右栏：打开模型按钮
+    auto* btnOpen = new QPushButton(QString::fromUtf8("\xF0\x9F\x93\x82 \xE6\x89\x93\xE5\xBC\x80\xE6\xA8\xA1\xE5\x9E\x8B"));
+    btnOpen->setFixedHeight(28);
+    btnOpen->setMinimumWidth(100);
+    rightL->addWidget(btnOpen);
     connect(btnOpen, &QPushButton::clicked, this, [this]() {
         QString path = QFileDialog::getOpenFileName(
             this, "选择模型文件",
@@ -94,9 +95,6 @@ void MainWindow::setupUi() {
             m_model3D->loadFile(path);
         }
     });
-    rh->addWidget(btnRHide);
-    rh->addWidget(btnOpen, 1);
-    rightL->addLayout(rh);
 
     m_modelInfo = new ModelInfoPanel;
     m_modelInfo->setMaximumHeight(180);
@@ -106,9 +104,9 @@ void MainWindow::setupUi() {
     rightL->addWidget(m_model3D, 1);
 
     // ── 组装 ──
-    m_mainSplitter->addWidget(leftW);
+    m_mainSplitter->addWidget(m_leftPanel);
     m_mainSplitter->addWidget(centerSplitter);
-    m_mainSplitter->addWidget(rightW);
+    m_mainSplitter->addWidget(m_rightPanel);
     m_mainSplitter->setStretchFactor(0, 1);
     m_mainSplitter->setStretchFactor(1, 3);
     m_mainSplitter->setStretchFactor(2, 2);
@@ -117,7 +115,17 @@ void MainWindow::setupUi() {
     // ── 底栏 ──
     auto* bar = new QWidget;
     auto* bl = new QHBoxLayout(bar);
-    bl->setContentsMargins(4, 2, 4, 2);
+    bl->setContentsMargins(10, 5, 10, 5);
+    auto* bLeft = new QPushButton(QString::fromUtf8("\xe2\x97\x80"));
+    bLeft->setFixedSize(60, 30);
+    bLeft->setStyleSheet("QPushButton{padding:0;min-width:60;border-radius:8px}");
+    bLeft->setToolTip(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\xb7\xa6\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"));
+    connect(bLeft, &QPushButton::clicked, this, [=]() {
+        bool vis = !m_leftPanel->isVisible();
+        m_leftPanel->setVisible(vis);
+        bLeft->setText(vis ? QString::fromUtf8("\xe2\x97\x80") : QString::fromUtf8("\xe2\x96\xb6"));
+    });
+    bl->addWidget(bLeft);
     auto* bCfg = new QPushButton("\u2699 配置");
     auto* bLd  = new QPushButton("\U0001F4C2 加载");
     auto* bExp = new QPushButton("\U0001F4CA 导出");
@@ -132,6 +140,16 @@ void MainWindow::setupUi() {
     bl->addStretch();
     bl->addWidget(bExp);
     bl->addWidget(bRun);
+    auto* bRight = new QPushButton(QString::fromUtf8("\xe2\x96\xb6"));
+    bRight->setFixedSize(60, 30);
+    bRight->setStyleSheet("QPushButton{padding:0;min-width:60;border-radius:8px}");
+    bRight->setToolTip(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\x8f\xb3\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"));
+    connect(bRight, &QPushButton::clicked, this, [=]() {
+        bool vis = !m_rightPanel->isVisible();
+        m_rightPanel->setVisible(vis);
+        bRight->setText(vis ? QString::fromUtf8("\xe2\x96\xb6") : QString::fromUtf8("\xe2\x97\x80"));
+    });
+    bl->addWidget(bRight);
     setCentralWidget(central);
     statusBar()->addPermanentWidget(bar, 1);
 
@@ -148,9 +166,14 @@ void MainWindow::setupMenu() {
     m_actCancel = f->addAction("\u274C 取消运行",        this, &MainWindow::onCancelRun);
     m_actExport = f->addAction("\U0001F4CA 导出报告",    this, &MainWindow::onExportReport);
     f->addSeparator();
-    m_actConfig = f->addAction("\u2699 配置",            this, &MainWindow::onEditConfig);
+    m_actConfig = f->addAction("\u2699 配置", this, &MainWindow::onEditConfig);
     f->addSeparator();
-    f->addAction("\u9000\u51FA(&Q)", qApp, &QApplication::quit, QKeySequence::Quit);  // 退出(&Q)
+
+    auto* v = menuBar()->addMenu(QString::fromUtf8("\xe8\xa7\x86\xe5\x9b\xbe(&V)"));
+    v->addAction(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\xb7\xa6\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"), this, [=](){ if(m_leftPanel)m_leftPanel->setVisible(!m_leftPanel->isVisible()); });
+    v->addAction(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\x8f\xb3\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"), this, [=](){ if(m_rightPanel)m_rightPanel->setVisible(!m_rightPanel->isVisible()); });
+
+    f->addAction(QString::fromUtf8("\xe9\x80\x80\xe5\x87\xba(&Q)"), qApp, &QApplication::quit, QKeySequence::Quit);
     auto* h = menuBar()->addMenu("\u5E2E\u52A9(&H)");  // 帮助(&H)
     h->addAction("\u5173\u4E8E", this, &MainWindow::onAbout);  // 关于
 }

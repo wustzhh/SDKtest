@@ -1,10 +1,111 @@
 #include "ReportExporter.h"
 #include "XlsxWriter.h"
-
 #include <QFile>
 #include <QTextStream>
 #include <QFileInfo>
 #include <QSet>
+
+// ════════════════════════════════════════════════════════════
+//  HTML 导出
+// ════════════════════════════════════════════════════════════
+bool ReportExporter::exportToHtml(const TestReport& report,
+                                   const QString& filePath,
+                                   QString* errorMsg)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (errorMsg) *errorMsg = file.errorString();
+        return false;
+    }
+    QTextStream out(&file);
+    out.setEncoding(QStringConverter::Utf8);
+
+    int total = report.total();
+    int passed = report.passed();
+    int failed = report.failed();
+    double passRate = total > 0 ? passed * 100.0 / total : 0;
+
+    QSet<QString> allPropKeys;
+    for (const auto& r : report.results)
+        for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
+            allPropKeys.insert(it.key());
+    QStringList propKeys = allPropKeys.values();
+    propKeys.sort();
+
+    // HTML 头
+    out << "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n";
+    out << "<meta charset=\"UTF-8\">\n";
+    out << "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\">\n";
+    out << "<title>Test Report</title>\n";
+    out << "<style>\n";
+    out << "*{margin:0;padding:0;box-sizing:border-box}\n";
+    out << "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#e8ecf8,#f0f2f8);color:#1a1a2e;padding:40px 20px;display:flex;justify-content:center}\n";
+    out << ".container{max-width:1200px;width:100%}\n";
+    out << "h1{font-size:28px;font-weight:300;color:#6c5ce7;margin-bottom:4px;letter-spacing:1px}\n";
+    out << "h1 small{font-size:13px;color:#999;margin-left:12px}\n";
+    out << ".info{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid rgba(108,92,231,0.15);font-size:13px;color:#999}\n";
+    out << ".info b{color:#1a1a2e;font-weight:500}\n";
+    out << ".stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:32px}\n";
+    out << ".card{background:rgba(255,255,255,0.7);border:1px solid rgba(108,92,231,0.15);border-radius:12px;padding:18px;text-align:center;backdrop-filter:blur(10px);transition:border-color .2s}\n";
+    out << ".card:hover{border-color:#6c5ce7}\n";
+    out << ".card .n{font-size:30px;font-weight:600}\n";
+    out << ".card .l{font-size:11px;color:#999;margin-top:4px;text-transform:uppercase;letter-spacing:1px}\n";
+    out << ".card.pass .n{color:#6c5ce7}\n.card.fail .n{color:#ff4757}\n.card.rate .n{color:#ffa502}\n";
+    out << "h2{font-size:17px;font-weight:400;color:#6c5ce7;margin:24px 0 14px;letter-spacing:.5px}\n";
+    out << "table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.7);border-radius:12px;overflow:hidden;border:1px solid rgba(108,92,231,0.12)}\n";
+    out << "th{background:rgba(108,92,231,0.06);color:#6c5ce7;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;padding:10px 12px;text-align:left;border-bottom:1px solid rgba(108,92,231,0.1)}\n";
+    out << "td{padding:8px 12px;font-size:13px;border-bottom:1px solid rgba(108,92,231,0.04);color:#1a1a2e}\n";
+    out << "tr:hover td{background:rgba(108,92,231,0.04)}\n";
+    out << ".ok{color:#6c5ce7;font-weight:500}\n.fail{color:#ff4757;font-weight:500}\n";
+    out << "</style>\n</head>\n<body>\n<div class=\"container\">\n";
+
+    // 标题 + 信息
+    out << "<h1>Test Report <small>" << report.testBinary.toHtmlEscaped() << "</small></h1>\n";
+    out << "<div class=\"info\">";
+    out << "<span>Time: <b>" << report.startTime.toString("yyyy-MM-dd hh:mm:ss") << "</b></span>";
+    out << "<span>Filter: <b>" << report.filterPattern.toHtmlEscaped() << "</b></span>";
+    out << "</div>\n";
+
+    // 统计卡片
+    out << "<div class=\"stats\">\n";
+    out << "<div class=\"card pass\"><div class=\"n\">" << total << "</div><div class=\"l\">Total</div></div>\n";
+    out << "<div class=\"card pass\"><div class=\"n\">" << passed << "</div><div class=\"l\">Passed</div></div>\n";
+    out << "<div class=\"card fail\"><div class=\"n\">" << failed << "</div><div class=\"l\">Failed</div></div>\n";
+    out << "<div class=\"card rate\"><div class=\"n\">" << QString::number(passRate,'f',1) << "%</div><div class=\"l\">Pass Rate</div></div>\n";
+    out << "</div>\n";
+
+    // 结果表格
+    out << "<h2>Results</h2>\n<table>\n<thead><tr><th>Status</th><th>Suite</th><th>Case</th><th>Duration</th>";
+    for (const auto& k : propKeys) out << "<th>" << k.toHtmlEscaped() << "</th>";
+    out << "</tr></thead>\n<tbody>\n";
+    for (const auto& r : report.results) {
+        out << "<tr><td class=\"" << (r.passed()?"ok":"fail") << "\">" << (r.passed()?"PASS":"FAIL") << "</td>";
+        out << "<td>" << r.testCase.suiteName.toHtmlEscaped() << "</td>";
+        out << "<td>" << r.testCase.caseName.toHtmlEscaped() << "</td>";
+        out << "<td>" << QString::number(r.durationMs,'f',1) << "</td>";
+        for (const auto& k : propKeys) out << "<td>" << r.properties.value(k).toHtmlEscaped() << "</td>";
+        out << "</tr>\n";
+    }
+    out << "</tbody>\n</table>\n";
+
+    // 失败详情
+    bool hasFail = false;
+    for (const auto& r : report.results) {
+        if (r.passed()) continue;
+        if (!hasFail) { out << "<h2>Failures</h2>\n"; hasFail = true; }
+        out << "<div style=\"background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:10px;padding:12px;margin:8px 0\">\n";
+        out << "<strong style=\"color:#ff4757\">" << r.testCase.fullName().toHtmlEscaped() << "</strong>";
+        out << " <span style=\"color:#999;font-size:12px\">" << QString::number(r.durationMs,'f',1) << " ms</span>\n";
+        if (!r.rawStderr.isEmpty())
+            out << "<pre style=\"font-size:12px;color:#e74c3c;margin-top:6px;max-height:200px;overflow:auto;white-space:pre-wrap\">" << r.rawStderr.toHtmlEscaped() << "</pre>\n";
+        out << "</div>\n";
+    }
+    if (!hasFail) out << "<div style=\"color:#2ed573;padding:10px 0\">All tests passed.</div>\n";
+
+    out << "</div>\n</body>\n</html>\n";
+    file.close();
+    return true;
+}
 
 // ════════════════════════════════════════════════════════════
 bool ReportExporter::exportToXlsx(const TestReport& report,
@@ -12,69 +113,46 @@ bool ReportExporter::exportToXlsx(const TestReport& report,
                                    QString* errorMsg)
 {
     XlsxWriter writer;
-
-    // Sheet 1: 测试概要（含模型属性）
-    {
-        // 动态表头：基础列 + 所有出现的属性名
-        QSet<QString> propKeys;
-        for (const auto& r : report.results)
-            for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
-                propKeys.insert(it.key());
-        QStringList propKeysSorted = propKeys.values();
-        propKeysSorted.sort();
-
-        QStringList headers = { "Suite", "Case", "Status", "Duration(ms)" };
-        for (const auto& k : propKeysSorted)
-            headers << k;
-
-        QVector<QStringList> rows;
-        for (const auto& r : report.results) {
-            QStringList row;
-            row << r.testCase.suiteName
-                << r.testCase.caseName
-                << r.status
-                << QString::number(r.durationMs, 'f', 1);
-            for (const auto& k : propKeysSorted)
-                row << r.properties.value(k, "");
-            rows << row;
-        }
-        writer.addSheet("Test Summary", headers, rows);
+    QSet<QString> propKeys;
+    for (const auto& r : report.results)
+        for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
+            propKeys.insert(it.key());
+    QStringList propKeysSorted = propKeys.values();
+    propKeysSorted.sort();
+    QStringList headers = { "Suite", "Case", "Status", "Duration(ms)" };
+    for (const auto& k : propKeysSorted) headers << k;
+    QVector<QStringList> rows;
+    for (const auto& r : report.results) {
+        QStringList row;
+        row << r.testCase.suiteName << r.testCase.caseName
+            << r.status << QString::number(r.durationMs, 'f', 1);
+        for (const auto& k : propKeysSorted) row << r.properties.value(k, "");
+        rows << row;
     }
-
-    // Sheet 2: 统计汇总
+    writer.addSheet("Test Summary", headers, rows);
     {
-        QStringList headers = { "Metric", "Value" };
+        QStringList h = { "Metric", "Value" };
         QVector<QStringList> rows;
-        rows << QStringList{ "Total",     QString::number(report.total()) };
-        rows << QStringList{ "Passed",    QString::number(report.passed()) };
-        rows << QStringList{ "Failed",    QString::number(report.failed()) };
-        rows << QStringList{ "Pass Rate", QString::number(
-                report.passed() * 100.0 / qMax(1, report.total()), 'f', 1) + "%" };
-        rows << QStringList{ "Total Time (ms)",
-                QString::number(report.totalDurationMs(), 'f', 0) };
-        rows << QStringList{ "Time",      report.startTime.toString("yyyy-MM-dd hh:mm:ss") };
-        rows << QStringList{ "Binary",    report.testBinary };
-        rows << QStringList{ "Filter",    report.filterPattern };
-        writer.addSheet("Statistics", headers, rows);
+        rows << QStringList{ "Total", QString::number(report.total()) };
+        rows << QStringList{ "Passed", QString::number(report.passed()) };
+        rows << QStringList{ "Failed", QString::number(report.failed()) };
+        rows << QStringList{ "Pass Rate", QString::number(report.passed()*100.0/qMax(1,report.total()),'f',1)+"%" };
+        rows << QStringList{ "Total Time (ms)", QString::number(report.totalDurationMs(),'f',0) };
+        rows << QStringList{ "Time", report.startTime.toString("yyyy-MM-dd hh:mm:ss") };
+        rows << QStringList{ "Binary", report.testBinary };
+        rows << QStringList{ "Filter", report.filterPattern };
+        writer.addSheet("Statistics", h, rows);
     }
-
-    // Sheet 3: 失败详情（仅当有失败时）
     {
-        QStringList headers = { "Suite", "Case", "Duration(ms)", "Stderr" };
+        QStringList h = { "Suite", "Case", "Duration(ms)", "Stderr" };
         QVector<QStringList> rows;
         for (const auto& r : report.results) {
             if (r.passed()) continue;
-            rows << QStringList{
-                r.testCase.suiteName,
-                r.testCase.caseName,
-                QString::number(r.durationMs, 'f', 1),
-                r.rawStderr.left(500)
-            };
+            rows << QStringList{ r.testCase.suiteName, r.testCase.caseName,
+                QString::number(r.durationMs,'f',1), r.rawStderr.left(500) };
         }
-        if (!rows.isEmpty())
-            writer.addSheet("Failures", headers, rows);
+        if (!rows.isEmpty()) writer.addSheet("Failures", h, rows);
     }
-
     if (!writer.save(filePath)) {
         if (errorMsg) *errorMsg = writer.lastError();
         return false;
@@ -83,114 +161,48 @@ bool ReportExporter::exportToXlsx(const TestReport& report,
 }
 
 // ════════════════════════════════════════════════════════════
-bool ReportExporter::exportToTxt(const TestReport& report,
-                                  const QString& filePath,
-                                  QString* errorMsg)
+bool ReportExporter::exportToTxt(const TestReport& report, const QString& filePath, QString* errorMsg)
 {
     QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        if (errorMsg) *errorMsg = file.errorString();
-        return false;
-    }
-
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) { if (errorMsg) *errorMsg = file.errorString(); return false; }
+    QTextStream out(&file); out.setEncoding(QStringConverter::Utf8);
     QString sep = QString(72, '=');
-
-    // ── Header ──
-    out << sep << "\n";
-    out << "  Test Report\n";
-    out << "  Time: " << report.startTime.toString("yyyy-MM-dd hh:mm:ss") << "\n";
-    out << "  Binary: " << report.testBinary << "\n";
-    out << "  Filter: " << report.filterPattern << "\n";
-    out << sep << "\n\n";
-
-    // ── Statistics ──
-    out << "--- Statistics ---\n";
-    out << QString("  Total:  %1\n").arg(report.total());
-    out << QString("  Passed: %1\n").arg(report.passed());
-    out << QString("  Failed: %1\n").arg(report.failed());
-    out << QString("  Rate:   %1%\n")
-               .arg(report.passed() * 100.0 / qMax(1, report.total()), 0, 'f', 1);
-    out << QString("  Time:   %1 ms\n").arg(report.totalDurationMs(), 0, 'f', 0);
-    out << "\n";
-
-    // ── 收集所有属性 key ──
+    out << sep << "\n  Test Report\n  Time: " << report.startTime.toString("yyyy-MM-dd hh:mm:ss")
+        << "\n  Binary: " << report.testBinary << "\n  Filter: " << report.filterPattern
+        << "\n" << sep << "\n\n--- Statistics ---\n"
+        << "  Total: " << report.total() << "\n  Passed: " << report.passed()
+        << "\n  Failed: " << report.failed()
+        << "\n  Rate: " << QString::number(report.passed()*100.0/qMax(1,report.total()),'f',1) << "%"
+        << "\n  Time: " << QString::number(report.totalDurationMs(),'f',0) << " ms\n\n";
     QSet<QString> allPropKeys;
-    for (const auto& r : report.results)
-        for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
-            allPropKeys.insert(it.key());
-    QStringList propKeys = allPropKeys.values();
-    propKeys.sort();
-
-    // ── All Results ──
+    for (const auto& r : report.results) for (auto it = r.properties.begin(); it != r.properties.end(); ++it) allPropKeys.insert(it.key());
+    QStringList propKeys = allPropKeys.values(); propKeys.sort();
     out << "--- All Results ---\n";
-    out << QString("%1  %2  %3  %4")
-               .arg("Status", -8)
-               .arg("Duration", -12)
-               .arg("Suite", -30)
-               .arg("Case", -30);
-    for (const auto& k : propKeys)
-        out << "  " << QString("%1").arg(k, -20);
-    out << "\n";
-    out << QString(72 + propKeys.size() * 22, '-') << "\n";
-
-    QString statusIcon;
+    out << QString("%1  %2  %3  %4").arg("Status",-8).arg("Duration",-12).arg("Suite",-30).arg("Case",-30);
+    for (const auto& k : propKeys) out << "  " << QString("%1").arg(k,-20);
+    out << "\n" << QString(72+propKeys.size()*22,'-') << "\n";
     for (const auto& r : report.results) {
-        statusIcon = r.passed() ? "[PASS]" : "[FAIL]";
-        out << QString("%1  %2  %3  %4")
-                   .arg(statusIcon, -8)
-                   .arg(QString::number(r.durationMs, 'f', 1) + "ms", -12)
-                   .arg(r.testCase.suiteName, -30)
-                   .arg(r.testCase.caseName, -30);
-        for (const auto& k : propKeys)
-            out << "  " << QString("%1").arg(r.properties.value(k, ""), -20);
+        out << QString("%1  %2  %3  %4").arg(r.passed()?"[PASS]":"[FAIL]",-8)
+            .arg(QString::number(r.durationMs,'f',1)+"ms",-12)
+            .arg(r.testCase.suiteName,-30).arg(r.testCase.caseName,-30);
+        for (const auto& k : propKeys) out << "  " << QString("%1").arg(r.properties.value(k,""),-20);
         out << "\n";
     }
-    out << "\n";
-
-    // ── Failures Detail ──
-    bool hasFailures = false;
+    out << "\n--- " << (report.failed()>0?"Failures":"All Passed") << " ---\n";
     for (const auto& r : report.results) {
         if (r.passed()) continue;
-        if (!hasFailures) {
-            out << "--- Failures ---\n";
-            hasFailures = true;
-        }
-        out << QString("\n[FAIL] %1\n").arg(r.testCase.fullName());
-        out << QString("  Duration: %1 ms\n").arg(r.durationMs, 0, 'f', 1);
-        if (!r.rawStderr.isEmpty()) {
-            out << "  Stderr:\n";
-            for (const auto& line : r.rawStderr.split('\n'))
-                out << "    " << line.trimmed() << "\n";
-        }
+        out << "\n[FAIL] " << r.testCase.fullName() << "  (" << QString::number(r.durationMs,'f',1) << " ms)\n";
+        if (!r.rawStderr.isEmpty()) out << "  Stderr:\n" << r.rawStderr.left(1000) << "\n";
     }
-
-    if (!hasFailures)
-        out << "--- No Failures ---\n";
-
-    out << "\n" << sep << "\n";
-    out << "  End of Report\n";
-    out << sep << "\n";
-
-    file.close();
-    return true;
+    out << "\n" << sep << "\n  End of Report\n" << sep << "\n"; file.close(); return true;
 }
 
 // ════════════════════════════════════════════════════════════
-bool ReportExporter::exportBoth(const TestReport& report,
-                                 const QString& basePath,
-                                 QString* errorMsg)
+bool ReportExporter::exportBoth(const TestReport& report, const QString& basePath, QString* errorMsg)
 {
-    QString xlsxPath = basePath + ".xlsx";
-    QString txtPath  = basePath + ".txt";
-
-    if (!exportToXlsx(report, xlsxPath, errorMsg))
-        return false;
-    if (!exportToTxt(report, txtPath, errorMsg)) {
-        if (errorMsg)
-            *errorMsg = "XLSX ok, but TXT failed: " + *errorMsg;
+    if (!exportToHtml(report, basePath + ".html", errorMsg)) return false;
+    if (!exportToXlsx(report, basePath + ".xlsx", errorMsg)) {
+        if (errorMsg) *errorMsg = "HTML ok, XLSX failed: " + *errorMsg;
         return false;
     }
     return true;

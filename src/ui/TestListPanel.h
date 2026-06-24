@@ -32,6 +32,9 @@ private slots:
     void onFilterChanged(const QString& text);
     void onSelectAllClicked();
     void onDeselectAllClicked();
+    void onReverseFilterClicked();
+    void collapseToLevel(int level);
+    void expandToLevel(int level);
     void onExpandAllClicked();
     void onCollapseAllClicked();
     void onTreeContextMenu(const QPoint& pos);
@@ -53,6 +56,7 @@ private:
     QLineEdit*      m_searchEdit;
     QWidget*        m_toolbar;
     QPushButton*    m_btnCollapsePanel;
+    QPushButton*    m_btnReverseFilter;
     QPushButton*    m_btnExpand;
     QPushButton*    m_btnCollapse;
     QPushButton*    m_btnSelectAll;

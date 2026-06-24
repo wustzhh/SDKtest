@@ -59,6 +59,8 @@ private:
     ModelRenderView*  m_centerResultView = nullptr;  // 中栏结果树
     ModelInfoPanel*   m_modelInfo       = nullptr;
     Model3DViewer*    m_model3D         = nullptr;
+    QWidget*          m_leftPanel       = nullptr;
+    QWidget*          m_rightPanel      = nullptr;
 
     QAction* m_actLoad   = nullptr;
     QAction* m_actRun    = nullptr;

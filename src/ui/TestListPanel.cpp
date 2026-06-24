@@ -2,6 +2,7 @@
 
 #include <QHeaderView>
 #include <QVBoxLayout>
+#include <QShortcut>
 #include <QHBoxLayout>
 #include <QApplication>
 #include <QStyle>
@@ -19,19 +20,12 @@ TestListPanel::TestListPanel(QWidget* parent)
     layout->setContentsMargins(2, 2, 2, 2);
     layout->setSpacing(2);
 
-    // Header: collapse + search
+    // Header: search
     auto* headerRow = new QHBoxLayout();
-    m_btnCollapsePanel = new QPushButton("\u25C0", this);
-    m_btnCollapsePanel->setFixedSize(18, 22);
-    m_btnCollapsePanel->setToolTip("隐藏面板");
-    connect(m_btnCollapsePanel, &QPushButton::clicked, this, &TestListPanel::collapseRequested);
-
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText("搜索用例...");
     m_searchEdit->setClearButtonEnabled(true);
     connect(m_searchEdit, &QLineEdit::textChanged, this, &TestListPanel::onFilterChanged);
-
-    headerRow->addWidget(m_btnCollapsePanel);
     headerRow->addWidget(m_searchEdit, 1);
     layout->addLayout(headerRow);
 
@@ -40,22 +34,20 @@ TestListPanel::TestListPanel(QWidget* parent)
     auto* tb = new QHBoxLayout(m_toolbar);
     tb->setContentsMargins(0, 0, 0, 0);
     tb->setSpacing(1);
-    m_btnExpand   = new QPushButton("展开", this);
-    m_btnCollapse = new QPushButton("折叠", this);
     m_btnSelectAll   = new QPushButton("全选", this);
     m_btnDeselectAll = new QPushButton("全消", this);
+    m_btnReverseFilter = new QPushButton(QString::fromUtf8("\xE2\x87\x84 \xE5\x8F\x8D\xE9\x80\x89"), this);
+    m_btnReverseFilter->setToolTip("反转当前选区");
     m_lblStats = new QLabel("0", this);
-    tb->addWidget(m_btnExpand);
-    tb->addWidget(m_btnCollapse);
     tb->addWidget(m_btnSelectAll);
     tb->addWidget(m_btnDeselectAll);
+    tb->addWidget(m_btnReverseFilter);
     tb->addStretch();
     tb->addWidget(m_lblStats);
     layout->addWidget(m_toolbar);
-    connect(m_btnExpand,   &QPushButton::clicked, this, &TestListPanel::onExpandAllClicked);
-    connect(m_btnCollapse, &QPushButton::clicked, this, &TestListPanel::onCollapseAllClicked);
     connect(m_btnSelectAll,   &QPushButton::clicked, this, &TestListPanel::onSelectAllClicked);
     connect(m_btnDeselectAll, &QPushButton::clicked, this, &TestListPanel::onDeselectAllClicked);
+    connect(m_btnReverseFilter, &QPushButton::clicked, this, &TestListPanel::onReverseFilterClicked);
 
     // Tree
     m_tree = new QTreeWidget(this);
@@ -67,6 +59,8 @@ TestListPanel::TestListPanel(QWidget* parent)
     m_tree->setSelectionMode(QAbstractItemView::NoSelection);
     m_tree->setStyleSheet(
         "QTreeWidget { font-size:12px; border:1px solid #ddd; background:white; }");
+    m_tree->setMinimumWidth(0);
+    m_tree->setExpandsOnDoubleClick(false);
     connect(m_tree, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int) {
         if (!item || m_updating) return;
         toggleItem(item);
@@ -76,6 +70,15 @@ TestListPanel::TestListPanel(QWidget* parent)
     layout->addWidget(m_tree, 1);
 
     m_contextMenu = new QMenu(this);
+
+    // Alt+数字 = 折叠到对应层级, Alt+Shift+数字 = 展开到对应层级
+    for (int d = 1; d <= 9; d++) {
+        auto* scCollapse = new QShortcut(QKeySequence(Qt::ALT | (Qt::Key_0 + d)), this);
+        connect(scCollapse, &QShortcut::activated, this, [this, d]() { collapseToLevel(d); });
+        auto* scExpand = new QShortcut(QKeySequence(Qt::ALT | Qt::SHIFT | (Qt::Key_0 + d)), this);
+        connect(scExpand, &QShortcut::activated, this, [this, d]() { expandToLevel(d); });
+    }
+
     showEmptyPlaceholder();
 }
 
@@ -101,13 +104,18 @@ void TestListPanel::toggleItem(QTreeWidgetItem* item) {
         setItemChecked(item, newState);
         applyToDescendants(item, newState);
         updateItemText(item);
+        // 向上传播
+        QTreeWidgetItem* p = item->parent();
+        while (p) { updateItemText(p); p = p->parent(); }
     } else {
         setItemChecked(item, newState);
         item->setText(0, (newState ? MARK_YES : MARK_NO) + "  " +
                        item->data(0, Role_CaseName).toString());
-        updateParentState(item->parent());
+        QTreeWidgetItem* p = item->parent();
+        while (p) { updateItemText(p); p = p->parent(); }
     }
     m_updating = false;
+    m_tree->viewport()->update();
     updateStats();
     emit selectionChanged(selectedTests().size());
 }
@@ -115,6 +123,7 @@ void TestListPanel::toggleItem(QTreeWidgetItem* item) {
 void TestListPanel::applyToDescendants(QTreeWidgetItem* parent, bool checked) {
     for (int i = 0; i < parent->childCount(); ++i) {
         auto* child = parent->child(i);
+        if (child->isHidden()) { setItemChecked(child, false); continue; }
         setItemChecked(child, checked);
         if (child->childCount() > 0) {
             applyToDescendants(child, checked);
@@ -130,8 +139,10 @@ void TestListPanel::updateParentState(QTreeWidgetItem* item) {
     if (!item) return;
     int total = 0, checked = 0;
     for (int i = 0; i < item->childCount(); ++i) {
+        auto* child = item->child(i);
+        if (child->isHidden()) continue;
         ++total;
-        if (itemChecked(item->child(i))) ++checked;
+        if (itemChecked(child)) ++checked;
     }
     bool full = (checked == total && total > 0);
     bool half = (checked > 0 && checked < total);
@@ -152,18 +163,27 @@ void TestListPanel::updateParentState(QTreeWidgetItem* item) {
 
 void TestListPanel::updateItemText(QTreeWidgetItem* item) {
     int total = 0, checked = 0;
-    for (int i = 0; i < item->childCount(); ++i) {
-        ++total;
-        if (itemChecked(item->child(i))) ++checked;
-    }
+    std::function<void(QTreeWidgetItem*)> countCases = [&](QTreeWidgetItem* it) {
+        for (int i = 0; i < it->childCount(); ++i) {
+            auto* child = it->child(i);
+            if (child->data(0, Role_Type).toString() == "case") {
+                if (child->isHidden()) continue;
+                ++total;
+                if (itemChecked(child)) ++checked;
+            } else if (child->childCount() > 0) {
+                countCases(child);
+            }
+        }
+    };
+    countCases(item);
+    QString base = item->data(0, Role_SuiteName).toString();
+    if (base.isEmpty()) return;
     bool full = (checked == total && total > 0);
     bool half = (checked > 0 && checked < total);
-    QString base = item->data(0, Role_SuiteName).toString();
-    if (base.isEmpty()) base = item->text(0).section("  ", 1).trimmed();
-    QString cnt = QString(" (%1/%2)").arg(checked).arg(total);
-    if (full)      item->setText(0, MARK_YES + "  " + base + cnt);
-    else if (half) item->setText(0, MARK_HALF + "  " + base + cnt);
-    else           item->setText(0, MARK_NO + "  " + base + cnt);
+    QString cntStr = QString(" (%1/%2)").arg(checked).arg(total);
+    if (full)      item->setText(0, MARK_YES + "  " + base + cntStr);
+    else if (half) item->setText(0, MARK_HALF + "  " + base + cntStr);
+    else           item->setText(0, MARK_NO + "  " + base + cntStr);
 }
 
 int TestListPanel::countVisibleLeaf() const {
@@ -241,6 +261,7 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
             int sc = si.value().size(); catTotal += sc;
             suiteItem->setText(0, MARK_NO + "  " + si.key() + QString(" (%1)").arg(sc));
         }
+        catItem->setData(0, Role_SuiteName, ci.key());
         catItem->setText(0, MARK_NO + "  " + ci.key() + QString(" (%1)").arg(catTotal));
     }
 }
@@ -265,9 +286,28 @@ void TestListPanel::collectChecked(QTreeWidgetItem* item, QVector<TestCase>& out
 
 void TestListPanel::selectAll(bool select) {
     m_updating = true;
+    std::function<void(QTreeWidgetItem*)> selVis = [&](QTreeWidgetItem* item) {
+        for (int i = 0; i < item->childCount(); ++i) {
+            auto* child = item->child(i);
+            if (child->isHidden()) {
+                setItemChecked(child, false);
+            } else if (child->childCount() > 0) {
+                selVis(child);
+            } else {
+                setItemChecked(child, select);
+            }
+        }
+        if (!item->isHidden()) {
+            updateItemText(item);
+            QTreeWidgetItem* p = item->parent();
+            while (p) { updateItemText(p); p = p->parent(); }
+        }
+    };
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
-        applyToDescendants(m_tree->topLevelItem(i), select);
+        if (!m_tree->topLevelItem(i)->isHidden()) selVis(m_tree->topLevelItem(i));
     m_updating = false;
+    m_tree->viewport()->update();
+    emit selectionChanged(selectedTests().size());
     updateStats();
     emit selectionChanged(selectedTests().size());
 }
@@ -275,6 +315,21 @@ void TestListPanel::selectAll(bool select) {
 void TestListPanel::onFilterChanged(const QString& text) {
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         applyFilter(m_tree->topLevelItem(i), text);
+    // 隐藏的项取消选中 + 向上传播更新
+    std::function<void(QTreeWidgetItem*)> deselHidden = [&](QTreeWidgetItem* item) {
+        for (int i = 0; i < item->childCount(); ++i) {
+            auto* child = item->child(i);
+            if (child->isHidden()) setItemChecked(child, false);
+            if (child->childCount() > 0) deselHidden(child);
+        }
+        if (!item->isHidden()) {
+            updateItemText(item);
+            QTreeWidgetItem* p = item->parent();
+            while (p) { updateItemText(p); p = p->parent(); }
+        }
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
+        if (!m_tree->topLevelItem(i)->isHidden()) deselHidden(m_tree->topLevelItem(i));
     updateStats();
 }
 bool TestListPanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
@@ -291,8 +346,61 @@ bool TestListPanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
     return any;
 }
 
+void TestListPanel::collapseToLevel(int level) {
+    if (level == 1) {
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+            if (!m_tree->topLevelItem(i)->isHidden())
+                m_tree->topLevelItem(i)->setExpanded(false);
+    } else {
+        std::function<void(QTreeWidgetItem*,int)> rec = [&](QTreeWidgetItem* item, int depth) {
+            for (int i = 0; i < item->childCount(); i++) {
+                auto* child = item->child(i);
+                if (!child->isHidden()) {
+                    if (depth == level) child->setExpanded(false);
+                    rec(child, depth + 1);
+                }
+            }
+        };
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+            if (!m_tree->topLevelItem(i)->isHidden()) rec(m_tree->topLevelItem(i), 2);
+    }
+}
+void TestListPanel::expandToLevel(int level) {
+    if (level == 1) {
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+            if (!m_tree->topLevelItem(i)->isHidden())
+                m_tree->topLevelItem(i)->setExpanded(true);
+    } else {
+        std::function<void(QTreeWidgetItem*,int)> rec = [&](QTreeWidgetItem* item, int depth) {
+            for (int i = 0; i < item->childCount(); i++) {
+                auto* child = item->child(i);
+                if (!child->isHidden()) {
+                    if (depth == level) child->setExpanded(true);
+                    rec(child, depth + 1);
+                }
+            }
+        };
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+            if (!m_tree->topLevelItem(i)->isHidden()) rec(m_tree->topLevelItem(i), 2);
+    }
+}
 void TestListPanel::onSelectAllClicked()   { selectAll(true); }
 void TestListPanel::onDeselectAllClicked() { selectAll(false); }
+void TestListPanel::onReverseFilterClicked() {
+    std::function<void(QTreeWidgetItem*)> rev = [&](QTreeWidgetItem* item) {
+        if (!item->childCount()) {
+            item->setHidden(!item->isHidden());
+        } else {
+            bool anyVis = false;
+            for (int i = 0; i < item->childCount(); i++) {
+                rev(item->child(i));
+                if (!item->child(i)->isHidden()) anyVis = true;
+            }
+            item->setHidden(!anyVis);
+        }
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); i++) rev(m_tree->topLevelItem(i));
+}
 void TestListPanel::onExpandAllClicked()   {
     m_tree->expandAll();
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)

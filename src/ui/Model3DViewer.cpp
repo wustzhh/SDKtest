@@ -144,20 +144,31 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     m_modelSize=qMax(qMax(Mx-mx,My-my),Mz-mz);m_modelSize=qMax(m_modelSize,.001f);
     m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_hasAnchor=false;resetView();
 }
-void GLViewer::resetView(){m_panX=0;m_panY=0;m_hasAnchor=false;m_pendingPick=false;m_rot=QQuaternion::fromAxisAndAngle(QVector3D(1,0,0),25)*QQuaternion::fromAxisAndAngle(QVector3D(0,1,0),-35);m_zoom=1;update();}
+void GLViewer::resetView(){m_panX=0;m_panY=0;m_hasAnchor=false;m_pendingPick=false;m_rot=QQuaternion();m_zoom=1;update();}
 void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();update();}
-void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.12f,.12f,.14f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_NORMALIZE);
-    GLfloat a[]={.25f,.25f,.3f,1};glLightfv(GL_LIGHT0,GL_AMBIENT,a);GLfloat d[]={.7f,.7f,.8f,1};glLightfv(GL_LIGHT0,GL_DIFFUSE,d);GLfloat s[]={.3f,.3f,.3f,1};glLightfv(GL_LIGHT0,GL_SPECULAR,s);
+void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.12f,.12f,.14f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
+    GLfloat a0[]={.4f,.4f,.45f,1};glLightfv(GL_LIGHT0,GL_AMBIENT,a0);GLfloat d0[]={.6f,.6f,.7f,1};glLightfv(GL_LIGHT0,GL_DIFFUSE,d0);GLfloat s0[]={.2f,.2f,.2f,1};glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
+    GLfloat a1[]={.15f,.15f,.2f,1};glLightfv(GL_LIGHT1,GL_AMBIENT,a1);GLfloat d1[]={.3f,.3f,.4f,1};glLightfv(GL_LIGHT1,GL_DIFFUSE,d1);
     glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);glEnable(GL_COLOR_MATERIAL);}
 void GLViewer::resizeGL(int w,int h){glViewport(0,0,w,h);}
 void GLViewer::paintGL(){
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);if(m_verts.isEmpty())return;
+    glClear(GL_DEPTH_BUFFER_BIT);
+    // 渐变背景：深蓝→深紫
+    glMatrixMode(GL_PROJECTION);glLoadIdentity();glOrtho(0,1,1,0,-1,1);
+    glMatrixMode(GL_MODELVIEW);glLoadIdentity();
+    glDisable(GL_LIGHTING);glBegin(GL_QUADS);
+    glColor3f(.08f,.1f,.18f);glVertex2f(0,0);glVertex2f(1,0);
+    glColor3f(.12f,.08f,.18f);glVertex2f(1,1);glVertex2f(0,1);
+    glEnd();glEnable(GL_LIGHTING);
+
+    if(m_verts.isEmpty())return;
     float as=float(width())/float(height()),sz=m_modelSize*.5f/qMax(m_zoom,.01f);
     glMatrixMode(GL_PROJECTION);glLoadIdentity();
-    if(as>1)glOrtho(-sz*as,sz*as,-sz,sz,-1e5,1e5);else glOrtho(-sz,sz,-sz/as,sz/as,-1e5,1e5);
+    float nearF=-sz*5,farF=sz*5;if(as>1)glOrtho(-sz*as,sz*as,-sz,sz,nearF,farF);else glOrtho(-sz,sz,-sz/as,sz/as,nearF,farF);
     glMatrixMode(GL_MODELVIEW);glLoadIdentity();glTranslatef(m_panX,m_panY,0);glTranslatef(m_anchor.x(),m_anchor.y(),m_anchor.z());
     QMatrix4x4 rmat;rmat.rotate(m_rot);glMultMatrixf(rmat.constData());glTranslatef(-m_anchor.x(),-m_anchor.y(),-m_anchor.z());
-    GLfloat lp[]={1,1,1,0};glLightfv(GL_LIGHT0,GL_POSITION,lp);GLfloat mv[16],pj[16];GLint vp[4];
+    GLfloat lp0[]={1,1,1,0};glLightfv(GL_LIGHT0,GL_POSITION,lp0);
+    GLfloat lp1[]={-1,-1,-.5f,0};glLightfv(GL_LIGHT1,GL_POSITION,lp1);GLfloat mv[16],pj[16];GLint vp[4];
     glGetFloatv(GL_MODELVIEW_MATRIX,mv);glGetFloatv(GL_PROJECTION_MATRIX,pj);glGetIntegerv(GL_VIEWPORT,vp);
     glEnable(GL_LIGHTING);
     if(!m_tri.isEmpty()){

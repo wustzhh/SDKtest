@@ -19,7 +19,6 @@ struct EdgeLine {
     QVector3D color;
 };
 
-#ifdef HAS_OCC
 struct StepLoadResult {
     bool ok = false;
     QString error;
@@ -43,7 +42,6 @@ signals:
 private:
     QString m_path;
 };
-#endif
 
 class GLViewer : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
