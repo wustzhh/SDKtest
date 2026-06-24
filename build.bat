@@ -58,7 +58,7 @@ if exist "%BUILD_DIR%\imageformats\qjpeg.dll" copy /Y "%BUILD_DIR%\imageformats\
 if exist "%BUILD_DIR%\imageformats\qsvg.dll" copy /Y "%BUILD_DIR%\imageformats\qsvg.dll" "%DIST_DIR%\imageformats\" >nul
 echo [OK] Packed
 
-echo [OK] STEP reader is built-in (no external DLLs needed)
+echo [OK] 3D uses VTK+OCCT (compile with VTK/OpenCASCADE)
 
 set ZIP_FILE=%~dp0test_runner_ui.zip
 if exist "%ZIP_FILE%" del "%ZIP_FILE%"

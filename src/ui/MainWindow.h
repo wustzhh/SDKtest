@@ -18,7 +18,6 @@
 #include "ui/ModelRenderView.h"
 #include "ui/ModelInfoPanel.h"
 #include "ui/Model3DViewer.h"
-
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:

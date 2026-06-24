@@ -15,7 +15,7 @@ class GLViewer : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
 public:
     explicit GLViewer(QWidget* parent = nullptr);
-    void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& indices, const QVector<int>& triangles = {});
+    void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& tris);
     void resetView();
     void clear();
 
@@ -29,15 +29,14 @@ protected:
 
 private:
     QVector<QVector3D> m_verts;
-    QVector<int> m_idx;
-    QVector<int> m_tri;  // 三角面索引（深度填充）
-    float m_rotX = 30, m_rotY = -30;
-    float m_zoom = 1.0f;
-    float m_modelSize = 1.0f;
-    float m_bboxDX = 1, m_bboxDY = 1, m_bboxDZ = 1;
-    float m_panX = 0, m_panY = 0;
+    QVector<int> m_tri;
+    float m_rotX=25,m_rotY=-35,m_zoom=1,m_modelSize=1;
+    float m_panX=0,m_panY=0;
+    QVector3D m_anchor;
+    bool m_hasAnchor=false,m_pendingPick=false;
+    QPointF m_pickPos;
     QPoint m_lastPos;
-    bool m_dragging = false;
+    bool m_dragging=false;
 };
 
 class Model3DViewer : public QWidget {
@@ -48,7 +47,7 @@ public:
     void clear();
 
 private:
-    GLViewer*    m_gl;
-    QLabel*      m_status;
-    QPushButton* m_btnResetView;
+    GLViewer* m_gl;
+    QLabel* m_status;
+    QPushButton* m_btnReset;
 };

@@ -174,7 +174,6 @@ void MainWindow::setupConnections() {
             m_model3D->loadFile(r.properties["model"]);
     });
 
-    // ModelInfo 的 "Open" 按钮 → 加载到 3D 查看器
     connect(m_modelInfo, &ModelInfoPanel::openFileRequested, this, [this](const QString& path) {
         m_model3D->loadFile(path);
     });

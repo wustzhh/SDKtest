@@ -1,1 +1,28 @@
-3rdparty
+# 编译产物
+build*/
+dist/
+test_runner_ui/
+*.exe
+*.dll
+*.zip
+*.lib
+*.exp
+*.obj
+*.pdb
+*.log
+
+# 第三方库
+3rdparty/
+
+# 工具脚本（编译器、下载器等）
+tools/
+
+# 编辑器 / 系统
+.reasonix/
+.vscode/
+.idea/
+cmake-*
+
+# 缓存
+__pycache__/
+*.pyc
