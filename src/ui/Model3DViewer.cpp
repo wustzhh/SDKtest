@@ -177,9 +177,9 @@ void GLViewer::paintGL(){
         for(int i=0;i<m_verts.size();i++){va[i*3]=m_verts[i].x();va[i*3+1]=m_verts[i].y();va[i*3+2]=m_verts[i].z();
             if(i<m_normals.size()){na[i*3]=m_normals[i].x();na[i*3+1]=m_normals[i].y();na[i*3+2]=m_normals[i].z();}else{na[i*3]=0;na[i*3+1]=1;na[i*3+2]=0;}}
         glVertexPointer(3,GL_FLOAT,0,va);glNormalPointer(GL_FLOAT,0,na);
-        glPolygonOffset(1,1);glEnable(GL_POLYGON_OFFSET_FILL);glColor3f(.55f,.62f,.72f);
+        glColor3f(.55f,.62f,.72f);
         glDrawElements(GL_TRIANGLES,m_tri.size(),GL_UNSIGNED_INT,m_tri.data());
-        glDisable(GL_POLYGON_OFFSET_FILL);glDisableClientState(GL_NORMAL_ARRAY);glDisableClientState(GL_VERTEX_ARRAY);delete[]va;delete[]na;
+        glDisableClientState(GL_NORMAL_ARRAY);glDisableClientState(GL_VERTEX_ARRAY);delete[]va;delete[]na;
     }
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
