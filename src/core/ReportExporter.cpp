@@ -52,47 +52,48 @@ bool ReportExporter::exportToHtml(const TestReport& report,
     out << ".card .l{font-size:11px;color:#999;margin-top:4px;text-transform:uppercase;letter-spacing:1px}\n";
     out << ".card.pass .n{color:#6c5ce7}\n.card.fail .n{color:#ff4757}\n.card.rate .n{color:#ffa502}\n";
     out << "h2{font-size:17px;font-weight:400;color:#6c5ce7;margin:24px 0 14px;letter-spacing:.5px}\n";
-    out << "table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.7);border-radius:12px;overflow:hidden;border:1px solid rgba(108,92,231,0.12)}\n";
-    out << "th{background:rgba(108,92,231,0.06);color:#6c5ce7;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;padding:10px 12px;text-align:left;border-bottom:1px solid rgba(108,92,231,0.1)}\n";
-    out << "td{padding:8px 12px;font-size:13px;border-bottom:1px solid rgba(108,92,231,0.04);color:#1a1a2e}\n";
+    out << ".table-wrap{border-radius:12px}\n";
+    out << "table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.7);border-radius:12px;border:1px solid rgba(108,92,231,0.12)}\n";
+    out << "th{background:rgba(108,92,231,0.06);color:#6c5ce7;font-size:10px;font-weight:600;letter-spacing:1px;padding:10px 12px;text-align:left;border-bottom:1px solid rgba(108,92,231,0.1)}\n";
+    out << "td{padding:8px 12px;font-size:13px;border-bottom:1px solid rgba(108,92,231,0.04);color:#1a1a2e;word-break:break-all;vertical-align:top}\n";
     out << "tr:hover td{background:rgba(108,92,231,0.04)}\n";
     out << ".ok{color:#6c5ce7;font-weight:500}\n.fail{color:#ff4757;font-weight:500}\n";
     out << "</style>\n</head>\n<body>\n<div class=\"container\">\n";
 
     // 标题 + 信息
-    out << "<h1>Test Report <small>" << report.testBinary.toHtmlEscaped() << "</small></h1>\n";
+    out << "<h1>" << QString::fromUtf8("\xe6\xb5\x8b\xe8\xaf\x95\xe6\x8a\xa5\xe5\x91\x8a") << " <small>" << report.testBinary.toHtmlEscaped() << "</small></h1>\n";
     out << "<div class=\"info\">";
-    out << "<span>Time: <b>" << report.startTime.toString("yyyy-MM-dd hh:mm:ss") << "</b></span>";
-    out << "<span>Filter: <b>" << report.filterPattern.toHtmlEscaped() << "</b></span>";
+    out << "<span>" << QString::fromUtf8("\xe6\x97\xb6\xe9\x97\xb4") << ": <b>" << report.startTime.toString("yyyy-MM-dd hh:mm:ss") << "</b></span>";
+    out << "<span>" << QString::fromUtf8("\xe7\xad\x9b\xe9\x80\x89") << ": <b>" << report.filterPattern.toHtmlEscaped() << "</b></span>";
     out << "</div>\n";
 
     // 统计卡片
     out << "<div class=\"stats\">\n";
-    out << "<div class=\"card pass\"><div class=\"n\">" << total << "</div><div class=\"l\">Total</div></div>\n";
-    out << "<div class=\"card pass\"><div class=\"n\">" << passed << "</div><div class=\"l\">Passed</div></div>\n";
-    out << "<div class=\"card fail\"><div class=\"n\">" << failed << "</div><div class=\"l\">Failed</div></div>\n";
-    out << "<div class=\"card rate\"><div class=\"n\">" << QString::number(passRate,'f',1) << "%</div><div class=\"l\">Pass Rate</div></div>\n";
+    out << "<div class=\"card pass\"><div class=\"n\">" << total << "</div><div class=\"l\">" << QString::fromUtf8("\xe5\x85\xb1\xe8\xae\xa1") << "</div></div>\n";
+    out << "<div class=\"card pass\"><div class=\"n\">" << passed << "</div><div class=\"l\">" << QString::fromUtf8("\xe9\x80\x9a\xe8\xbf\x87") << "</div></div>\n";
+    out << "<div class=\"card fail\"><div class=\"n\">" << failed << "</div><div class=\"l\">" << QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5") << "</div></div>\n";
+    out << "<div class=\"card rate\"><div class=\"n\">" << QString::number(passRate,'f',1) << "%</div><div class=\"l\">" << QString::fromUtf8("\xe9\x80\x9a\xe8\xbf\x87\xe7\x8e\x87") << "</div></div>\n";
     out << "</div>\n";
 
     // 结果表格
-    out << "<h2>Results</h2>\n<table>\n<thead><tr><th>Status</th><th>Suite</th><th>Case</th><th>Duration</th>";
+    out << "<h2>" << QString::fromUtf8("\xe6\xb5\x8b\xe8\xaf\x95\xe7\xbb\x93\xe6\x9e\x9c") << "</h2>\n<div class=\"table-wrap\">\n<table>\n<thead><tr><th>" << QString::fromUtf8("\xe7\x8a\xb6\xe6\x80\x81") << "</th><th>" << QString::fromUtf8("\xe5\xa5\x97\xe4\xbb\xb6") << "</th><th>" << QString::fromUtf8("\xe7\x94\xa8\xe4\xbe\x8b") << "</th><th>" << QString::fromUtf8("\xe8\x80\x97\xe6\x97\xb6(ms)") << "</th>";
     for (const auto& k : propKeys) out << "<th>" << k.toHtmlEscaped() << "</th>";
     out << "</tr></thead>\n<tbody>\n";
     for (const auto& r : report.results) {
-        out << "<tr><td class=\"" << (r.passed()?"ok":"fail") << "\">" << (r.passed()?"PASS":"FAIL") << "</td>";
+        out << "<tr><td class=\"" << (r.passed()?"ok":"fail") << "\">" << (r.passed()?QString::fromUtf8("\xe9\x80\x9a\xe8\xbf\x87"):QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5")) << "</td>";
         out << "<td>" << r.testCase.suiteName.toHtmlEscaped() << "</td>";
         out << "<td>" << r.testCase.caseName.toHtmlEscaped() << "</td>";
         out << "<td>" << QString::number(r.durationMs,'f',1) << "</td>";
         for (const auto& k : propKeys) out << "<td>" << r.properties.value(k).toHtmlEscaped() << "</td>";
         out << "</tr>\n";
     }
-    out << "</tbody>\n</table>\n";
+    out << "</tbody>\n</table>\n</div>\n";
 
     // 失败详情
     bool hasFail = false;
     for (const auto& r : report.results) {
         if (r.passed()) continue;
-        if (!hasFail) { out << "<h2>Failures</h2>\n"; hasFail = true; }
+        if (!hasFail) { out << "<h2>" << QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5\xe8\xaf\xa6\xe6\x83\x85") << "</h2>\n"; hasFail = true; }
         out << "<div style=\"background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:10px;padding:12px;margin:8px 0\">\n";
         out << "<strong style=\"color:#ff4757\">" << r.testCase.fullName().toHtmlEscaped() << "</strong>";
         out << " <span style=\"color:#999;font-size:12px\">" << QString::number(r.durationMs,'f',1) << " ms</span>\n";
@@ -100,7 +101,7 @@ bool ReportExporter::exportToHtml(const TestReport& report,
             out << "<pre style=\"font-size:12px;color:#e74c3c;margin-top:6px;max-height:200px;overflow:auto;white-space:pre-wrap\">" << r.rawStderr.toHtmlEscaped() << "</pre>\n";
         out << "</div>\n";
     }
-    if (!hasFail) out << "<div style=\"color:#2ed573;padding:10px 0\">All tests passed.</div>\n";
+    if (!hasFail) out << "<div style=\"color:#2ed573;padding:10px 0\">" << QString::fromUtf8("\xe2\x9c\x93 \xe5\x85\xa8\xe9\x83\xa8\xe5\xb7\xb2\xe9\x80\x9a\xe8\xbf\x87") << "</div>\n";
 
     out << "</div>\n</body>\n</html>\n";
     file.close();

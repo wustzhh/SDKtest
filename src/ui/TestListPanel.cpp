@@ -295,6 +295,8 @@ void TestListPanel::selectAll(bool select) {
                 selVis(child);
             } else {
                 setItemChecked(child, select);
+                child->setText(0, (select ? MARK_YES : MARK_NO) + "  " +
+                               child->data(0, Role_CaseName).toString());
             }
         }
         if (!item->isHidden()) {
@@ -319,7 +321,11 @@ void TestListPanel::onFilterChanged(const QString& text) {
     std::function<void(QTreeWidgetItem*)> deselHidden = [&](QTreeWidgetItem* item) {
         for (int i = 0; i < item->childCount(); ++i) {
             auto* child = item->child(i);
-            if (child->isHidden()) setItemChecked(child, false);
+            if (child->isHidden()) {
+                setItemChecked(child, false);
+                if (child->data(0, Role_Type).toString() == "case")
+                    child->setText(0, MARK_NO + "  " + child->data(0, Role_CaseName).toString());
+            }
             if (child->childCount() > 0) deselHidden(child);
         }
         if (!item->isHidden()) {
@@ -389,7 +395,9 @@ void TestListPanel::onDeselectAllClicked() { selectAll(false); }
 void TestListPanel::onReverseFilterClicked() {
     std::function<void(QTreeWidgetItem*)> rev = [&](QTreeWidgetItem* item) {
         if (!item->childCount()) {
-            item->setHidden(!item->isHidden());
+            bool wasHidden = item->isHidden();
+            item->setHidden(!wasHidden);
+            if (!wasHidden) { setItemChecked(item, false); item->setText(0, MARK_NO + "  " + item->data(0, Role_CaseName).toString()); }
         } else {
             bool anyVis = false;
             for (int i = 0; i < item->childCount(); i++) {
@@ -397,9 +405,12 @@ void TestListPanel::onReverseFilterClicked() {
                 if (!item->child(i)->isHidden()) anyVis = true;
             }
             item->setHidden(!anyVis);
+            if (!item->isHidden()) updateItemText(item);
         }
     };
-    for (int i = 0; i < m_tree->topLevelItemCount(); i++) rev(m_tree->topLevelItem(i));
+    for (int i = 0; i < m_tree->topLevelItemCount(); i++) { rev(m_tree->topLevelItem(i)); if (!m_tree->topLevelItem(i)->isHidden()) updateItemText(m_tree->topLevelItem(i)); }
+    m_tree->viewport()->update();
+    updateStats();
 }
 void TestListPanel::onExpandAllClicked()   {
     m_tree->expandAll();

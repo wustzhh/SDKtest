@@ -90,13 +90,20 @@ void ModelInfoPanel::showModelInfo(const TestRunResult* result) {
             row.btnOpen->setVisible(false);
         } else {
             QFileInfo fi(val);
-            bool exists = fi.exists();
-            QString icon = exists ? "✓" : "✗";
-            QString color = exists ? "#2e7d32" : "#c62828";
-            row.label->setText(QString("<span style='color:%1'>%2</span> %3")
-                .arg(color, icon, val.toHtmlEscaped()));
-            row.label->setToolTip("file:" + val);
-            row.btnOpen->setVisible(exists);
+            bool isFile = fi.exists() || val.contains('/') || val.contains('\\');
+            if (isFile) {
+                bool exists = fi.exists();
+                QString icon = exists ? "✓" : "✗";
+                QString color = exists ? "#2e7d32" : "#c62828";
+                row.label->setText(QString("<span style='color:%1'>%2</span> %3")
+                    .arg(color, icon, val.toHtmlEscaped()));
+                row.label->setToolTip("file:" + val);
+                row.btnOpen->setVisible(exists);
+            } else {
+                row.label->setText(val.toHtmlEscaped());
+                row.label->setToolTip("");
+                row.btnOpen->setVisible(false);
+            }
         }
     };
 

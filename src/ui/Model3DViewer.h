@@ -26,8 +26,9 @@ struct StepLoadResult {
     QVector<int> tris;
     QVector<QVector3D> normals;
     QVector<EdgeLine> edges;
-    QVector<int> faceIds;    // 三角形的面索引（与 tris 一一对应，每 3 个一组）
+    QVector<int> faceIds;    // 每个三角形的面 ID（与 tris 一一对应）
     QVector<QVector3D> faceCenters; // 每个面的中心点
+    QVector<int> faceCenterIds; // 与 faceCenters 一一对应的面 ID
     int elapsedMs = 0;
 };
 
@@ -49,8 +50,11 @@ public:
     explicit GLViewer(QWidget* parent = nullptr);
     void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& tris,
                   const QVector<QVector3D>& normals = {}, const QVector<EdgeLine>& edges = {},
-                  const QVector<int>& faceIds = {}, const QVector<QVector3D>& faceCenters = {});
+                  const QVector<int>& faceIds = {}, const QVector<QVector3D>& faceCenters = {},
+                  const QVector<int>& faceCenterIds = {});
     void resetView();
+    void setHighlightFaces(const QVector<int>& ids);
+    void setShowFaceIds(bool show);
     void clear();
 protected:
     void initializeGL() override;
@@ -66,6 +70,12 @@ private:
     QVector<EdgeLine> m_edges;
     QVector<int> m_faceIds;
     QVector<QVector3D> m_faceCenters;
+    QVector<int> m_faceCenterIds;
+    QVector<int> m_hlFaces;
+    bool m_showFaceIds=false;
+#ifdef _WIN32
+    GLuint m_fontBase=0;
+#endif
     QQuaternion m_rot;
     float m_zoom=1,m_modelSize=1;
     float m_panX=0,m_panY=0;
@@ -82,6 +92,8 @@ public:
     explicit Model3DViewer(QWidget* parent = nullptr);
     ~Model3DViewer() override;
     void loadFile(const QString& filePath);
+    void highlightFaces(const QVector<int>& ids);
+    void toggleFaceIds();
     void clear();
 
 private:
@@ -89,6 +101,8 @@ private:
     GLViewer* m_gl;
     QLabel* m_status;
     QPushButton* m_btnReset;
+    QPushButton* m_btnShowFaceIds;
+    bool m_showFaceIdsFlag = false;
     void updateCountdown();
     QThread* m_workerThread = nullptr;
     QTimer* m_timeoutTimer = nullptr;

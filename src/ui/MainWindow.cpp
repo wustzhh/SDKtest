@@ -91,14 +91,9 @@ void MainWindow::setupUi() {
             QString(), "模型文件 (*.step *.stp *.iges *.igs *.brep);;所有文件 (*)");
         if (!path.isEmpty()) {
             LOG("MODEL", "Open: " + path);
-            m_modelInfo->showModelInfo(nullptr);
             m_model3D->loadFile(path);
         }
     });
-
-    m_modelInfo = new ModelInfoPanel;
-    m_modelInfo->setMaximumHeight(180);
-    rightL->addWidget(m_modelInfo);
 
     m_model3D = new Model3DViewer;
     rightL->addWidget(m_model3D, 1);
@@ -108,7 +103,7 @@ void MainWindow::setupUi() {
     m_mainSplitter->addWidget(centerSplitter);
     m_mainSplitter->addWidget(m_rightPanel);
     m_mainSplitter->setStretchFactor(0, 1);
-    m_mainSplitter->setStretchFactor(1, 3);
+    m_mainSplitter->setStretchFactor(1, 1);
     m_mainSplitter->setStretchFactor(2, 2);
     mainLayout->addWidget(m_mainSplitter, 1);
 
@@ -191,15 +186,21 @@ void MainWindow::setupConnections() {
     connect(m_progress, &TestProgressPanel::cancelRequested, this, &MainWindow::onCancelRun);
 
     // 中栏结果树选中 → 更新右栏 ModelInfo
-    connect(m_centerResultView, &ModelRenderView::resultSelected, this, [this](const TestRunResult& r) {
-        m_modelInfo->showModelInfo(&r);
-        if (r.properties.contains("model"))
-            m_model3D->loadFile(r.properties["model"]);
-    });
-
-    connect(m_modelInfo, &ModelInfoPanel::openFileRequested, this, [this](const QString& path) {
+    connect(m_centerResultView, &ModelRenderView::openModelFile, this, [this](const QString& path) {
         m_model3D->loadFile(path);
     });
+    connect(m_centerResultView, &ModelRenderView::toggleHighlight, this, [this](const QVector<int>& ids, bool on) {
+        m_model3D->highlightFaces(on ? ids : QVector<int>{});
+    });
+    connect(m_centerResultView, &ModelRenderView::resultSelected, this, [this](const TestRunResult& r) {
+        if (r.properties.contains("model"))
+            m_model3D->loadFile(r.properties["model"]);
+        QVector<int> hl;
+        auto parseIds=[&](const QString& key){ QString v=r.properties.value(key); if(!v.isEmpty()){ for(auto& s:v.split(',',Qt::SkipEmptyParts)){ bool ok; int id=s.trimmed().toInt(&ok); if(ok) hl.append(id); } } };
+        parseIds("searchResult");parseIds("removeResult");
+        m_model3D->highlightFaces(hl);
+    });
+
 }
 
 

@@ -31,6 +31,8 @@ public:
 
 signals:
     void resultSelected(const TestRunResult& result);
+    void openModelFile(const QString& path);
+    void toggleHighlight(const QVector<int>& ids, bool on);
     void collapseRequested();
 
 private slots:
@@ -59,9 +61,8 @@ private:
     QPushButton*    m_btnExpand;
     QPushButton*    m_btnCollapse;
     QLabel*         m_lblStats;
-    QSplitter*      m_splitter;
     QTreeWidget*    m_tree;
-    QTextBrowser*   m_detailPanel;
+    QTreeWidget*    m_propTree;
 
     // 数据
     QVector<TestRunResult> m_results;

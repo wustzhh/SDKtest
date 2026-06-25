@@ -2,6 +2,8 @@
 
 #include <QHeaderView>
 #include <QScrollBar>
+#include <QFileInfo>
+
 
 // ── 颜色 ──
 static const QColor COLOR_PASS(0x4C, 0xAF, 0x50);   // 绿色
@@ -74,10 +76,10 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     toolbar->addWidget(m_lblStats);
     contentLayout->addLayout(toolbar);
 
-    // Splitter: result tree + detail panel
-    m_splitter = new QSplitter(Qt::Vertical, m_content);
-    m_tree = new QTreeWidget(m_splitter);
+    // Result tree
+    m_tree = new QTreeWidget(m_content);
     m_tree->setHeaderLabels({"", "Node", "Value"});
+    m_tree->setMinimumHeight(100);
     m_tree->setColumnWidth(0, 24);
     m_tree->setColumnWidth(1, 280);
     m_tree->header()->setStretchLastSection(true);
@@ -90,18 +92,31 @@ ModelRenderView::ModelRenderView(QWidget* parent)
         "QTreeWidget::item:selected { background:#e3f2fd; color:#333; }");
     connect(m_tree, &QTreeWidget::itemClicked, this, &ModelRenderView::onTreeItemClicked);
 
-    m_detailPanel = new QTextBrowser(m_splitter);
-    m_detailPanel->setOpenExternalLinks(false);
-    m_detailPanel->setMinimumHeight(80);
-    m_detailPanel->setStyleSheet(
-        "QTextBrowser { background:#fafafa; border:1px solid #ddd; "
-        "font-family: Consolas; font-size: 11px; padding: 6px; }");
+    // Splitter: result tree + property tree
+    auto* bottomSplit = new QSplitter(Qt::Vertical, m_content);
+    bottomSplit->setHandleWidth(5);
+    bottomSplit->setStyleSheet("QSplitter::handle{background:rgba(108,92,231,0.15);margin:2px 0}");
+    bottomSplit->addWidget(m_tree);
 
-    m_splitter->addWidget(m_tree);
-    m_splitter->addWidget(m_detailPanel);
-    m_splitter->setStretchFactor(0, 3);
-    m_splitter->setStretchFactor(1, 1);
-    contentLayout->addWidget(m_splitter, 1);
+    // Property tree
+    m_propTree = new QTreeWidget(bottomSplit);
+    m_propTree->setHeaderLabels({"Key", "Value", ""});
+    m_propTree->setColumnWidth(0, 160);
+    m_propTree->setColumnWidth(2, 50);
+    m_propTree->header()->setStretchLastSection(true);
+    m_propTree->setWordWrap(false);
+    m_propTree->setMinimumHeight(40);
+    m_propTree->setRootIsDecorated(false);
+    m_propTree->setAlternatingRowColors(true);
+    m_propTree->setStyleSheet(
+        "QTreeWidget { background:rgba(108,92,231,0.04); border-radius:6px; "
+        "font-size:12px; alternate-background-color:rgba(108,92,231,0.08); } "
+        "QTreeWidget::item { padding:2px 4px; } "
+        "QHeaderView::section { background:rgba(108,92,231,0.06); padding:2px 6px; font-size:11px; }");
+    bottomSplit->setStretchFactor(0, 4);
+    bottomSplit->setStretchFactor(1, 1);
+    bottomSplit->setSizes({400, 80});
+    contentLayout->addWidget(bottomSplit, 1);
 
     m_stack->addWidget(m_content);  // page 1
     m_stack->setCurrentIndex(0);
@@ -132,14 +147,11 @@ void ModelRenderView::showResults(const QVector<TestRunResult>& results) {
             .arg(failed > 0 ? "#f44336" : "#4CAF50"));
 
     m_tree->expandAll();
-    if (!results.isEmpty()) {
-        updateDetailPanel(&m_results[0]);
-    }
 }
 
 void ModelRenderView::clear() {
     m_tree->clear();
-    m_detailPanel->clear();
+    m_propTree->clear();
     m_results.clear();
     m_resultMap.clear();
     m_lblStats->setText("");
@@ -276,69 +288,63 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
 }
 
 void ModelRenderView::updateDetailPanel(const TestRunResult* result) {
-    if (!result) {
-        m_detailPanel->setHtml("<p style='color:#999'>选择测试用例查看详情</p>");
-        return;
-    }
-
-    QString statusColor = result->status == "PASSED" ? "#4CAF50" :
-                          result->status == "FAILED" ? "#F44336" : "#FF9800";
-    QString statusIcon = result->status == "PASSED" ? "✅" :
-                         result->status == "FAILED" ? "❌" : "⏭";
-
-    QString html;
-    html += QString("<h2 style='margin:0'>%1 %2</h2>")
-                .arg(statusIcon, result->testCase.fullName());
-    html += QString("<p><b>状态:</b> <span style='color:%1'>%2</span> | "
-                    "<b>耗时:</b> %3 ms | "
-                    "<b>套件:</b> %4</p>")
-                .arg(statusColor, result->status)
-                .arg(result->durationMs, 0, 'f', 1)
-                .arg(result->testCase.suiteName);
-
-    // ── 模型属性（优先展示）──
-    if (!result->properties.isEmpty()) {
-        html += "<hr/><h3>📋 模型属性</h3>";
-        html += "<table style='border-collapse:collapse; width:100%; font-size:13px;'>";
-        // 优先字段排前面
-        QStringList priority = {"interface", "model", "resultModel"};
-        for (const auto& pk : priority) {
-            if (result->properties.contains(pk)) {
-                QString val = result->properties[pk].toHtmlEscaped();
-                html += QString(
-                    "<tr><td style='padding:4px 8px; font-weight:bold; "
-                    "background:#f0f0f0; border:1px solid #ddd; width:140px;'>%1</td>"
-                    "<td style='padding:4px 8px; border:1px solid #ddd;'>%2</td></tr>")
-                    .arg(pk, val);
+    m_propTree->clear();
+    if (!result || result->properties.isEmpty()) return;
+    m_propTree->expandAll();
+    QStringList priority = {"interface", "model", "resultModel"};
+    for (const auto& pk : priority) {
+        if (result->properties.contains(pk)) {
+            auto* item = new QTreeWidgetItem(m_propTree);
+            item->setText(0, pk);
+            QString v = result->properties[pk];
+            QFileInfo fi(v);
+            bool isFilePath = fi.exists() || v.contains('/') || v.contains('\\');
+            if (isFilePath) {
+                item->setText(1, QString(fi.exists() ? "\xe2\x9c\x93 " : "\xe2\x9c\x97 ") + v);
+                item->setForeground(1, fi.exists() ? QColor(0x2e,0x7d,0x32) : QColor(0xc6,0x28,0x28));
+                if (fi.exists()) {
+                    auto* btn = new QPushButton(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80"));
+                    btn->setFixedSize(40, 20);
+                    btn->setStyleSheet("QPushButton{font-size:10px;padding:0 4px;border-radius:4px;background:#6c5ce7;color:white;border:none;}QPushButton:hover{background:#5a4bd1;}");
+                    connect(btn, &QPushButton::clicked, this, [this, v]() { emit openModelFile(v); });
+                    m_propTree->setItemWidget(item, 2, btn);
+                }
+            } else {
+                item->setText(1, v);
             }
         }
-        // 其余字段
-        for (auto it = result->properties.begin(); it != result->properties.end(); ++it) {
-            if (priority.contains(it.key())) continue;
-            html += QString(
-                "<tr><td style='padding:4px 8px; font-weight:bold; "
-                "background:#f0f0f0; border:1px solid #ddd;'>%1</td>"
-                "<td style='padding:4px 8px; border:1px solid #ddd;'>%2</td></tr>")
-                .arg(it.key().toHtmlEscaped(), it.value().toHtmlEscaped());
+    }
+    for (auto it = result->properties.begin(); it != result->properties.end(); ++it) {
+        if (priority.contains(it.key())) continue;
+        auto* item = new QTreeWidgetItem(m_propTree);
+        item->setText(0, it.key());
+        QString v = it.value();
+        // 检测逗号分隔的数组
+        QStringList parts = v.split(',', Qt::SkipEmptyParts);
+        bool isArray = parts.size() > 1;
+        for (auto& p : parts) { p = p.trimmed(); bool ok; p.toInt(&ok); if (!ok) { isArray = false; break; } }
+        if (isArray) {
+            item->setText(1, v);
+            item->setToolTip(1, v);
+            // 显示/隐藏 切换按钮
+            if (it.key() == "searchResult" || it.key() == "removeResult") {
+                auto* btn = new QPushButton(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"));
+                btn->setFixedSize(40, 18);
+                btn->setStyleSheet("QPushButton{font-size:10px;padding:0 2px;border-radius:4px;background:#6c5ce7;color:white;border:none;}QPushButton:hover{background:#5a4bd1;}");
+                btn->setCheckable(true);
+                btn->setChecked(true);
+                QVector<int> ids; for(const auto& p:parts){bool ok;int id=p.toInt(&ok);if(ok)ids.append(id);}
+                connect(btn, &QPushButton::toggled, this, [this, ids, btn](bool on){
+                    btn->setText(on?QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"):QString::fromUtf8("\xe9\x9a\x90\xe8\x97\x8f"));
+                    emit toggleHighlight(ids, on);
+                });
+                m_propTree->setItemWidget(item, 2, btn);
+            }
+        } else {
+            item->setText(1, v);
+            item->setToolTip(1, v);
         }
-        html += "</table>";
     }
-
-    html += "<hr/><h3>📄 原始输出</h3>";
-    html += "<pre style='background:#f5f5f5; padding:8px; border-radius:4px; "
-            "max-height:300px; overflow:auto; font-size:11px; white-space:pre-wrap;'>";
-    html += result->rawStdout.toHtmlEscaped().left(5000);
-    html += "</pre>";
-
-    if (!result->rawStderr.isEmpty()) {
-        html += "<hr/><h3>⚠ 错误输出</h3>";
-        html += "<pre style='background:#ffebee; padding:8px; border-radius:4px; "
-                "color:#c62828; font-size:11px; white-space:pre-wrap;'>";
-        html += result->rawStderr.toHtmlEscaped();
-        html += "</pre>";
-    }
-
-    m_detailPanel->setHtml(html);
 }
 
 void ModelRenderView::onExpandAll() {

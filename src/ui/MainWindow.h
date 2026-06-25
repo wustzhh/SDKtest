@@ -16,7 +16,7 @@
 #include "ui/TestListPanel.h"
 #include "ui/TestProgressPanel.h"
 #include "ui/ModelRenderView.h"
-#include "ui/ModelInfoPanel.h"
+
 #include "ui/Model3DViewer.h"
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -57,7 +57,6 @@ private:
     TestListPanel*    m_testList        = nullptr;
     TestProgressPanel* m_progress       = nullptr;
     ModelRenderView*  m_centerResultView = nullptr;  // 中栏结果树
-    ModelInfoPanel*   m_modelInfo       = nullptr;
     Model3DViewer*    m_model3D         = nullptr;
     QWidget*          m_leftPanel       = nullptr;
     QWidget*          m_rightPanel      = nullptr;
