@@ -112,8 +112,9 @@ TestRunResult ResultParser::parse(const TestCase& tc,
 
     // ── 原始输出 ──
     tree.children.push_back(ResultNode::makeSection("📄 原始输出"));
-    tree.children.push_back(ResultNode::makeScalar("stdout",
-        result.rawStdout.left(2000)));  // 截断，完整在详情面板
+    auto stdoutNode = ResultNode::makeScalar("stdout", result.rawStdout.left(500));
+    stdoutNode.rawData = result.rawStdout;  // 完整文本存 rawData，供点击弹窗使用
+    tree.children.push_back(stdoutNode);
     if (!rawStderr.isEmpty()) {
         tree.children.push_back(ResultNode::makeScalar("stderr", rawStderr));
     }

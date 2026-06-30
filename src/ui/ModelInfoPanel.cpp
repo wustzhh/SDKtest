@@ -14,9 +14,9 @@ ModelInfoPanel::ModelInfoPanel(QWidget* parent)
     hdrLayout->setContentsMargins(0, 0, 0, 0);
     m_btnToggle = new QPushButton("▼  模型信息", this);
     m_btnToggle->setStyleSheet(
-        "QPushButton { background:#e8e8e8; border:none; border-radius:3px; "
-        "padding:4px 8px; font-weight:bold; text-align:left; }"
-        "QPushButton:hover { background:#d0d0d0; }");
+        "QPushButton { background:#282a34; border:1px solid #2a2d38; border-radius:4px; "
+        "padding:4px 8px; font-weight:600; text-align:left; color:#8892a6; }"
+        "QPushButton:hover { background:#323540; color:#e2e8f0; }");
     m_btnToggle->setFixedHeight(26);
     connect(m_btnToggle, &QPushButton::clicked, this, &ModelInfoPanel::onToggleCollapse);
     hdrLayout->addWidget(m_btnToggle, 1);
@@ -35,10 +35,10 @@ ModelInfoPanel::ModelInfoPanel(QWidget* parent)
     m_lblExtra = new QLabel("—", m_content);
     m_lblExtra->setWordWrap(true);
     m_lblExtra->setMaximumHeight(60);
-    m_lblExtra->setStyleSheet("font-size:11px; color:#888;");
+    m_lblExtra->setStyleSheet("font-size:11px; color:#5a6278;");
     cl->addWidget(m_lblExtra);
 
-    m_content->setStyleSheet("background:#fafafa; border:1px solid #e0e0e0; border-radius:3px;");
+    m_content->setStyleSheet("background:#1e2028; border:1px solid #2a2d38; border-radius:6px;");
     m_layout->addWidget(m_content);
     clear();
 }
@@ -51,20 +51,20 @@ ModelInfoPanel::ModelRow ModelInfoPanel::makeRow(const QString& title) {
     rl->setSpacing(4);
 
     auto* lbl = new QLabel(title, m_content);
-    lbl->setStyleSheet("font-weight:bold; color:#555; font-size:12px; min-width:70px;");
+    lbl->setStyleSheet("font-weight:600; color:#8892a6; font-size:12px; min-width:70px;");
     rl->addWidget(lbl);
 
     row.label = new QLabel("—", m_content);
-    row.label->setStyleSheet("font-size:12px; color:#333;");
+    row.label->setStyleSheet("font-size:12px; color:#e2e8f0;");
     row.label->setWordWrap(true);
     rl->addWidget(row.label, 1);
 
     row.btnOpen = new QPushButton("打开", m_content);
     row.btnOpen->setFixedSize(40, 20);
     row.btnOpen->setStyleSheet(
-        "QPushButton { background:#2196F3; color:white; border:none; "
-        "border-radius:3px; font-size:10px; }"
-        "QPushButton:hover { background:#1976D2; }");
+        "QPushButton { background:#282a34; color:#818cf8; border:1px solid #2a2d38; "
+        "border-radius:4px; font-size:10px; }"
+        "QPushButton:hover { background:#323540; border-color:#818cf8; }");
     row.btnOpen->setVisible(false);
     connect(row.btnOpen, &QPushButton::clicked, this, [this, row]() {
         if (row.label->toolTip().startsWith("file:"))

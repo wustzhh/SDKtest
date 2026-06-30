@@ -19,6 +19,11 @@ struct EdgeLine {
     QVector3D color;
 };
 
+struct FaceBBox {
+    double minX, minY, minZ;
+    double maxX, maxY, maxZ;
+};
+
 struct StepLoadResult {
     bool ok = false;
     QString error;
@@ -29,6 +34,7 @@ struct StepLoadResult {
     QVector<int> faceIds;    // 每个三角形的面 ID（与 tris 一一对应）
     QVector<QVector3D> faceCenters; // 每个面的中心点
     QVector<int> faceCenterIds; // 与 faceCenters 一一对应的面 ID
+    QVector<FaceBBox> faceBBoxes; // 每个面的包围盒（与 faceCenterIds 一一对应）
     int elapsedMs = 0;
 };
 
@@ -51,10 +57,15 @@ public:
     void loadMesh(const QVector<QVector3D>& verts, const QVector<int>& tris,
                   const QVector<QVector3D>& normals = {}, const QVector<EdgeLine>& edges = {},
                   const QVector<int>& faceIds = {}, const QVector<QVector3D>& faceCenters = {},
-                  const QVector<int>& faceCenterIds = {});
+                  const QVector<int>& faceCenterIds = {},
+                  const QVector<FaceBBox>& faceBBoxes = {});
     void resetView();
     void setHighlightFaces(const QVector<int>& ids);
+    QVector<int> findFacesInBox(double minX, double minY, double minZ,
+                                 double maxX, double maxY, double maxZ,
+                                 double eps = 0.01) const;
     void setShowFaceIds(bool show);
+    int faceBBoxCount() const { return m_faceBBoxes.size(); }
     void clear();
 protected:
     void initializeGL() override;
@@ -71,6 +82,7 @@ private:
     QVector<int> m_faceIds;
     QVector<QVector3D> m_faceCenters;
     QVector<int> m_faceCenterIds;
+    QVector<FaceBBox> m_faceBBoxes;
     QVector<int> m_hlFaces;
     bool m_showFaceIds=false;
 #ifdef _WIN32
@@ -92,17 +104,26 @@ public:
     explicit Model3DViewer(QWidget* parent = nullptr);
     ~Model3DViewer() override;
     void loadFile(const QString& filePath);
+signals:
+    void boxesResolved(const QString& propKey, const QString& displayText);
+
+public:
     void highlightFaces(const QVector<int>& ids);
+    void highlightFacesInBoxes(const QVector<QVector<double>>& boxes, bool on);
+    void highlightFacesInBoxes(const QString& propKey, const QVector<QVector<double>>& boxes, bool on);
+    QVector<int> resolveBoxes(const QVector<QVector<double>>& boxes) const;
     void toggleFaceIds();
     void clear();
 
 private:
+    void applyPendingBoxes();
     void cancelLoad();
     GLViewer* m_gl;
     QLabel* m_status;
     QPushButton* m_btnReset;
     QPushButton* m_btnShowFaceIds;
     bool m_showFaceIdsFlag = false;
+    QMap<QString, QVector<QVector<double>>> m_pendingBoxesMap;
     void updateCountdown();
     QThread* m_workerThread = nullptr;
     QTimer* m_timeoutTimer = nullptr;

@@ -34,9 +34,15 @@ TestListPanel::TestListPanel(QWidget* parent)
     auto* tb = new QHBoxLayout(m_toolbar);
     tb->setContentsMargins(0, 0, 0, 0);
     tb->setSpacing(1);
+    QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
+                    "padding:4px 12px;font-size:13px;min-width:44px}"
+                    "QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
     m_btnSelectAll   = new QPushButton("全选", this);
+    m_btnSelectAll->setFixedHeight(28);m_btnSelectAll->setStyleSheet(tbBtn);
     m_btnDeselectAll = new QPushButton("全消", this);
+    m_btnDeselectAll->setFixedHeight(28);m_btnDeselectAll->setStyleSheet(tbBtn);
     m_btnReverseFilter = new QPushButton(QString::fromUtf8("\xE2\x87\x84 \xE5\x8F\x8D\xE9\x80\x89"), this);
+    m_btnReverseFilter->setFixedHeight(28);m_btnReverseFilter->setStyleSheet(tbBtn);
     m_btnReverseFilter->setToolTip("反转当前选区");
     m_lblStats = new QLabel("0", this);
     tb->addWidget(m_btnSelectAll);
@@ -58,7 +64,10 @@ TestListPanel::TestListPanel(QWidget* parent)
     m_tree->setIndentation(16);
     m_tree->setSelectionMode(QAbstractItemView::NoSelection);
     m_tree->setStyleSheet(
-        "QTreeWidget { font-size:12px; border:1px solid #ddd; background:white; }");
+        "QTreeWidget { font-size:13px; border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
+        "QTreeWidget::item { padding:2px 6px; min-height:22px; color:#1e293b; }"
+        "QTreeWidget::item:hover { background:#f8f9fb; }"
+        "QTreeWidget{outline:none;}");
     m_tree->setMinimumWidth(0);
     m_tree->setExpandsOnDoubleClick(false);
     connect(m_tree, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int) {
@@ -86,7 +95,7 @@ void TestListPanel::showEmptyPlaceholder() {
     m_tree->clear();
     auto* item = new QTreeWidgetItem(m_tree);
     item->setText(0, "No tests loaded. Click Config then Load Tests.");
-    item->setForeground(0, QColor("#999"));
+    item->setForeground(0, QColor("#5a6278"));
     item->setFlags(Qt::NoItemFlags);
 }
 

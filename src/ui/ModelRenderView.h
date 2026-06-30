@@ -29,10 +29,15 @@ public:
     // 清空
     void clear();
 
+    // 更新属性面板中某 key 的显示文本
+    void updatePropertyText(const QString& key, const QString& newText);
+    void showFullOutput(const QString& title, const QString& text);
+
 signals:
     void resultSelected(const TestRunResult& result);
     void openModelFile(const QString& path);
     void toggleHighlight(const QVector<int>& ids, bool on);
+    void toggleHighlightBoxes(const QString& propKey, const QVector<QVector<double>>& boxes, bool on);
     void collapseRequested();
 
 private slots:

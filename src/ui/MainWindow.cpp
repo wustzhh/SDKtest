@@ -83,7 +83,7 @@ void MainWindow::setupUi() {
     // 右栏：打开模型按钮
     auto* btnOpen = new QPushButton(QString::fromUtf8("\xF0\x9F\x93\x82 \xE6\x89\x93\xE5\xBC\x80\xE6\xA8\xA1\xE5\x9E\x8B"));
     btnOpen->setFixedHeight(28);
-    btnOpen->setMinimumWidth(100);
+    btnOpen->setStyleSheet("QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:2px 10px;font-size:12px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}");
     rightL->addWidget(btnOpen);
     connect(btnOpen, &QPushButton::clicked, this, [this]() {
         QString path = QFileDialog::getOpenFileName(
@@ -103,17 +103,21 @@ void MainWindow::setupUi() {
     m_mainSplitter->addWidget(centerSplitter);
     m_mainSplitter->addWidget(m_rightPanel);
     m_mainSplitter->setStretchFactor(0, 1);
-    m_mainSplitter->setStretchFactor(1, 1);
-    m_mainSplitter->setStretchFactor(2, 2);
+    m_mainSplitter->setStretchFactor(1, 2);
+    m_mainSplitter->setStretchFactor(2, 3);
     mainLayout->addWidget(m_mainSplitter, 1);
 
     // ── 底栏 ──
-    auto* bar = new QWidget;
+    auto* bar = new QWidget; bar->setStyleSheet("background:#ffffff;border-top:1px solid #e2e8f0;");
     auto* bl = new QHBoxLayout(bar);
-    bl->setContentsMargins(10, 5, 10, 5);
+    bl->setContentsMargins(8, 3, 8, 3);
+    bl->setSpacing(8);
+    QString smallBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
+                       "padding:0;font-size:14px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
+    QString mainBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
+                      "padding:4px 14px;font-size:13px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
     auto* bLeft = new QPushButton(QString::fromUtf8("\xe2\x97\x80"));
-    bLeft->setFixedSize(60, 30);
-    bLeft->setStyleSheet("QPushButton{padding:0;min-width:60;border-radius:8px}");
+    bLeft->setFixedSize(30,28);bLeft->setStyleSheet(smallBtn);
     bLeft->setToolTip(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\xb7\xa6\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"));
     connect(bLeft, &QPushButton::clicked, this, [=]() {
         bool vis = !m_leftPanel->isVisible();
@@ -121,23 +125,27 @@ void MainWindow::setupUi() {
         bLeft->setText(vis ? QString::fromUtf8("\xe2\x97\x80") : QString::fromUtf8("\xe2\x96\xb6"));
     });
     bl->addWidget(bLeft);
-    auto* bCfg = new QPushButton("\u2699 配置");
-    auto* bLd  = new QPushButton("\U0001F4C2 加载");
-    auto* bExp = new QPushButton("\U0001F4CA 导出");
-    auto* bRun = new QPushButton("\u25B6 运行");
+    auto* bCfg = new QPushButton(QString::fromUtf8("\u2699 \xE9\x85\x8D\xE7\xBD\xAE"));
+    bCfg->setFixedHeight(30);bCfg->setStyleSheet(mainBtn);
+    auto* bLd  = new QPushButton(QString::fromUtf8("\U0001F4C2 \xE5\x8A\xA0\xE8\xBD\xBD"));
+    bLd->setFixedHeight(30);bLd->setStyleSheet(mainBtn);
+    auto* bExp = new QPushButton(QString::fromUtf8("\U0001F4CA \xE5\xAF\xBC\xE5\x87\xBA"));
+    bExp->setFixedHeight(30);bExp->setStyleSheet(mainBtn);
+    auto* bRun = new QPushButton(QString::fromUtf8("\u25B6 \xE8\xBF\x90\xE8\xA1\x8C"));
+    bRun->setFixedHeight(30);
     bRun->setStyleSheet(
-        "QPushButton { background:#4CAF50; color:white; border:none; "
-        "border-radius:4px; padding:6px 20px; font-size:13px; font-weight:bold; }"
-        "QPushButton:hover { background:#388E3C; }"
-        "QPushButton:disabled { background:#ccc; }");
+        "QPushButton{background:#6366f1;color:white;border:none;border-radius:6px;"
+        "font-size:13px;padding:4px 16px;font-weight:600}"
+        "QPushButton:hover{background:#4f46e5}"
+        "QPushButton:disabled{background:#cbd5e1;color:#94a3b8}");
     bl->addWidget(bCfg);
     bl->addWidget(bLd);
     bl->addStretch();
     bl->addWidget(bExp);
     bl->addWidget(bRun);
+
     auto* bRight = new QPushButton(QString::fromUtf8("\xe2\x96\xb6"));
-    bRight->setFixedSize(60, 30);
-    bRight->setStyleSheet("QPushButton{padding:0;min-width:60;border-radius:8px}");
+    bRight->setFixedSize(30,28);bRight->setStyleSheet(smallBtn);
     bRight->setToolTip(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\x8f\xb3\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"));
     connect(bRight, &QPushButton::clicked, this, [=]() {
         bool vis = !m_rightPanel->isVisible();
@@ -167,6 +175,124 @@ void MainWindow::setupMenu() {
     auto* v = menuBar()->addMenu(QString::fromUtf8("\xe8\xa7\x86\xe5\x9b\xbe(&V)"));
     v->addAction(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\xb7\xa6\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"), this, [=](){ if(m_leftPanel)m_leftPanel->setVisible(!m_leftPanel->isVisible()); });
     v->addAction(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\x8f\xb3\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"), this, [=](){ if(m_rightPanel)m_rightPanel->setVisible(!m_rightPanel->isVisible()); });
+    v->addSeparator();
+
+    // ── 主题选择 ──
+    auto* themeMenu = v->addMenu(QString::fromUtf8("\xF0\x9F\x8E\xA8 \xe4\xb8\xbb\xe9\xa2\x98"));
+    static int curTheme = 0;
+    static const char* themeNames[] = {
+        "\xe2\x98\x80\xef\xb8\x8f \xe4\xba\xae\xe8\x89\xb2",
+        "\xf0\x9f\x8c\x99 \xe6\x9a\x97\xe8\x89\xb2",
+        "\xf0\x9f\x94\xa5 \xe9\xab\x98\xe5\xaf\xb9\xe6\xaf\x94"
+    };
+    static const char* themeStyles[] = {
+        R"(
+            QMainWindow,QDialog{background:#f5f6f8}
+            QMenuBar{background:#ffffff;border-bottom:1px solid #e2e8f0}
+            QMenuBar::item:selected{background:#f1f5f9;color:#1e293b}
+            QMenu{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px}
+            QMenu::item:selected{background:#f1f5f9;color:#6366f1}
+            QMenu::separator{height:1px;background:#e2e8f0}
+            QStatusBar{background:#ffffff;border-top:1px solid #e2e8f0;color:#64748b}
+            QToolTip{background:#ffffff;border:1px solid #e2e8f0;color:#1e293b}
+            QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:6px 14px;color:#1e293b}
+            QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1}
+            QPushButton:disabled{background:#f8f9fb;color:#94a3b8;border-color:#e2e8f0}
+            QPushButton:checked{background:#eef2ff;border-color:#6366f1;color:#6366f1}
+            QTreeView,QListView,QTableView{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;selection-background-color:#eef2ff;selection-color:#1e293b}
+            QTreeView::item:hover,QListView::item:hover{background:#f8f9fb}
+            QHeaderView::section{background:#f8f9fb;color:#6366f1;border-bottom:1px solid #e2e8f0}
+            QLineEdit,QSpinBox,QComboBox{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;color:#1e293b}
+            QLineEdit:focus{border-color:#6366f1}
+            QLabel{color:#1e293b}
+            QProgressBar{background:#f1f5f9;border:none;border-radius:4px;color:#64748b}
+            QProgressBar::chunk{background:#6366f1;border-radius:4px}
+            QGroupBox{border:1px solid #e2e8f0;border-radius:6px}
+            QGroupBox::title{color:#6366f1}
+            QScrollBar::handle:vertical,QScrollBar::handle:horizontal{background:#cbd5e1;border-radius:3px}
+            QScrollBar::handle:vertical:hover,QScrollBar::handle:horizontal:hover{background:#6366f1}
+            QCheckBox::indicator,QRadioButton::indicator{border:2px solid #cbd5e1;background:#ffffff}
+            QCheckBox::indicator:checked{background:#6366f1;border-color:#6366f1}
+            QSplitter::handle{background:#e2e8f0}
+            QSplitter::handle:hover{background:#6366f1}
+        )",
+        R"(
+            QMainWindow,QDialog{background:#0d0e12}
+            QMenuBar{background:#16181e;border-bottom:1px solid #2a2d38}
+            QMenuBar::item{color:#8892a6}QMenuBar::item:selected{background:#282a34;color:#e2e8f0}
+            QMenu{background:#1e2028;border:1px solid #2a2d38;border-radius:6px}
+            QMenu::item{color:#8892a6}QMenu::item:selected{background:#323540;color:#e2e8f0}
+            QMenu::separator{height:1px;background:#2a2d38}
+            QStatusBar{background:#16181e;border-top:1px solid #2a2d38;color:#8892a6}
+            QToolTip{background:#1e2028;border:1px solid #818cf8;color:#e2e8f0}
+            QPushButton{background:#1e2028;border:1px solid #2a2d38;border-radius:6px;padding:6px 14px;color:#e2e8f0;font-weight:500}
+            QPushButton:hover{background:#282a34;border-color:#818cf8;color:#818cf8}
+            QPushButton:disabled{background:#16181e;color:#5a6278;border-color:#1e2028}
+            QPushButton:checked{background:#323540;border-color:#818cf8;color:#818cf8}
+            QTreeView,QListView,QTableView{background:#1e2028;border:1px solid #2a2d38;border-radius:6px;color:#e2e8f0;selection-background-color:#323540;selection-color:#e2e8f0}
+            QTreeView::item:hover,QListView::item:hover{background:#282a34}
+            QHeaderView::section{background:#282a34;color:#818cf8;border-bottom:1px solid #2a2d38}
+            QLineEdit,QSpinBox,QComboBox{background:#1e2028;border:1px solid #2a2d38;border-radius:6px;color:#e2e8f0}
+            QLineEdit:focus{border-color:#818cf8}
+            QLabel{color:#e2e8f0}
+            QProgressBar{background:#1e2028;border:none;border-radius:4px;color:#8892a6}
+            QProgressBar::chunk{background:#818cf8;border-radius:4px}
+            QGroupBox{border:1px solid #2a2d38;border-radius:6px}
+            QGroupBox::title{color:#818cf8}
+            QScrollBar::handle:vertical,QScrollBar::handle:horizontal{background:#323540;border-radius:3px}
+            QScrollBar::handle:vertical:hover,QScrollBar::handle:horizontal:hover{background:#818cf8}
+            QCheckBox::indicator,QRadioButton::indicator{border:2px solid #2a2d38;background:#1e2028}
+            QCheckBox::indicator:checked{background:#818cf8;border-color:#818cf8}
+            QSplitter::handle{background:#2a2d38}QSplitter::handle:hover{background:#818cf8}
+        )",
+        R"(
+            QMainWindow,QDialog{background:#000000}
+            QMenuBar{background:#000000;border-bottom:2px solid #ffff00}
+            QMenuBar::item{color:#ffffff}QMenuBar::item:selected{background:#ffff00;color:#000000}
+            QMenu{background:#000000;border:2px solid #ffffff;border-radius:4px}
+            QMenu::item{color:#ffffff}QMenu::item:selected{background:#ffff00;color:#000000}
+            QStatusBar{background:#000000;border-top:2px solid #ffff00;color:#ffffff}
+            QPushButton{background:#000000;border:2px solid #ffffff;border-radius:4px;padding:6px 14px;color:#ffffff;font-weight:bold}
+            QPushButton:hover{background:#ffffff;color:#000000}
+            QPushButton:disabled{color:#666666;border-color:#666666}
+            QPushButton:checked{background:#ffff00;color:#000000;border-color:#ffff00}
+            QTreeView,QListView,QTableView{background:#000000;border:2px solid #ffffff;border-radius:4px;color:#ffffff;selection-background-color:#ffff00;selection-color:#000000}
+            QTreeView::item:hover{background:#333333}
+            QHeaderView::section{background:#000000;color:#ffff00;border-bottom:2px solid #ffff00}
+            QLineEdit,QSpinBox,QComboBox{background:#000000;border:2px solid #ffffff;border-radius:4px;color:#ffffff}
+            QLineEdit:focus{border-color:#ffff00}
+            QLabel{color:#ffffff}
+            QProgressBar{background:#000000;border:2px solid #ffffff;border-radius:4px;color:#ffffff}
+            QProgressBar::chunk{background:#ffff00;border-radius:2px}
+            QGroupBox{border:2px solid #ffffff;border-radius:4px}
+            QGroupBox::title{color:#ffff00}
+            QScrollBar::handle:vertical,QScrollBar::handle:horizontal{background:#ffffff;border-radius:2px}
+            QScrollBar::handle:vertical:hover,QScrollBar::handle:horizontal:hover{background:#ffff00}
+            QCheckBox::indicator,QRadioButton::indicator{border:2px solid #ffffff;background:#000000}
+            QCheckBox::indicator:checked{background:#ffff00;border-color:#ffff00}
+            QSplitter::handle{background:#ffffff}QSplitter::handle:hover{background:#ffff00}
+        )"
+    };
+    QVector<QAction*> themeActs;
+    for (int i = 0; i < 3; i++) {
+        auto* act = themeMenu->addAction(QString::fromUtf8(themeNames[i]));
+        act->setCheckable(true);
+        themeActs.append(act);
+        if (i == 0) act->setChecked(true);
+    }
+    for (int i = 0; i < 3; i++) {
+        connect(themeActs[i], &QAction::triggered, this, [themeActs, i]() {
+            curTheme = i;
+            for (auto* a : themeActs) a->setChecked(false);
+            themeActs[i]->setChecked(true);
+            if (i == 0)
+                qApp->setStyleSheet(QString::fromUtf8(themeStyles[0]));  // 亮色 = 初始样式表
+            else if (i == 1)
+                qApp->setStyleSheet(QString::fromUtf8(themeStyles[1]));  // 暗色
+            else
+                qApp->setStyleSheet(QString::fromUtf8(themeStyles[2]));  // 高对比
+        });
+    }
 
     f->addAction(QString::fromUtf8("\xe9\x80\x80\xe5\x87\xba(&Q)"), qApp, &QApplication::quit, QKeySequence::Quit);
     auto* h = menuBar()->addMenu("\u5E2E\u52A9(&H)");  // 帮助(&H)
@@ -191,6 +317,12 @@ void MainWindow::setupConnections() {
     });
     connect(m_centerResultView, &ModelRenderView::toggleHighlight, this, [this](const QVector<int>& ids, bool on) {
         m_model3D->highlightFaces(on ? ids : QVector<int>{});
+    });
+    connect(m_centerResultView, &ModelRenderView::toggleHighlightBoxes, this, [this](const QString& propKey, const QVector<QVector<double>>& boxes, bool on) {
+        m_model3D->highlightFacesInBoxes(propKey, boxes, on);
+    });
+    connect(m_model3D, &Model3DViewer::boxesResolved, this, [this](const QString& propKey, const QString& displayText) {
+        m_centerResultView->updatePropertyText(propKey, displayText);
     });
     connect(m_centerResultView, &ModelRenderView::resultSelected, this, [this](const TestRunResult& r) {
         if (r.properties.contains("model"))

@@ -13,11 +13,11 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
     m_progressBar->setValue(0);
     m_progressBar->setTextVisible(true);
     m_progressBar->setStyleSheet(
-        "QProgressBar { border: 1px solid #ccc; border-radius: 4px; text-align: center; height: 22px; }"
-        "QProgressBar::chunk { background-color: #4CAF50; border-radius: 3px; }");
+        "QProgressBar { background:#f1f5f9; border:none; border-radius:4px; text-align:center; height:22px; font-size:11px; color:#64748b; }"
+        "QProgressBar::chunk { background:#6366f1; border-radius:4px; }");
 
     m_lblProgress = new QLabel("就绪", this);
-    m_lblProgress->setStyleSheet("font-size: 13px; color: #333;");
+    m_lblProgress->setStyleSheet("font-size: 13px; color: #64748b;");
 
     // ── 日志 ──
     m_logView = new QTextEdit(this);
@@ -30,10 +30,10 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
     m_btnCancel = new QPushButton("取消运行", this);
     m_btnCancel->setEnabled(false);
     m_btnCancel->setStyleSheet(
-        "QPushButton { background: #f44336; color: white; border: none; "
-        "border-radius: 4px; padding: 6px 16px; }"
-        "QPushButton:hover { background: #d32f2f; }"
-        "QPushButton:disabled { background: #ccc; }");
+        "QPushButton { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; "
+        "border-radius: 6px; padding: 5px 14px; font-weight:500; }"
+        "QPushButton:hover { background: #fee2e2; border-color:#fca5a5; }"
+        "QPushButton:disabled { background: #f8f9fb; color: #94a3b8; border-color: #e2e8f0; }");
     connect(m_btnCancel, &QPushButton::clicked, this, &TestProgressPanel::cancelRequested);
 
     m_layout->addWidget(m_lblProgress);

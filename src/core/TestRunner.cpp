@@ -121,7 +121,10 @@ void TestRunner::onProcessFinished(int exitCode, QProcess::ExitStatus status) {
                 auto pIt = propRe.globalMatch(body);
                 while (pIt.hasNext()) {
                     auto pm = pIt.next();
-                    allProps[full][pm.captured(1)] = pm.captured(2);
+                    QString key = pm.captured(1);
+                    QString val = pm.captured(2);
+                    allProps[full][key] = val;
+                    LOG("PROP", full, key + " = " + val);
                 }
             }
             LOG("XML", "Parsed " + QString::number(allProps.size()) + " testcases with properties");
