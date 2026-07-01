@@ -20,7 +20,8 @@ TestRunner::TestRunner(QObject* parent)
 void TestRunner::run(const QString& binaryPath,
                      const QVector<TestCase>& cases,
                      const QStringList& extraArgs,
-                     const QString& workingDir)
+                     const QString& workingDir,
+                     const QStringList& dependencies)
 {
     if (isRunning()) {
         emit errorOccurred("Already running.");
@@ -55,6 +56,18 @@ void TestRunner::run(const QString& binaryPath,
 
     if (!m_workingDir.isEmpty())
         m_process->setWorkingDirectory(m_workingDir);
+
+    // 设置环境变量 PATH 包含依赖路径
+    if (!dependencies.isEmpty()) {
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        QString path = env.value("PATH");
+        for (const auto& d : dependencies) {
+            if (QFileInfo::exists(d))
+                path = QDir::toNativeSeparators(d) + ";" + path;
+        }
+        env.insert("PATH", path);
+        m_process->setProcessEnvironment(env);
+    }
 
     m_elapsed.start();
     m_process->start(m_binaryPath, args);

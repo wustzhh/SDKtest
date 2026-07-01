@@ -6,6 +6,7 @@
 #include <QMenuBar>
 #include <QAction>
 #include <QLabel>
+#include <QComboBox>
 
 #include "core/ConfigManager.h"
 #include "core/TestLoader.h"
@@ -22,7 +23,9 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(QWidget* parent = nullptr);
-    ~MainWindow() override = default;
+    ~MainWindow() override;
+    void closeEvent(QCloseEvent* e) override;
+    void showEvent(QShowEvent* e) override;
 
 private slots:
     void onLoadTests();
@@ -47,6 +50,8 @@ private:
     void setupMenu();
     void setupConnections();
     void updateButtonStates();
+    void refreshProfileCombo();
+    void saveLayout();
 
     ConfigManager     m_config;
     TestLoader        m_loader;
@@ -54,6 +59,7 @@ private:
     TestReport        m_report;
 
     QSplitter*        m_mainSplitter    = nullptr;
+    QSplitter*        m_centerSplitter  = nullptr;
     TestListPanel*    m_testList        = nullptr;
     TestProgressPanel* m_progress       = nullptr;
     ModelRenderView*  m_centerResultView = nullptr;  // 中栏结果树
@@ -66,4 +72,7 @@ private:
     QAction* m_actCancel = nullptr;
     QAction* m_actExport = nullptr;
     QAction* m_actConfig = nullptr;
+    QPushButton* m_profileBtn = nullptr;
+    QMenu* m_profileMenu = nullptr;
+    int m_restoreLW = 0, m_restoreRW = 0, m_restoreVP = 0, m_restoreVP2 = 0;
 };

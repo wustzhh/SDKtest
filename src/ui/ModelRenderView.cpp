@@ -105,13 +105,13 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     connect(m_tree, &QTreeWidget::itemClicked, this, &ModelRenderView::onTreeItemClicked);
 
     // Splitter: result tree + property tree
-    auto* bottomSplit = new QSplitter(Qt::Vertical, m_content);
-    bottomSplit->setHandleWidth(5);
-    bottomSplit->setStyleSheet("QSplitter::handle{background:rgba(108,92,231,0.15);margin:2px 0}");
-    bottomSplit->addWidget(m_tree);
+    m_bottomSplit = new QSplitter(Qt::Vertical, m_content);
+    m_bottomSplit->setHandleWidth(5);
+    m_bottomSplit->setStyleSheet("QSplitter::handle{background:rgba(108,92,231,0.15);margin:2px 0}");
+    m_bottomSplit->addWidget(m_tree);
 
     // Property tree
-    m_propTree = new QTreeWidget(bottomSplit);
+    m_propTree = new QTreeWidget(m_bottomSplit);
     m_propTree->setHeaderLabels({"Key", "Value", ""});
     m_propTree->setColumnWidth(0, 160);
     m_propTree->setColumnWidth(2, 64);
@@ -128,10 +128,10 @@ ModelRenderView::ModelRenderView(QWidget* parent)
         "QTreeWidget::item:selected { background:#eef2ff; color:#1e293b; } "
         "QHeaderView::section { background:#f8f9fb; color:#6366f1; padding:6px 12px; "
         "font-size:12px; font-weight:600; border:none; border-bottom:1px solid #e2e8f0; }");
-    bottomSplit->setStretchFactor(0, 4);
-    bottomSplit->setStretchFactor(1, 1);
-    bottomSplit->setSizes({400, 80});
-    contentLayout->addWidget(bottomSplit, 1);
+    m_bottomSplit->setStretchFactor(0, 4);
+    m_bottomSplit->setStretchFactor(1, 1);
+    m_bottomSplit->setSizes({400, 80});
+    contentLayout->addWidget(m_bottomSplit, 1);
 
     m_stack->addWidget(m_content);  // page 1
     m_stack->setCurrentIndex(1);  // 默认显示内容页
@@ -444,6 +444,19 @@ void ModelRenderView::showFullOutput(const QString& title, const QString& text) 
     lay->addWidget(te);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     dlg->show();
+}
+
+int ModelRenderView::saveBottomSplitPos() const {
+    auto s = m_bottomSplit->sizes();
+    return s.size() >= 2 ? s[0] : 400;
+}
+
+void ModelRenderView::restoreBottomSplitPos(int pos) {
+    if (pos <= 0) return;
+    int total = m_bottomSplit->height();
+    if (total < 50) total = pos + 80;
+    int treeH = qBound(60, pos, total - 60);
+    m_bottomSplit->setSizes({treeH, total - treeH});
 }
 
 void ModelRenderView::onCollapseAll() {

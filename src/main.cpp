@@ -38,6 +38,7 @@ int main(int argc, char* argv[]) {
     // ── 全局样式表 ──
     const char* darkStyle = R"(
         QMainWindow, QDialog { background:#f5f6f8; }
+        QMessageBox QPushButton { padding:6px 20px; min-width:60px; }
 
         QToolTip {
             border:1px solid #e2e8f0; border-radius:4px;
@@ -67,10 +68,10 @@ int main(int argc, char* argv[]) {
         }
         QStatusBar::item { border:none; }
 
-        /* ── 按钮：全局只设背景/边框，padding 由各按钮内联控制 ── */
+        /* ── 按钮：全局默认 padding，图标按钮用内联 padding:0 覆盖 ── */
         QPushButton {
             background:#ffffff; border:1px solid #e2e8f0; border-radius:6px;
-            color:#1e293b;
+            color:#1e293b; padding:5px 14px; min-width:50px;
         }
         QPushButton:hover { background:#f1f5f9; border-color:#cbd5e1; }
         QPushButton:disabled { background:#f8f9fb; color:#94a3b8; border-color:#e2e8f0; }

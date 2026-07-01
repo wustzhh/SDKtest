@@ -18,7 +18,8 @@ public:
     void run(const QString& binaryPath,
              const QVector<TestCase>& cases,
              const QStringList& extraArgs = {},
-             const QString& workingDir = {});
+             const QString& workingDir = {},
+             const QStringList& dependencies = {});
 
     void cancel();
     bool isRunning() const;

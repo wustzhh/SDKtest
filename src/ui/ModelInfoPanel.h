@@ -40,4 +40,7 @@ private:
     QLabel*         m_lblExtra;
 
     bool            m_collapsed = false;
+public:
+    bool isCollapsed() const { return m_collapsed; }
+    void setCollapsed(bool c);
 };

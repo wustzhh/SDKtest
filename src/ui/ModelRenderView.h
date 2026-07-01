@@ -11,6 +11,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QMap>
+#include <QSplitter>
 
 #include "models/TestResult.h"
 
@@ -32,6 +33,8 @@ public:
     // 更新属性面板中某 key 的显示文本
     void updatePropertyText(const QString& key, const QString& newText);
     void showFullOutput(const QString& title, const QString& text);
+    int saveBottomSplitPos() const;
+    void restoreBottomSplitPos(int pos);
 
 signals:
     void resultSelected(const TestRunResult& result);
@@ -71,5 +74,6 @@ private:
 
     // 数据
     QVector<TestRunResult> m_results;
+    QSplitter* m_bottomSplit = nullptr;
     QMap<QString, TestRunResult*> m_resultMap;  // fullName → result
 };

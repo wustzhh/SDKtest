@@ -234,7 +234,7 @@ QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double
 }
 void GLViewer::setShowFaceIds(bool show){m_showFaceIds=show;update();}
 void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();m_faceCenterIds.clear();m_faceBBoxes.clear();m_hlFaces.clear();update();}
-void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.05f,.055f,.07f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
+void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.18f,.18f,.22f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
 #ifdef _WIN32
     if(!m_fontBase){HDC hdc=::GetDC((HWND)winId());HFONT hf=CreateFontA(15,0,0,0,FW_BOLD,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,FF_DONTCARE|FIXED_PITCH,"Consolas");SelectObject(hdc,hf);m_fontBase=glGenLists(128);wglUseFontBitmaps(hdc,0,128,m_fontBase);DeleteObject(hf);ReleaseDC((HWND)winId(),hdc);}
 #endif

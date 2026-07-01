@@ -129,14 +129,13 @@ void ModelInfoPanel::clear() {
     m_lblExtra->setText("—");
 }
 
+void ModelInfoPanel::setCollapsed(bool c) {
+    m_collapsed = c;
+    m_content->setVisible(!c);
+    setMaximumHeight(c ? 26 : 200);
+    m_btnToggle->setText(c ? "▶  模型信息" : "▼  模型信息");
+}
+
 void ModelInfoPanel::onToggleCollapse() {
-    m_collapsed = !m_collapsed;
-    m_content->setVisible(!m_collapsed);
-    if (m_collapsed) {
-        setMaximumHeight(26);
-        m_btnToggle->setText("▶  模型信息");
-    } else {
-        setMaximumHeight(200);
-        m_btnToggle->setText("▼  模型信息");
-    }
+    setCollapsed(!m_collapsed);
 }

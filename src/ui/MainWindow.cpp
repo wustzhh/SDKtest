@@ -7,7 +7,16 @@
 #include <QPushButton>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QDialog>
+#include <QFormLayout>
+#include <QTextEdit>
+#include <QTabWidget>
+#include <QDialogButtonBox>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QInputDialog>
+#include <QStyledItemDelegate>
+#include <functional>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
@@ -30,9 +39,28 @@ MainWindow::MainWindow(QWidget* parent)
 
     LOG("APP", "Started");
     if (m_config.load()) {
+        refreshProfileCombo();
         LOG("CFG", "Config loaded: " + m_config.configPath());
-        LOG("CFG", "binary: " + m_config.testBinary());
-        LOG("CFG", "workdir: " + m_config.workingDir());
+        LOG("LOAD", QString("ui state: geo=%1,%2 %3x%4 max=%5 L=%6 R=%7 LV=%8 RV=%9 VP=%10")
+            .arg(m_config.uiState.windowX).arg(m_config.uiState.windowY)
+            .arg(m_config.uiState.windowW).arg(m_config.uiState.windowH)
+            .arg(m_config.uiState.maximized)
+            .arg(m_config.uiState.splitterLeftW).arg(m_config.uiState.splitterRightW)
+            .arg(m_config.uiState.leftPanelVisible).arg(m_config.uiState.rightPanelVisible)
+            .arg(m_config.uiState.splitterVPos));
+        // 恢复 UI 状态
+        auto& ui = m_config.uiState;
+        // 先存恢复值，再设显隐和几何（showEvent 中会用到这些值）
+        m_restoreLW = ui.leftPanelVisible ? ui.splitterLeftW : 0;
+        m_restoreRW = ui.rightPanelVisible ? ui.splitterRightW : 0;
+        m_restoreVP = ui.splitterVPos;
+        m_restoreVP2 = ui.splitterVPos2;
+        if (m_leftPanel) m_leftPanel->setVisible(ui.leftPanelVisible);
+        if (m_rightPanel) m_rightPanel->setVisible(ui.rightPanelVisible);
+        if (ui.windowX >= 0) {
+            setGeometry(ui.windowX, ui.windowY, ui.windowW, ui.windowH);
+            if (ui.maximized) showMaximized();
+        }
     } else {
         LOG("CFG", "Config not found: " + m_config.configPath());
     }
@@ -68,12 +96,13 @@ void MainWindow::setupUi() {
     m_progress = new TestProgressPanel;
     m_progress->setMinimumHeight(100);
     m_centerResultView = new ModelRenderView;
+    m_centerSplitter = centerSplitter;
     centerSplitter->addWidget(m_progress);
     centerSplitter->addWidget(m_centerResultView);
     centerSplitter->setStretchFactor(0, 0);
     centerSplitter->setStretchFactor(1, 1);
 
-    // ═══ 右：ModelInfo(上) + Model3DViewer(下) ═══
+    // ═══ 右：Model3DViewer(下) ═══
     m_rightPanel = new QWidget;
     m_rightPanel->setMinimumWidth(0);
     auto* rightL = new QVBoxLayout(m_rightPanel);
@@ -102,9 +131,9 @@ void MainWindow::setupUi() {
     m_mainSplitter->addWidget(m_leftPanel);
     m_mainSplitter->addWidget(centerSplitter);
     m_mainSplitter->addWidget(m_rightPanel);
-    m_mainSplitter->setStretchFactor(0, 1);
-    m_mainSplitter->setStretchFactor(1, 2);
-    m_mainSplitter->setStretchFactor(2, 3);
+    m_mainSplitter->setStretchFactor(0, 0);
+    m_mainSplitter->setStretchFactor(1, 1);
+    m_mainSplitter->setStretchFactor(2, 0);
     mainLayout->addWidget(m_mainSplitter, 1);
 
     // ── 底栏 ──
@@ -139,6 +168,17 @@ void MainWindow::setupUi() {
         "QPushButton:hover{background:#4f46e5}"
         "QPushButton:disabled{background:#cbd5e1;color:#94a3b8}");
     bl->addWidget(bCfg);
+
+    // ── Profile 切换（菜单按钮） ──
+    m_profileBtn = new QPushButton;
+    m_profileBtn->setFixedHeight(30);
+    m_profileBtn->setMinimumWidth(150);
+    m_profileBtn->setStyleSheet("QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:2px 8px;font-size:12px;text-align:left}"
+                                "QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1}");
+    m_profileMenu = new QMenu(this);
+    refreshProfileCombo();
+    m_profileBtn->setMenu(m_profileMenu);
+    bl->addWidget(m_profileBtn);
     bl->addWidget(bLd);
     bl->addStretch();
     bl->addWidget(bExp);
@@ -349,7 +389,7 @@ void MainWindow::updateButtonStates() {
 void MainWindow::onLoadTests() {
     QString binary = m_config.testBinary();
     if (binary.isEmpty()) {
-        QMessageBox::information(this, "Info", "Set test binary path in Config first.");
+        QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe5\x9c\xa8\xe9\x85\x8d\xe7\xbd\xae\xe4\xb8\xad\xe8\xae\xbe\xe7\xbd\xae exe \xe8\xb7\xaf\xe5\xbe\x84"));
         onEditConfig();
         return;
     }
@@ -378,7 +418,7 @@ void MainWindow::onLoadTests() {
 void MainWindow::onRunSelected() {
     auto sel = m_testList->selectedTests();
     if (sel.isEmpty()) {
-        QMessageBox::information(this, "Info", "Select tests first.");
+        QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe6\xb5\x8b\xe8\xaf\x95\xe7\x94\xa8\xe4\xbe\x8b"));
         return;
     }
 
@@ -391,7 +431,8 @@ void MainWindow::onRunSelected() {
 
     m_centerResultView->clear();
     m_progress->startRun(sel.size());
-    m_runner->run(m_config.testBinary(), sel, m_config.extraArgs(), m_config.workingDir());
+    m_runner->run(m_config.testBinary(), sel, m_config.extraArgs(), m_config.workingDir(),
+                  m_config.currentProfile().dependencies);
     updateButtonStates();
 }
 
@@ -404,7 +445,7 @@ void MainWindow::onCancelRun() {
 
 void MainWindow::onExportReport() {
     if (m_report.results.isEmpty()) {
-        QMessageBox::information(this, "Export", "No results to export.");
+        QMessageBox::information(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba"), QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8f\xaf\xe5\xaf\xbc\xe5\x87\xba\xe7\x9a\x84\xe7\xbb\x93\xe6\x9e\x9c"));
         return;
     }
     QString exeDir = QCoreApplication::applicationDirPath();
@@ -416,8 +457,8 @@ void MainWindow::onExportReport() {
     QString err;
     if (ReportExporter::exportBoth(m_report, base, &err)) {
         statusBar()->showMessage("Exported: " + base + ".xlsx/.txt", 5000);
-        auto r = QMessageBox::question(this, "Exported",
-            "Saved:\n  " + base + ".xlsx\n  " + base + ".txt\n\nOpen folder?");
+        auto r = QMessageBox::question(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba\xe5\xae\x8c\xe6\x88\x90"),
+            QString::fromUtf8("\xe5\xb7\xb2\xe4\xbf\x9d\xe5\xad\x98:\n  ") + base + ".xlsx\n  " + base + ".txt\n\n" + QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9?"));
         if (r == QMessageBox::Yes)
             QDesktopServices::openUrl(QUrl::fromLocalFile(outDir));
     } else {
@@ -425,19 +466,223 @@ void MainWindow::onExportReport() {
     }
 }
 
+// 分类树编辑委托——确保内联编辑器高度足够显示全部字符
+class CatDelegate : public QStyledItemDelegate {
+public:
+    CatDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
+    QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem&, const QModelIndex&) const override {
+        auto* ed = new QLineEdit(parent);
+        ed->setFont(QFont("Microsoft YaHei UI", 13));
+        ed->setFixedHeight(34);
+        return ed;
+    }
+};
+
 void MainWindow::onEditConfig() {
-    QString start = m_config.testBinary().isEmpty()
-        ? QDir::currentPath()
-        : QFileInfo(m_config.testBinary()).absolutePath();
-    QString bin = QFileDialog::getOpenFileName(this, "Select test exe", start,
-                                                "Executable (*.exe);;All (*)");
-    if (bin.isEmpty()) return;
-    m_config.setTestBinary(bin);
-    m_config.save();
-    LOG("CFG", "Binary set", bin);
-    statusBar()->showMessage("Config saved: " + bin, 5000);
-    updateButtonStates();
+    QDialog dlg(this);
+    dlg.setWindowTitle(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe9\x85\x8d\xe7\xbd\xae"));
+    dlg.setMinimumWidth(580);
+    dlg.setStyleSheet("QDialog{background:#ffffff;border-radius:12px}");
+    auto* lay = new QVBoxLayout(&dlg);
+    lay->setContentsMargins(16, 12, 16, 12);
+
+    // Profile 选择器（按钮+菜单）
+    auto* profRow = new QHBoxLayout;
+    auto* profLabel = new QLabel(QString::fromUtf8("\xe9\x85\x8d\xe7\xbd\xae:"));
+    profLabel->setStyleSheet("font-weight:600;font-size:13px");
+    auto* dlgProfBtn = new QPushButton;
+    dlgProfBtn->setMinimumWidth(180);
+    dlgProfBtn->setFixedHeight(30);
+    dlgProfBtn->setStyleSheet("QPushButton{font-size:13px;padding:2px 8px;background:#ffffff;border:1px solid #cbd5e1;border-radius:4px;text-align:left}"
+                              "QPushButton:hover{background:#f8f9fb;border-color:#6366f1}");
+    auto* dlgProfMenu = new QMenu(&dlg);
+    dlgProfMenu->setStyleSheet("QMenu{font-size:13px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;padding:4px}"
+                               "QMenu::item{padding:6px 20px;border-radius:4px}"
+                               "QMenu::item:selected{background:#eef2ff;color:#1e293b}");
+    // 用 std::function 以支持 forward reference
+    std::function<void(int)> loadProfile;
+    auto fillMenu = [&]() {
+        dlgProfMenu->clear();
+        dlgProfBtn->setText(m_config.currentProfile().name);
+        for (int i = 0; i < m_config.profiles().size(); i++) {
+            auto* act = dlgProfMenu->addAction(m_config.profiles()[i].name);
+            connect(act, &QAction::triggered, &dlg, [this, i, &loadProfile, dlgProfBtn]() {
+                m_config.setActiveProfile(i);
+                dlgProfBtn->setText(m_config.currentProfile().name);
+                if (loadProfile) loadProfile(i);
+            });
+        }
+    };
+    fillMenu();
+    connect(dlgProfBtn, &QPushButton::clicked, &dlg, [&dlg, dlgProfBtn, dlgProfMenu]() {
+        dlgProfMenu->exec(dlgProfBtn->mapToGlobal(QPoint(0, dlgProfBtn->height())));
+    });
+    auto* btnNewP = new QPushButton(QString::fromUtf8("\xe6\x96\xb0\xe5\xbb\xba"));
+    btnNewP->setFixedHeight(30);
+    btnNewP->setStyleSheet("QPushButton{font-size:12px;padding:2px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:4px}QPushButton:hover{background:#f1f5f9;border-color:#6366f1}");
+    auto* btnDelP = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
+    btnDelP->setFixedHeight(30);
+    btnDelP->setStyleSheet("QPushButton{font-size:12px;padding:2px 12px;background:#ffffff;border:1px solid #fecaca;border-radius:4px;color:#dc2626}QPushButton:hover{background:#fef2f2;border-color:#ef4444}");
+    profRow->addWidget(profLabel);
+    profRow->addWidget(dlgProfBtn, 1);
+    profRow->addWidget(btnNewP);
+    profRow->addWidget(btnDelP);
+    lay->addLayout(profRow);
+
+    // 表单字段
+    auto* tabs = new QTabWidget;
+    auto* profileTab = new QWidget;
+    auto* pf = new QFormLayout(profileTab);
+    pf->setLabelAlignment(Qt::AlignRight);
+    auto* edName = new QLineEdit;
+    auto* edBinary = new QLineEdit;
+    auto* btnBrowseBin = new QPushButton(QString::fromUtf8("\xe6\xb5\x8f\xe8\xa7\x88..."));
+    auto* binaryRow = new QHBoxLayout;
+    binaryRow->addWidget(edBinary, 1);
+    binaryRow->addWidget(btnBrowseBin);
+    auto* edDeps = new QTextEdit;
+    edDeps->setMaximumHeight(100);
+    auto* btnBrowseDep = new QPushButton(QString::fromUtf8("\xe6\xb7\xbb\xe5\x8a\xa0\xe7\x9b\xae\xe5\xbd\x95..."));
+    auto* depsRow = new QVBoxLayout;
+    auto* depsTop = new QHBoxLayout;
+    depsTop->addWidget(edDeps, 1);
+    depsTop->addWidget(btnBrowseDep);
+    depsRow->addLayout(depsTop);
+    auto* edWorkDir = new QLineEdit;
+    auto* edArgs = new QLineEdit;
+    pf->addRow(QString::fromUtf8("\xe9\x85\x8d\xe7\xbd\xae\xe5\x90\x8d"), edName);
+    pf->addRow(QString::fromUtf8("Exe \xe8\xb7\xaf\xe5\xbe\x84"), binaryRow);
+    pf->addRow(QString::fromUtf8("\xe4\xbe\x9d\xe8\xb5\x96\xe8\xb7\xaf\xe5\xbe\x84"), depsRow);
+    pf->addRow(QString::fromUtf8("\xe5\xb7\xa5\xe4\xbd\x9c\xe7\x9b\xae\xe5\xbd\x95"), edWorkDir);
+    pf->addRow(QString::fromUtf8("\xe9\xa2\x9d\xe5\xa4\x96\xe5\x8f\x82\xe6\x95\xb0"), edArgs);
+    profileTab->setLayout(pf);
+    tabs->addTab(profileTab, "Profile");
+
+    // 分类
+    auto* catTab = new QWidget;
+    auto* catLay = new QVBoxLayout(catTab);
+    auto* catTree = new QTreeWidget(catTab);
+    catTree->setHeaderLabels({QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"), QString::fromUtf8("\xe5\x89\x8d\xe7\xbc\x80")});
+    catTree->setRootIsDecorated(false);
+    catTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    catTree->setStyleSheet("QTreeWidget::item{padding:8px 12px;min-height:36px;font-size:14px}");
+    catTree->setItemDelegate(new CatDelegate(catTree));
+    catLay->addWidget(catTree, 1);
+    auto* catBtns = new QHBoxLayout;
+    auto* btnAddCat = new QPushButton(QString::fromUtf8("\xe6\xb7\xbb\xe5\x8a\xa0"));
+    auto* btnDelCat = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
+    catBtns->addWidget(btnAddCat);
+    catBtns->addWidget(btnDelCat);
+    catBtns->addStretch();
+    catLay->addLayout(catBtns);
+
+    // 加载 profile 数据
+    loadProfile = [&](int idx) {
+        if (idx < 0 || idx >= m_config.profiles().size()) return;
+        const auto& p = m_config.profiles()[idx];
+        edName->setText(p.name);
+        edBinary->setText(p.testBinary);
+        edDeps->setText(p.dependencies.join("\n"));
+        edWorkDir->setText(p.workingDir);
+        edArgs->setText(p.extraArgs.join(" "));
+        catTree->clear();
+        for (const auto& c : p.categories) {
+            auto* item = new QTreeWidgetItem(catTree);
+            item->setText(0, c.name);
+            item->setText(1, c.prefixes.join(", "));
+            item->setFlags(item->flags() | Qt::ItemIsEditable);
+        }
+    };
+    tabs->addTab(catTab, QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"));
+
+    // 连接
+    connect(btnBrowseBin, &QPushButton::clicked, [&]() {
+        QString p = QFileDialog::getOpenFileName(&dlg, QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9 exe"), edBinary->text(), "*.exe");
+        if (!p.isEmpty()) edBinary->setText(p);
+    });
+    connect(btnBrowseDep, &QPushButton::clicked, [&]() {
+        QString dir = QFileDialog::getExistingDirectory(&dlg, QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe4\xbe\x9d\xe8\xb5\x96\xe7\x9b\xae\xe5\xbd\x95"));
+        if (!dir.isEmpty()) {
+            QString cur = edDeps->toPlainText().trimmed();
+            edDeps->setText(cur.isEmpty() ? dir : cur + "\n" + dir);
+        }
+    });
+    connect(btnNewP, &QPushButton::clicked, [&]() {
+        ExeProfile p;
+        p.name = QString::fromUtf8("\xe6\x96\xb0\xe9\x85\x8d\xe7\xbd\xae %1").arg(m_config.profiles().size() + 1);
+        TestCategory c1, c2;
+        c1.name = "test_p*"; c1.prefixes << "test_p";
+        c2.name = QString::fromUtf8("\xe5\x85\xb6\xe4\xbb\x96");
+        p.categories << c1 << c2;
+        m_config.addProfile(p);
+        m_config.setActiveProfile(m_config.profiles().size() - 1);
+        fillMenu();
+        loadProfile(m_config.activeProfile());
+    });
+    connect(btnDelP, &QPushButton::clicked, [&]() {
+        if (m_config.profiles().size() <= 1) {
+            QMessageBox::warning(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\x87\xb3\xe5\xb0\x91\xe4\xbf\x9d\xe7\x95\x99\xe4\xb8\x80\xe4\xb8\xaa\xe9\x85\x8d\xe7\xbd\xae"));
+            return;
+        }
+        int idx = m_config.activeProfile();
+        m_config.removeProfile(idx);
+        if (m_config.activeProfile() >= m_config.profiles().size())
+            m_config.setActiveProfile(0);
+        fillMenu();
+        loadProfile(m_config.activeProfile());
+    });
+    connect(btnAddCat, &QPushButton::clicked, [&]() {
+        auto* item = new QTreeWidgetItem(catTree);
+        item->setText(0, QString::fromUtf8("\xe6\x96\xb0\xe5\x88\x86\xe7\xb1\xbb"));
+        item->setText(1, "");
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        catTree->editItem(item, 0);
+    });
+    connect(btnDelCat, &QPushButton::clicked, [&]() {
+        for (auto* s : catTree->selectedItems()) delete s;
+    });
+
+    lay->addWidget(tabs);
+
+    // 加载当前 profile
+    loadProfile(m_config.activeProfile());
+
+    auto* btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    btnBox->setStyleSheet("QPushButton{padding:6px 28px;min-width:90px;font-size:13px}");
+    connect(btnBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(btnBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    lay->addWidget(btnBox);
+
+    if (dlg.exec() == QDialog::Accepted) {
+        int idx = m_config.activeProfile();
+        if (idx >= 0 && idx < m_config.profiles().size()) {
+            ExeProfile p = m_config.profiles()[idx];
+            p.name = edName->text().trimmed();
+            p.testBinary = edBinary->text().trimmed();
+            QStringList deps;
+            for (const auto& line : edDeps->toPlainText().split('\n', Qt::SkipEmptyParts))
+                deps << line.trimmed();
+            p.dependencies = deps;
+            p.workingDir = edWorkDir->text().trimmed();
+            p.extraArgs = edArgs->text().trimmed().split(' ', Qt::SkipEmptyParts);
+            QVector<TestCategory> cats;
+            for (int i = 0; i < catTree->topLevelItemCount(); i++) {
+                auto* item = catTree->topLevelItem(i);
+                TestCategory c;
+                c.name = item->text(0);
+                for (const auto& pr : item->text(1).split(',', Qt::SkipEmptyParts))
+                    c.prefixes << pr.trimmed();
+                if (!c.name.isEmpty()) cats << c;
+            }
+            p.categories = cats;
+            m_config.updateProfile(idx, p);
+            m_config.setActiveProfile(idx);
+            m_config.save();
+            refreshProfileCombo();
+        }
+    }
 }
+
 
 void MainWindow::onAbout() {
     QMessageBox::about(this, "About",
@@ -485,4 +730,77 @@ void MainWindow::onRawOutput(const QString& line) {
 
 void MainWindow::onSelectionChanged(int count) {
     updateButtonStates();
+}
+
+void MainWindow::refreshProfileCombo() {
+    if (!m_profileBtn || !m_profileMenu) return;
+    m_profileBtn->setText(m_config.currentProfile().name);
+    m_profileMenu->clear();
+    int active = m_config.activeProfile();
+    for (int i = 0; i < m_config.profiles().size(); i++) {
+        const auto& p = m_config.profiles()[i];
+        auto* act = m_profileMenu->addAction(p.name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : p.name);
+        act->setCheckable(true);
+        if (i == active) act->setChecked(true);
+        connect(act, &QAction::triggered, this, [this, i]() {
+            m_config.setActiveProfile(i);
+            refreshProfileCombo();
+        });
+    }
+}
+
+
+
+void MainWindow::saveLayout() {
+    auto& ui = m_config.uiState;
+    if (isMaximized()) { ui.maximized = true; }
+    else {
+        ui.maximized = false;
+        auto geo = geometry();
+        ui.windowX = geo.x(); ui.windowY = geo.y();
+        ui.windowW = geo.width(); ui.windowH = geo.height();
+    }
+    if (m_mainSplitter) { auto s = m_mainSplitter->sizes(); if (s.size()>=3) { ui.splitterLeftW=s[0]; ui.splitterRightW=s[2]; } }
+    if (m_centerSplitter) { auto s = m_centerSplitter->sizes(); if (s.size()>=2) ui.splitterVPos=s[0]; }
+    if (m_centerResultView) ui.splitterVPos2 = m_centerResultView->saveBottomSplitPos();
+    if (m_leftPanel) ui.leftPanelVisible = m_leftPanel->isVisible();
+    if (m_rightPanel) ui.rightPanelVisible = m_rightPanel->isVisible();
+    m_config.save();
+    LOG("SAVE", QString("geo=%1,%2 %3x%4 max=%5 L=%6 R=%7 LV=%8 RV=%9 VP=%10")
+        .arg(ui.windowX).arg(ui.windowY).arg(ui.windowW).arg(ui.windowH)
+        .arg(ui.maximized).arg(ui.splitterLeftW).arg(ui.splitterRightW)
+        .arg(ui.leftPanelVisible).arg(ui.rightPanelVisible).arg(ui.splitterVPos));
+}
+
+MainWindow::~MainWindow() {
+    // 析构时不保存，closeEvent 中已完成且数据有效
+}
+
+void MainWindow::showEvent(QShowEvent* e) {
+    QMainWindow::showEvent(e);
+    // 窗口首次显示后恢复 splitter 尺寸
+    if (m_restoreLW > 0 || m_restoreRW > 0 || m_restoreVP > 0 || m_restoreVP2 > 0) {
+        QTimer::singleShot(0, [this]() {
+            if (m_mainSplitter && m_restoreLW + m_restoreRW > 0) {
+                int w = m_mainSplitter->width();
+                if (w > m_restoreLW + m_restoreRW + 50)
+                    m_mainSplitter->setSizes({m_restoreLW, w - m_restoreLW - m_restoreRW, m_restoreRW});
+            }
+            if (m_centerSplitter && m_restoreVP > 0) {
+                int h = m_centerSplitter->height();
+                if (h > 50) {
+                    int ph = qBound(80, m_restoreVP, h - 80);
+                    m_centerSplitter->setSizes({ph, h - ph});
+                }
+            }
+            if (m_centerResultView && m_restoreVP2 > 0)
+                m_centerResultView->restoreBottomSplitPos(m_restoreVP2);
+            m_restoreLW = m_restoreRW = m_restoreVP = m_restoreVP2 = 0;
+        });
+    }
+}
+
+void MainWindow::closeEvent(QCloseEvent* e) {
+    saveLayout();
+    QMainWindow::closeEvent(e);
 }

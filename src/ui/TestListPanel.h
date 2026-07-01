@@ -42,6 +42,10 @@ private slots:
 private:
     void buildTree(const QVector<TestCase>& cases,
                    const QVector<TestCategory>& categories);
+    void updatePathLabel(QTreeWidgetItem* item);
+    void buildGroupTree(QTreeWidgetItem* parent,
+                        const QVector<TestCase>& cases,
+                        const QVector<TestCategory>& categories);
     void toggleItem(QTreeWidgetItem* item);
     void applyToDescendants(QTreeWidgetItem* parent, bool checked);
     void updateParentState(QTreeWidgetItem* item);
@@ -54,6 +58,7 @@ private:
     void updateStats();
 
     QLineEdit*      m_searchEdit;
+    QLabel*         m_pathLabel = nullptr;
     QWidget*        m_toolbar;
     QPushButton*    m_btnCollapsePanel;
     QPushButton*    m_btnReverseFilter;

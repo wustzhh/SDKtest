@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QApplication>
 #include <QStyle>
+#include <QClipboard>
 
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
 static const QString MARK_YES  = QString::fromUtf8("\xe2\x98\x91");
@@ -20,7 +21,12 @@ TestListPanel::TestListPanel(QWidget* parent)
     layout->setContentsMargins(2, 2, 2, 2);
     layout->setSpacing(2);
 
-    // Header: search
+    // Header: path + search
+    m_pathLabel = new QLabel(this);
+    m_pathLabel->setStyleSheet("font-size:11px;color:#6366f1;padding:2px 4px;min-height:16px");
+    m_pathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    layout->addWidget(m_pathLabel);
+
     auto* headerRow = new QHBoxLayout();
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText("搜索用例...");
@@ -73,6 +79,7 @@ TestListPanel::TestListPanel(QWidget* parent)
     connect(m_tree, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int) {
         if (!item || m_updating) return;
         toggleItem(item);
+        updatePathLabel(item);
     });
     m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_tree, &QTreeWidget::customContextMenuRequested, this, &TestListPanel::onTreeContextMenu);
@@ -94,7 +101,7 @@ TestListPanel::TestListPanel(QWidget* parent)
 void TestListPanel::showEmptyPlaceholder() {
     m_tree->clear();
     auto* item = new QTreeWidgetItem(m_tree);
-    item->setText(0, "No tests loaded. Click Config then Load Tests.");
+    item->setText(0, QString::fromUtf8("\xe6\x9c\xaa\xe5\x8a\xa0\xe8\xbd\xbd\xe6\xb5\x8b\xe8\xaf\x95\xef\xbc\x8c\xe8\xaf\xb7\xe5\x85\x88\xe9\x85\x8d\xe7\xbd\xae\xe5\xb9\xb6\xe5\x8a\xa0\xe8\xbd\xbd"));
     item->setForeground(0, QColor("#5a6278"));
     item->setFlags(Qt::NoItemFlags);
 }
@@ -234,8 +241,9 @@ void TestListPanel::loadTests(const QVector<TestCase>& cases,
     emit selectionChanged(0);
 }
 
-void TestListPanel::buildTree(const QVector<TestCase>& cases,
-                               const QVector<TestCategory>& categories)
+void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,
+                                    const QVector<TestCase>& cases,
+                                    const QVector<TestCategory>& categories)
 {
     QMap<QString, QVector<TestCase>> groups;
     for (const auto& tc : cases) groups[tc.suiteName].append(tc);
@@ -251,7 +259,7 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
 
     for (auto ci = catGroups.begin(); ci != catGroups.end(); ++ci) {
         int catTotal = 0;
-        auto* catItem = new QTreeWidgetItem(m_tree);
+        auto* catItem = new QTreeWidgetItem(parent);
         catItem->setData(0, Role_Type, "category");
         QFont f = catItem->font(0); f.setBold(true); catItem->setFont(0, f);
         catItem->setExpanded(true);
@@ -273,6 +281,43 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
         catItem->setData(0, Role_SuiteName, ci.key());
         catItem->setText(0, MARK_NO + "  " + ci.key() + QString(" (%1)").arg(catTotal));
     }
+}
+
+void TestListPanel::buildTree(const QVector<TestCase>& cases,
+                               const QVector<TestCategory>& categories)
+{
+    // 分参数化和非参数化
+    QVector<TestCase> paramCases, normalCases;
+    for (const auto& tc : cases) {
+        if (tc.suiteName.contains('/'))
+            paramCases.append(tc);
+        else
+            normalCases.append(tc);
+    }
+
+    auto addGroup = [&](const QString& title, const QVector<TestCase>& group) {
+        if (group.isEmpty()) return;
+        auto* item = new QTreeWidgetItem(m_tree);
+        item->setText(0, MARK_NO + "  " + title);
+        item->setData(0, Role_Type, "category");
+        QFont f = item->font(0); f.setBold(true); item->setFont(0, f);
+        item->setExpanded(true);
+        buildGroupTree(item, group, categories);
+        // 更新总数
+        int total = 0;
+        std::function<void(QTreeWidgetItem*)> cnt = [&](QTreeWidgetItem* it) {
+            for (int i = 0; i < it->childCount(); ++i) {
+                auto* ch = it->child(i);
+                if (ch->data(0, Role_Type).toString() == "case") total++;
+                else if (ch->childCount() > 0) cnt(ch);
+            }
+        };
+        cnt(item);
+        item->setText(0, MARK_NO + "  " + title + QString(" (%1)").arg(total));
+    };
+
+    addGroup(QString::fromUtf8("\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), paramCases);
+    addGroup(QString::fromUtf8("\xe9\x9d\x9e\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), normalCases);
 }
 
 QVector<TestCase> TestListPanel::selectedTests() const {
@@ -445,18 +490,52 @@ void TestListPanel::onTreeContextMenu(const QPoint& pos) {
         };
     };
     if (type == "category" || type == "suite") {
-        m_contextMenu->addAction("Select All", act([=]() {
+        m_contextMenu->addAction(QString::fromUtf8("\xe5\x85\xa8\xe9\x80\x89"), act([=]() {
             applyToDescendants(item, true); updateParentState(item);
         }));
-        m_contextMenu->addAction("Clear All", act([=]() {
+        m_contextMenu->addAction(QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88\xe5\x85\xa8\xe9\x80\x89"), act([=]() {
             applyToDescendants(item, false); updateParentState(item);
         }));
         m_contextMenu->addSeparator();
-        m_contextMenu->addAction("Expand", [item]() { item->setExpanded(true); });
-        m_contextMenu->addAction("Collapse", [item]() { item->setExpanded(false); });
+        m_contextMenu->addAction(QString::fromUtf8("\xe5\xb1\x95\xe5\xbc\x80"), [item]() { item->setExpanded(true); });
+        m_contextMenu->addAction(QString::fromUtf8("\xe6\x8a\x98\xe5\x8f\xa0"), [item]() { item->setExpanded(false); });
     } else {
-        m_contextMenu->addAction(checked ? "Deselect" : "Select",
+        m_contextMenu->addAction(checked ? QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88\xe9\x80\x89\xe4\xb8\xad") : QString::fromUtf8("\xe9\x80\x89\xe4\xb8\xad"),
             [this, item, checked]() { toggleItem(item); });
     }
+    m_contextMenu->addSeparator();
+    QString fullName;
+    if (type == "case") {
+        fullName = item->data(0, Role_SuiteName).toString() + "." + item->data(0, Role_CaseName).toString();
+    } else if (type == "suite") {
+        fullName = item->data(0, Role_SuiteName).toString();
+    } else if (type == "category") {
+        fullName = item->data(0, Role_SuiteName).toString();
+    }
+    if (!fullName.isEmpty()) {
+        m_contextMenu->addAction(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe5\x90\x8d\xe7\xa7\xb0"), [fullName]() {
+            QApplication::clipboard()->setText(fullName);
+        });
+    }
     m_contextMenu->popup(m_tree->viewport()->mapToGlobal(pos));
+}
+
+void TestListPanel::updatePathLabel(QTreeWidgetItem* item) {
+    if (!m_pathLabel) return;
+    QStringList parts;
+    QTreeWidgetItem* cur = item;
+    while (cur) {
+        QString t;
+        if (cur->data(0, Role_Type).toString() == "case")
+            t = cur->data(0, Role_CaseName).toString();
+        else if (cur->data(0, Role_Type).toString() == "suite")
+            t = cur->data(0, Role_SuiteName).toString();
+        else if (cur->data(0, Role_Type).toString() == "category")
+            t = cur->data(0, Role_SuiteName).toString();
+        else if (cur->childCount() > 0)
+            t = cur->text(0).section("  ", -1).trimmed();
+        if (!t.isEmpty()) parts.prepend(t);
+        cur = cur->parent();
+    }
+    m_pathLabel->setText(parts.isEmpty() ? "" : "> " + parts.join(" > "));
 }
