@@ -14,7 +14,8 @@ public:
 
     // 执行 list_tests，返回 true 表示成功
     bool load(const QString& binaryPath, const QStringList& extraArgs = {},
-              const QString& workingDir = {});
+              const QString& workingDir = {}, const QStringList& dependencies = {},
+              const QMap<QString, QString>& envVars = {});
 
     // 获取发现的用例
     QVector<TestCase> testCases() const { return m_cases; }

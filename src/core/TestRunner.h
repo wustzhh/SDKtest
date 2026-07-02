@@ -6,6 +6,7 @@
 #include <QProcess>
 #include <QElapsedTimer>
 #include <QStringList>
+#include <QMap>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -19,7 +20,8 @@ public:
              const QVector<TestCase>& cases,
              const QStringList& extraArgs = {},
              const QString& workingDir = {},
-             const QStringList& dependencies = {});
+             const QStringList& dependencies = {},
+             const QMap<QString, QString>& envVars = {});
 
     void cancel();
     bool isRunning() const;
@@ -60,4 +62,5 @@ private:
 
     QString         m_accumulatedStdout;
     QString         m_gtestXmlPath;
+    QMap<QString, QString> m_envVars;
 };

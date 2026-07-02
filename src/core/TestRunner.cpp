@@ -21,7 +21,8 @@ void TestRunner::run(const QString& binaryPath,
                      const QVector<TestCase>& cases,
                      const QStringList& extraArgs,
                      const QString& workingDir,
-                     const QStringList& dependencies)
+                     const QStringList& dependencies,
+                     const QMap<QString, QString>& envVars)
 {
     if (isRunning()) {
         emit errorOccurred("Already running.");
@@ -30,6 +31,7 @@ void TestRunner::run(const QString& binaryPath,
 
     m_binaryPath = binaryPath;
     m_workingDir = workingDir;
+    m_envVars = envVars;
     m_totalCount = cases.size();
     m_doneCount  = 0;
 
@@ -54,20 +56,34 @@ void TestRunner::run(const QString& binaryPath,
     LOG("RUN", "XmlOut: " + m_gtestXmlPath);
     emit rawOutput(QString("▶ Running %1 tests in one batch...\n").arg(m_totalCount));
 
-    if (!m_workingDir.isEmpty())
-        m_process->setWorkingDirectory(m_workingDir);
-
-    // 设置环境变量 PATH 包含依赖路径
-    if (!dependencies.isEmpty()) {
-        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        QString path = env.value("PATH");
-        for (const auto& d : dependencies) {
-            if (QFileInfo::exists(d))
-                path = QDir::toNativeSeparators(d) + ";" + path;
+    // 设置进程环境：PATH 优先包含依赖目录
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    QStringList depDirs;
+    for (const auto& d : dependencies) {
+        if (QFileInfo::exists(d)) {
+            depDirs << QDir::toNativeSeparators(QDir(d).absolutePath());
+            LOG("RUN", "  dep added: " + d);
+        } else {
+            LOG("RUN", "  dep NOT FOUND: " + d);
         }
-        env.insert("PATH", path);
+    }
+    // 把 exe 目录和依赖目录加到 PATH 前面
+    if (!depDirs.isEmpty()) {
+        QString newPath = depDirs.join(";") + ";" + env.value("PATH");
+        env.insert("PATH", newPath);
         m_process->setProcessEnvironment(env);
     }
+    // 自定义环境变量
+    for (auto it = m_envVars.begin(); it != m_envVars.end(); ++it) {
+        QProcessEnvironment env = m_process->processEnvironment();
+        if (env.isEmpty()) env = QProcessEnvironment::systemEnvironment();
+        env.insert(it.key(), it.value());
+        m_process->setProcessEnvironment(env);
+    }
+    // 工作目录设到 exe 所在目录
+    QFileInfo binInfo(m_binaryPath);
+    QString workDir = m_workingDir.isEmpty() ? binInfo.absolutePath() : m_workingDir;
+    m_process->setWorkingDirectory(workDir);
 
     m_elapsed.start();
     m_process->start(m_binaryPath, args);

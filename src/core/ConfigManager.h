@@ -3,6 +3,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
+#include <QMap>
 #include <QJsonObject>
 #include <QJsonArray>
 
@@ -23,6 +24,7 @@ struct ExeProfile {
     QStringList dependencies;     // 依赖路径（DLL 目录或文件）
     QString     workingDir;       // 工作目录
     QStringList extraArgs;        // 额外参数
+    QMap<QString, QString> envVars;  // 自定义环境变量
     QVector<TestCategory> categories;
 
     bool isValid() const { return !testBinary.isEmpty(); }
@@ -71,11 +73,12 @@ public:
         int  windowX = -1, windowY = -1, windowW = 1280, windowH = 800;
         bool maximized = false;
         int  themeIndex = 0;       // 0=light 1=dark 2=high contrast
-        int  splitterLeftW = 250;   // 左面板宽度(像素)
-        int  splitterRightW = 350;  // 右面板宽度(像素)
-        int  splitterVPos = 200;    // 中栏垂直分割位置(像素, 上:进度 下:结果)
-        int  splitterVPos2 = 400;   // 中栏下半部分内部分割(结果树 与 属性树)
-        bool modelInfoCollapsed = false; // ModelInfo 面板是否收起
+        int  splitterLeftPct = 20;   // 左面板宽度百分比
+        int  splitterRightPct = 30;  // 右面板宽度百分比
+        int  splitterVPct = 25;      // 中栏垂直分割百分比(进度面板占比)
+        int  splitterV2Pct = 60;     // 中栏下半部分内部百分比(结果树占比)
+        int  cfgDialogW = 580, cfgDialogH = 500; // 配置对话框尺寸
+        bool modelInfoCollapsed = false;
         bool leftPanelVisible = true;
         bool rightPanelVisible = true;
     };

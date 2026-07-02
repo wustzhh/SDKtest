@@ -41,20 +41,17 @@ MainWindow::MainWindow(QWidget* parent)
     if (m_config.load()) {
         refreshProfileCombo();
         LOG("CFG", "Config loaded: " + m_config.configPath());
-        LOG("LOAD", QString("ui state: geo=%1,%2 %3x%4 max=%5 L=%6 R=%7 LV=%8 RV=%9 VP=%10")
+        LOG("LOAD", QString("ui state: geo=%1,%2 %3x%4 max=%5")
             .arg(m_config.uiState.windowX).arg(m_config.uiState.windowY)
             .arg(m_config.uiState.windowW).arg(m_config.uiState.windowH)
-            .arg(m_config.uiState.maximized)
-            .arg(m_config.uiState.splitterLeftW).arg(m_config.uiState.splitterRightW)
-            .arg(m_config.uiState.leftPanelVisible).arg(m_config.uiState.rightPanelVisible)
-            .arg(m_config.uiState.splitterVPos));
+            .arg(m_config.uiState.maximized));
         // 恢复 UI 状态
         auto& ui = m_config.uiState;
         // 先存恢复值，再设显隐和几何（showEvent 中会用到这些值）
-        m_restoreLW = ui.leftPanelVisible ? ui.splitterLeftW : 0;
-        m_restoreRW = ui.rightPanelVisible ? ui.splitterRightW : 0;
-        m_restoreVP = ui.splitterVPos;
-        m_restoreVP2 = ui.splitterVPos2;
+        m_restoreLW = ui.leftPanelVisible ? ui.splitterLeftPct : 0;
+        m_restoreRW = ui.rightPanelVisible ? ui.splitterRightPct : 0;
+        m_restoreVP = ui.splitterVPct;
+        m_restoreVP2 = ui.splitterV2Pct;
         if (m_leftPanel) m_leftPanel->setVisible(ui.leftPanelVisible);
         if (m_rightPanel) m_rightPanel->setVisible(ui.rightPanelVisible);
         if (ui.windowX >= 0) {
@@ -394,13 +391,15 @@ void MainWindow::onLoadTests() {
         return;
     }
 
+    // 把当前进程的工作目录切到 exe 所在目录，子进程继承后 DLL 搜索优先
+    QDir::setCurrent(QFileInfo(binary).absolutePath());
     LOG("LOAD", "Binary: " + binary);
     LOG("LOAD", "WorkDir: " + m_config.workingDir());
 
     statusBar()->showMessage("Loading...");
     QApplication::processEvents();
 
-    if (m_loader.load(binary, m_config.extraArgs(), m_config.workingDir())) {
+    if (m_loader.load(binary, m_config.extraArgs(), m_config.workingDir(), m_config.currentProfile().dependencies, m_config.currentProfile().envVars)) {
         int n = m_loader.testCases().size();
         LOG("LOAD", "OK, found: " + QString::number(n) + " tests");
         m_testList->loadTests(m_loader.testCases(), m_config.categories());
@@ -432,7 +431,7 @@ void MainWindow::onRunSelected() {
     m_centerResultView->clear();
     m_progress->startRun(sel.size());
     m_runner->run(m_config.testBinary(), sel, m_config.extraArgs(), m_config.workingDir(),
-                  m_config.currentProfile().dependencies);
+                  m_config.currentProfile().dependencies, m_config.currentProfile().envVars);
     updateButtonStates();
 }
 
@@ -481,6 +480,7 @@ public:
 void MainWindow::onEditConfig() {
     QDialog dlg(this);
     dlg.setWindowTitle(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe9\x85\x8d\xe7\xbd\xae"));
+    dlg.resize(m_config.uiState.cfgDialogW, m_config.uiState.cfgDialogH);
     dlg.setMinimumWidth(580);
     dlg.setStyleSheet("QDialog{background:#ffffff;border-radius:12px}");
     auto* lay = new QVBoxLayout(&dlg);
@@ -500,15 +500,19 @@ void MainWindow::onEditConfig() {
                                "QMenu::item{padding:6px 20px;border-radius:4px}"
                                "QMenu::item:selected{background:#eef2ff;color:#1e293b}");
     // 用 std::function 以支持 forward reference
+    QTextEdit* edEnv = nullptr; // forward decl
     std::function<void(int)> loadProfile;
+    // 当前编辑的 profile 索引（不修改全局 activeProfile，避免影响其他逻辑）
+    int currentEditIdx = m_config.activeProfile();
     auto fillMenu = [&]() {
         dlgProfMenu->clear();
-        dlgProfBtn->setText(m_config.currentProfile().name);
+        dlgProfBtn->setText(m_config.profiles()[currentEditIdx].name);
         for (int i = 0; i < m_config.profiles().size(); i++) {
             auto* act = dlgProfMenu->addAction(m_config.profiles()[i].name);
-            connect(act, &QAction::triggered, &dlg, [this, i, &loadProfile, dlgProfBtn]() {
-                m_config.setActiveProfile(i);
-                dlgProfBtn->setText(m_config.currentProfile().name);
+            act->setEnabled(i != currentEditIdx);
+            connect(act, &QAction::triggered, &dlg, [this, i, &loadProfile, dlgProfBtn, &currentEditIdx]() {
+                currentEditIdx = i;
+                dlgProfBtn->setText(m_config.profiles()[i].name);
                 if (loadProfile) loadProfile(i);
             });
         }
@@ -585,6 +589,10 @@ void MainWindow::onEditConfig() {
         edDeps->setText(p.dependencies.join("\n"));
         edWorkDir->setText(p.workingDir);
         edArgs->setText(p.extraArgs.join(" "));
+        QStringList envLines;
+        for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
+            envLines << it.key() + "=" + it.value();
+        edEnv->setText(envLines.join("\n"));
         catTree->clear();
         for (const auto& c : p.categories) {
             auto* item = new QTreeWidgetItem(catTree);
@@ -595,13 +603,29 @@ void MainWindow::onEditConfig() {
     };
     tabs->addTab(catTab, QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"));
 
+    // 环境变量标签页
+    auto* envTab = new QWidget;
+    auto* envLay = new QVBoxLayout(envTab);
+    auto* envHelp = new QLabel(QString::fromUtf8("\xe6\xaf\x8f\xe8\xa1\x8c\xe4\xb8\x80\xe4\xb8\xaa KEY=VALUE\xef\xbc\x8c\xe4\xbe\x8b\xe5\xa6\x82:"));
+    envHelp->setStyleSheet("color:#64748b;font-size:12px");
+    envHelp->setWordWrap(true);
+    envLay->addWidget(envHelp);
+    auto* envExplain = new QLabel("QT_QPA_PLATFORM_PLUGIN_PATH=D:/sdk/plugins\nPYTHONPATH=D:/sdk/python");
+    envExplain->setStyleSheet("color:#94a3b8;font-size:11px;padding:0 0 4px 0");
+    envLay->addWidget(envExplain);
+    edEnv = new QTextEdit;
+    edEnv->setPlaceholderText("KEY=VALUE");
+    edEnv->setMaximumHeight(200);
+    envLay->addWidget(edEnv, 1);
+    tabs->addTab(envTab, QString::fromUtf8("\xe7\x8e\xaf\xe5\xa2\x83\xe5\x8f\x98\xe9\x87\x8f"));
+
     // 连接
     connect(btnBrowseBin, &QPushButton::clicked, [&]() {
-        QString p = QFileDialog::getOpenFileName(&dlg, QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9 exe"), edBinary->text(), "*.exe");
+        QString p = QFileDialog::getOpenFileName(nullptr, QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9 exe"), edBinary->text(), "*.exe");
         if (!p.isEmpty()) edBinary->setText(p);
     });
     connect(btnBrowseDep, &QPushButton::clicked, [&]() {
-        QString dir = QFileDialog::getExistingDirectory(&dlg, QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe4\xbe\x9d\xe8\xb5\x96\xe7\x9b\xae\xe5\xbd\x95"));
+        QString dir = QFileDialog::getExistingDirectory(nullptr, QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe4\xbe\x9d\xe8\xb5\x96\xe7\x9b\xae\xe5\xbd\x95"));
         if (!dir.isEmpty()) {
             QString cur = edDeps->toPlainText().trimmed();
             edDeps->setText(cur.isEmpty() ? dir : cur + "\n" + dir);
@@ -616,20 +640,21 @@ void MainWindow::onEditConfig() {
         p.categories << c1 << c2;
         m_config.addProfile(p);
         m_config.setActiveProfile(m_config.profiles().size() - 1);
+        currentEditIdx = m_config.activeProfile();
         fillMenu();
-        loadProfile(m_config.activeProfile());
+        loadProfile(currentEditIdx);
     });
     connect(btnDelP, &QPushButton::clicked, [&]() {
         if (m_config.profiles().size() <= 1) {
             QMessageBox::warning(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\x87\xb3\xe5\xb0\x91\xe4\xbf\x9d\xe7\x95\x99\xe4\xb8\x80\xe4\xb8\xaa\xe9\x85\x8d\xe7\xbd\xae"));
             return;
         }
-        int idx = m_config.activeProfile();
-        m_config.removeProfile(idx);
-        if (m_config.activeProfile() >= m_config.profiles().size())
-            m_config.setActiveProfile(0);
+        m_config.removeProfile(currentEditIdx);
+        if (currentEditIdx >= m_config.profiles().size())
+            currentEditIdx = 0;
+        m_config.setActiveProfile(currentEditIdx);
         fillMenu();
-        loadProfile(m_config.activeProfile());
+        loadProfile(currentEditIdx);
     });
     connect(btnAddCat, &QPushButton::clicked, [&]() {
         auto* item = new QTreeWidgetItem(catTree);
@@ -645,7 +670,7 @@ void MainWindow::onEditConfig() {
     lay->addWidget(tabs);
 
     // 加载当前 profile
-    loadProfile(m_config.activeProfile());
+    loadProfile(currentEditIdx);
 
     auto* btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
     btnBox->setStyleSheet("QPushButton{padding:6px 28px;min-width:90px;font-size:13px}");
@@ -653,8 +678,12 @@ void MainWindow::onEditConfig() {
     connect(btnBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
     lay->addWidget(btnBox);
 
+    // 保存对话框尺寸
+    m_config.uiState.cfgDialogW = dlg.width();
+    m_config.uiState.cfgDialogH = dlg.height();
+
     if (dlg.exec() == QDialog::Accepted) {
-        int idx = m_config.activeProfile();
+        int idx = currentEditIdx;
         if (idx >= 0 && idx < m_config.profiles().size()) {
             ExeProfile p = m_config.profiles()[idx];
             p.name = edName->text().trimmed();
@@ -675,6 +704,11 @@ void MainWindow::onEditConfig() {
                 if (!c.name.isEmpty()) cats << c;
             }
             p.categories = cats;
+            p.envVars.clear();
+            for (const auto& line : edEnv->toPlainText().split('\n', Qt::SkipEmptyParts)) {
+                int eq = line.indexOf('=');
+                if (eq > 0) p.envVars[line.left(eq).trimmed()] = line.mid(eq+1).trimmed();
+            }
             m_config.updateProfile(idx, p);
             m_config.setActiveProfile(idx);
             m_config.save();
@@ -760,16 +794,28 @@ void MainWindow::saveLayout() {
         ui.windowX = geo.x(); ui.windowY = geo.y();
         ui.windowW = geo.width(); ui.windowH = geo.height();
     }
-    if (m_mainSplitter) { auto s = m_mainSplitter->sizes(); if (s.size()>=3) { ui.splitterLeftW=s[0]; ui.splitterRightW=s[2]; } }
-    if (m_centerSplitter) { auto s = m_centerSplitter->sizes(); if (s.size()>=2) ui.splitterVPos=s[0]; }
-    if (m_centerResultView) ui.splitterVPos2 = m_centerResultView->saveBottomSplitPos();
+    if (m_mainSplitter) { auto s = m_mainSplitter->sizes(); if (s.size()>=3) { int w = s[0]+s[1]+s[2]; if (w>0) { ui.splitterLeftPct=qRound(s[0]*100.0/w); ui.splitterRightPct=qRound(s[2]*100.0/w); } } }
+    if (m_centerSplitter) { auto s = m_centerSplitter->sizes(); if (s.size()>=2) { int h = s[0]+s[1]; if (h>0) ui.splitterVPct = qRound(s[0]*100.0/h); } }
+    if (m_centerResultView) { int bp = m_centerResultView->saveBottomSplitPos(); int total = m_centerResultView->height(); if (total>0) ui.splitterV2Pct = qRound(bp*100.0/total); }
     if (m_leftPanel) ui.leftPanelVisible = m_leftPanel->isVisible();
     if (m_rightPanel) ui.rightPanelVisible = m_rightPanel->isVisible();
     m_config.save();
-    LOG("SAVE", QString("geo=%1,%2 %3x%4 max=%5 L=%6 R=%7 LV=%8 RV=%9 VP=%10")
+    // 保存时输出当前 splitter 实际像素值
+    if (m_mainSplitter) {
+        auto sz = m_mainSplitter->sizes();
+        if (sz.size()>=3) LOG("SAVE", QString("SIZES main=[%1,%2,%3] sum=%4 pct=[%5,%6,%7]")
+            .arg(sz[0]).arg(sz[1]).arg(sz[2]).arg(sz[0]+sz[1]+sz[2])
+            .arg(ui.splitterLeftPct).arg(100-ui.splitterLeftPct-ui.splitterRightPct).arg(ui.splitterRightPct));
+    }
+    if (m_centerSplitter) {
+        auto sz = m_centerSplitter->sizes();
+        if (sz.size()>=2) LOG("SAVE", QString("SIZES center=[%1,%2] sum=%3 pct=[%4,%5]")
+            .arg(sz[0]).arg(sz[1]).arg(sz[0]+sz[1]).arg(ui.splitterVPct).arg(100-ui.splitterVPct));
+    }
+    LOG("SAVE", QString("geo=%1,%2 %3x%4 max=%5 Lpct=%6 Rpct=%7 Vpct=%8 V2pct=%9")
         .arg(ui.windowX).arg(ui.windowY).arg(ui.windowW).arg(ui.windowH)
-        .arg(ui.maximized).arg(ui.splitterLeftW).arg(ui.splitterRightW)
-        .arg(ui.leftPanelVisible).arg(ui.rightPanelVisible).arg(ui.splitterVPos));
+        .arg(ui.maximized).arg(ui.splitterLeftPct).arg(ui.splitterRightPct)
+        .arg(ui.splitterVPct).arg(ui.splitterV2Pct));
 }
 
 MainWindow::~MainWindow() {
@@ -778,23 +824,50 @@ MainWindow::~MainWindow() {
 
 void MainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
-    // 窗口首次显示后恢复 splitter 尺寸
+    // 窗口首次显示后，用 setSizes 恢复 splitter 比例
     if (m_restoreLW > 0 || m_restoreRW > 0 || m_restoreVP > 0 || m_restoreVP2 > 0) {
-        QTimer::singleShot(0, [this]() {
-            if (m_mainSplitter && m_restoreLW + m_restoreRW > 0) {
-                int w = m_mainSplitter->width();
-                if (w > m_restoreLW + m_restoreRW + 50)
-                    m_mainSplitter->setSizes({m_restoreLW, w - m_restoreLW - m_restoreRW, m_restoreRW});
-            }
-            if (m_centerSplitter && m_restoreVP > 0) {
-                int h = m_centerSplitter->height();
-                if (h > 50) {
-                    int ph = qBound(80, m_restoreVP, h - 80);
-                    m_centerSplitter->setSizes({ph, h - ph});
+        QTimer::singleShot(200, [this]() {
+            if (m_mainSplitter && m_restoreLW > 0) {
+                auto s = m_mainSplitter->sizes();
+                if (s.size() >= 3) {
+                    int cw = s[0] + s[1] + s[2];
+                    int lw = qRound(cw * m_restoreLW / 100.0);
+                    int rw = qRound(cw * m_restoreRW / 100.0);
+                    LOG("RESTORE", QString("BEFORE main=[%1,%2,%3] sum=%4 savedPct=[%5,%6]")
+                        .arg(s[0]).arg(s[1]).arg(s[2]).arg(cw).arg(m_restoreLW).arg(m_restoreRW));
+                    LOG("RESTORE", QString("TARGET main=[%1,%2,%3]").arg(lw).arg(cw-lw-rw).arg(rw));
+                    if (lw + rw + 20 < cw) {
+                        m_mainSplitter->setSizes({lw, cw - lw - rw, rw});
+                        {
+                            auto a = m_mainSplitter->sizes();
+                            if (a.size()>=3) LOG("RESTORE", QString("AFTER  main=[%1,%2,%3] sum=%4")
+                                .arg(a[0]).arg(a[1]).arg(a[2]).arg(a[0]+a[1]+a[2]));
+                        }
+                        // 不再修改 stretch factor，保持 setupUi 的 (0,1,0)
+                    }
                 }
             }
-            if (m_centerResultView && m_restoreVP2 > 0)
-                m_centerResultView->restoreBottomSplitPos(m_restoreVP2);
+            if (m_centerSplitter && m_restoreVP > 0) {
+                auto s = m_centerSplitter->sizes();
+                if (s.size() >= 2) {
+                    int ch = s[0] + s[1];
+                    int ph = qBound(60, qRound(ch * m_restoreVP / 100.0), ch - 60);
+                    LOG("RESTORE", QString("CENTER before=[%1,%2] sum=%3 savedPct=%4 target=[%5,%6]")
+                        .arg(s[0]).arg(s[1]).arg(ch).arg(m_restoreVP).arg(ph).arg(ch-ph));
+                    m_centerSplitter->setSizes({ph, ch - ph});
+                    {
+                        auto a = m_centerSplitter->sizes();
+                        if (a.size()>=2) LOG("RESTORE", QString("CENTER after=[%1,%2]").arg(a[0]).arg(a[1]));
+                    }
+                    m_centerSplitter->setStretchFactor(0, m_restoreVP);
+                    m_centerSplitter->setStretchFactor(1, 100 - m_restoreVP);
+                }
+            }
+            if (m_centerResultView && m_restoreVP2 > 0) {
+                int h = m_centerResultView->height();
+                if (h > 0)
+                    m_centerResultView->restoreBottomSplitPos(qRound(h * m_restoreVP2 / 100.0));
+            }
             m_restoreLW = m_restoreRW = m_restoreVP = m_restoreVP2 = 0;
         });
     }

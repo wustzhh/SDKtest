@@ -2,17 +2,51 @@
 
 #include <QProcess>
 #include <QTextStream>
+#include <QFileInfo>
+#include <QDir>
 #include "Logger.h"
 
 TestLoader::TestLoader() {}
 
 bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
-                       const QString& workingDir) {
+                       const QString& workingDir, const QStringList& dependencies,
+                       const QMap<QString, QString>& envVars) {
     m_cases.clear();
 
     QProcess proc;
-    if (!workingDir.isEmpty())
-        proc.setWorkingDirectory(workingDir);
+    QFileInfo binInfo(binaryPath);
+    QString workDir = workingDir.isEmpty() ? binInfo.absolutePath() : workingDir;
+    if (!workDir.isEmpty())
+        proc.setWorkingDirectory(workDir);
+
+    // 设置进程环境：PATH 优先包含依赖目录
+    if (!dependencies.isEmpty()) {
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        QStringList depDirs;
+        for (const auto& d : dependencies) {
+            if (QFileInfo::exists(d)) {
+                depDirs << QDir::toNativeSeparators(QDir(d).absolutePath());
+                LOG("LDR", "  dep added: " + d);
+            } else {
+                LOG("LDR", "  dep NOT FOUND: " + d);
+            }
+        }
+        if (!depDirs.isEmpty()) {
+            QString newPath = depDirs.join(";") + ";" + env.value("PATH");
+            env.insert("PATH", newPath);
+            proc.setProcessEnvironment(env);
+        }
+    } else {
+        LOG("LDR", "  no deps configured");
+    }
+    // 自定义环境变量
+    for (auto it = envVars.begin(); it != envVars.end(); ++it) {
+        QProcessEnvironment env = proc.processEnvironment();
+        if (env.isEmpty()) env = QProcessEnvironment::systemEnvironment();
+        env.insert(it.key(), it.value());
+        proc.setProcessEnvironment(env);
+        LOG("LDR", "  env: " + it.key() + "=" + it.value());
+    }
 
     QStringList args;
     args << "--gtest_list_tests" << extraArgs;

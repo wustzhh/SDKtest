@@ -127,10 +127,12 @@ void ConfigManager::fromJson(const QJsonObject& obj) {
     uiState.windowH = ui["window_h"].toInt(800);
     uiState.maximized = ui["maximized"].toBool(false);
     uiState.themeIndex = ui["theme"].toInt(0);
-    uiState.splitterLeftW = ui["splitter_left_w"].toInt(250);
-    uiState.splitterRightW = ui["splitter_right_w"].toInt(350);
-    uiState.splitterVPos = ui["splitter_v_pos"].toInt(200);
-    uiState.splitterVPos2 = ui["splitter_v_pos2"].toInt(400);
+    uiState.splitterLeftPct = ui["splitter_left_pct"].toInt(20);
+    uiState.splitterRightPct = ui["splitter_right_pct"].toInt(30);
+    uiState.splitterVPct = ui["splitter_v_pct"].toInt(25);
+    uiState.splitterV2Pct = ui["splitter_v2_pct"].toInt(60);
+    uiState.cfgDialogW = ui["cfg_dialog_w"].toInt(580);
+    uiState.cfgDialogH = ui["cfg_dialog_h"].toInt(500);
     uiState.modelInfoCollapsed = ui["model_info_collapsed"].toBool(false);
     uiState.leftPanelVisible = ui["left_panel"].toBool(true);
     uiState.rightPanelVisible = ui["right_panel"].toBool(true);
@@ -151,10 +153,12 @@ QJsonObject ConfigManager::toJson() const {
     ui["window_h"] = uiState.windowH;
     ui["maximized"] = uiState.maximized;
     ui["theme"] = uiState.themeIndex;
-    ui["splitter_left_w"] = uiState.splitterLeftW;
-    ui["splitter_right_w"] = uiState.splitterRightW;
-    ui["splitter_v_pos"] = uiState.splitterVPos;
-    ui["splitter_v_pos2"] = uiState.splitterVPos2;
+    ui["splitter_left_pct"] = uiState.splitterLeftPct;
+    ui["splitter_right_pct"] = uiState.splitterRightPct;
+    ui["splitter_v_pct"] = uiState.splitterVPct;
+    ui["splitter_v2_pct"] = uiState.splitterV2Pct;
+    ui["cfg_dialog_w"] = uiState.cfgDialogW;
+    ui["cfg_dialog_h"] = uiState.cfgDialogH;
     ui["model_info_collapsed"] = uiState.modelInfoCollapsed;
     ui["left_panel"] = uiState.leftPanelVisible;
     ui["right_panel"] = uiState.rightPanelVisible;
@@ -180,6 +184,9 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
             cat.prefixes << pr.toString();
         p.categories.push_back(cat);
     }
+    auto envObj = obj["env_vars"].toObject();
+    for (auto it = envObj.begin(); it != envObj.end(); ++it)
+        p.envVars[it.key()] = it.value().toString();
     return p;
 }
 
@@ -204,6 +211,10 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         cats.append(co);
     }
     obj["categories"] = cats;
+    QJsonObject envObj;
+    for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
+        envObj[it.key()] = it.value();
+    obj["env_vars"] = envObj;
     return obj;
 }
 
