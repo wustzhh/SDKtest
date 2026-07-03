@@ -15,6 +15,8 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QInputDialog>
+#include <QCheckBox>
+#include <QScrollArea>
 #include <QStyledItemDelegate>
 #include <functional>
 #include <QDateTime>
@@ -364,6 +366,8 @@ void MainWindow::setupConnections() {
     connect(m_centerResultView, &ModelRenderView::resultSelected, this, [this](const TestRunResult& r) {
         if (r.properties.contains("model"))
             m_model3D->loadFile(r.properties["model"]);
+        else
+            m_model3D->clear();
         QVector<int> hl;
         auto parseIds=[&](const QString& key){ QString v=r.properties.value(key); if(!v.isEmpty()){ for(auto& s:v.split(',',Qt::SkipEmptyParts)){ bool ok; int id=s.trimmed().toInt(&ok); if(ok) hl.append(id); } } };
         parseIds("searchResult");parseIds("removeResult");
@@ -402,6 +406,7 @@ void MainWindow::onLoadTests() {
     if (m_loader.load(binary, m_config.extraArgs(), m_config.workingDir(), m_config.currentProfile().dependencies, m_config.currentProfile().envVars)) {
         int n = m_loader.testCases().size();
         LOG("LOAD", "OK, found: " + QString::number(n) + " tests");
+        m_suiteNames = m_loader.groupedBySuite().keys();
         m_testList->loadTests(m_loader.testCases(), m_config.categories());
         m_centerResultView->clear();
         m_report = {};
@@ -421,17 +426,48 @@ void MainWindow::onRunSelected() {
         return;
     }
 
+    int actualRunCount = sel.size();
+    // 优化 filter：全选所有用例 → "*"
+    bool allSelected = sel.size() == m_loader.testCases().size();
+    if (allSelected) {
+        sel.clear();
+        TestCase all; all.suiteName = "*"; all.caseName = "*";
+        sel.append(all);
+        LOG("RUN", "All tests selected, filter=*");
+    } else {
+        // 按套件分组，如果某套件下所有用例都选中 → 用 Suite.*
+        auto allCases = m_loader.groupedBySuite();
+        QMap<QString, int> selCount;
+        for (const auto& tc : sel) selCount[tc.suiteName]++;
+        QVector<TestCase> optimized;
+        for (auto it = allCases.begin(); it != allCases.end(); ++it) {
+            if (selCount.value(it.key()) == it.value().size()) {
+                TestCase suiteAll;
+                suiteAll.suiteName = it.key();
+                suiteAll.caseName = "*";
+                optimized.append(suiteAll);
+            } else {
+                // 只加选中的单个用例
+                for (const auto& tc : sel)
+                    if (tc.suiteName == it.key()) optimized.append(tc);
+            }
+        }
+        sel = optimized;
+        LOG("RUN", "Optimized filter: " + QString::number(sel.size()) + " entries");
+    }
+
     LOG("RUN", "Selected", QString::number(sel.size()) + " tests");
 
     m_report = {};
     m_report.startTime = QDateTime::currentDateTime();
     m_report.testBinary = m_config.testBinary();
-    m_report.filterPattern = "custom";
+    m_report.filterPattern = allSelected ? "*" : "custom";
 
     m_centerResultView->clear();
-    m_progress->startRun(sel.size());
+    m_progress->startRun(actualRunCount);
     m_runner->run(m_config.testBinary(), sel, m_config.extraArgs(), m_config.workingDir(),
-                  m_config.currentProfile().dependencies, m_config.currentProfile().envVars);
+                  m_config.currentProfile().dependencies, m_config.currentProfile().envVars,
+                  actualRunCount);
     updateButtonStates();
 }
 
@@ -539,13 +575,16 @@ void MainWindow::onEditConfig() {
     auto* pf = new QFormLayout(profileTab);
     pf->setLabelAlignment(Qt::AlignRight);
     auto* edName = new QLineEdit;
+    edName->setToolTip(QString::fromUtf8("\xe9\x85\x8d\xe7\xbd\xae\xe5\x90\x8d\xef\xbc\x8c\xe7\x94\xa8\xe4\xba\x8e\xe5\x9c\xa8\xe4\xb8\x8b\xe6\x8b\x89\xe6\xa0\x8f\xe4\xb8\xad\xe8\xaf\x86\xe5\x88\xab"));
     auto* edBinary = new QLineEdit;
+    edBinary->setToolTip(QString::fromUtf8("\xe6\xb5\x8b\xe8\xaf\x95 exe \xe7\x9a\x84\xe5\xae\x8c\xe6\x95\xb4\xe8\xb7\xaf\xe5\xbe\x84"));
     auto* btnBrowseBin = new QPushButton(QString::fromUtf8("\xe6\xb5\x8f\xe8\xa7\x88..."));
     auto* binaryRow = new QHBoxLayout;
     binaryRow->addWidget(edBinary, 1);
     binaryRow->addWidget(btnBrowseBin);
     auto* edDeps = new QTextEdit;
     edDeps->setMaximumHeight(100);
+    edDeps->setToolTip(QString::fromUtf8("\xe6\xaf\x8f\xe8\xa1\x8c\xe4\xb8\x80\xe4\xb8\xaa\xe7\x9b\xae\xe5\xbd\x95\xef\xbc\x8c\xe5\x90\xaf\xe5\x8a\xa8 exe \xe6\x97\xb6\xe8\x87\xaa\xe5\x8a\xa8\xe5\x8a\xa0\xe5\x88\xb0 PATH"));
     auto* btnBrowseDep = new QPushButton(QString::fromUtf8("\xe6\xb7\xbb\xe5\x8a\xa0\xe7\x9b\xae\xe5\xbd\x95..."));
     auto* depsRow = new QVBoxLayout;
     auto* depsTop = new QHBoxLayout;
@@ -553,25 +592,75 @@ void MainWindow::onEditConfig() {
     depsTop->addWidget(btnBrowseDep);
     depsRow->addLayout(depsTop);
     auto* edWorkDir = new QLineEdit;
+    edWorkDir->setToolTip(QString::fromUtf8("\xe5\xb7\xa5\xe4\xbd\x9c\xe7\x9b\xae\xe5\xbd\x95\xef\xbc\x8c\xe7\x95\x99\xe7\xa9\xba\xe5\x88\x99\xe7\x94\xa8 exe \xe6\x89\x80\xe5\x9c\xa8\xe7\x9b\xae\xe5\xbd\x95"));
     auto* edArgs = new QLineEdit;
+    edArgs->setToolTip(QString::fromUtf8("\xe4\xbc\xa0\xe9\x80\x92\xe7\xbb\x99 gtest \xe7\x9a\x84\xe9\xa2\x9d\xe5\xa4\x96\xe5\x8f\x82\xe6\x95\xb0\xef\xbc\x8c\xe5\xa6\x82 --gtest_also_run_disabled_tests"));
     pf->addRow(QString::fromUtf8("\xe9\x85\x8d\xe7\xbd\xae\xe5\x90\x8d"), edName);
     pf->addRow(QString::fromUtf8("Exe \xe8\xb7\xaf\xe5\xbe\x84"), binaryRow);
     pf->addRow(QString::fromUtf8("\xe4\xbe\x9d\xe8\xb5\x96\xe8\xb7\xaf\xe5\xbe\x84"), depsRow);
     pf->addRow(QString::fromUtf8("\xe5\xb7\xa5\xe4\xbd\x9c\xe7\x9b\xae\xe5\xbd\x95"), edWorkDir);
     pf->addRow(QString::fromUtf8("\xe9\xa2\x9d\xe5\xa4\x96\xe5\x8f\x82\xe6\x95\xb0"), edArgs);
     profileTab->setLayout(pf);
-    tabs->addTab(profileTab, "Profile");
+    tabs->addTab(profileTab, QString::fromUtf8("\xe9\x85\x8d\xe7\xbd\xae"));
 
     // 分类
+    // 分类标签页（从已加载的套件列表中选择前缀）
     auto* catTab = new QWidget;
     auto* catLay = new QVBoxLayout(catTab);
     auto* catTree = new QTreeWidget(catTab);
-    catTree->setHeaderLabels({QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"), QString::fromUtf8("\xe5\x89\x8d\xe7\xbc\x80")});
+    catTree->setHeaderLabels({QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"), QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d\xe5\xa5\x97\xe4\xbb\xb6")});
     catTree->setRootIsDecorated(false);
     catTree->setSelectionMode(QAbstractItemView::SingleSelection);
     catTree->setStyleSheet("QTreeWidget::item{padding:8px 12px;min-height:36px;font-size:14px}");
-    catTree->setItemDelegate(new CatDelegate(catTree));
     catLay->addWidget(catTree, 1);
+    // 双击打开套件选择对话框
+    connect(catTree, &QTreeWidget::itemDoubleClicked, &dlg, [&](QTreeWidgetItem* item, int) {
+        if (!item) return;
+        QDialog selDlg(&dlg);
+        selDlg.setWindowTitle(QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe5\x8c\xb9\xe9\x85\x8d\xe5\xa5\x97\xe4\xbb\xb6"));
+        selDlg.resize(400, 500);
+        auto* sl = new QVBoxLayout(&selDlg);
+        auto* scroll = new QScrollArea;
+        scroll->setWidgetResizable(true);
+        auto* sw = new QWidget;
+        auto* swl = new QVBoxLayout(sw);
+        QString raw = item->text(1);
+        if (raw.startsWith(QString::fromUtf8("\xe2\x98\x91"))) raw = raw.mid(2).trimmed();
+        QStringList oldPrefs;
+        for (const auto& p : raw.split(',', Qt::SkipEmptyParts))
+            oldPrefs << p.trimmed();
+        QVector<QCheckBox*> checks;
+        for (const auto& sn : m_suiteNames) {
+            auto* cb = new QCheckBox(sn);
+            cb->setChecked(oldPrefs.contains(sn));
+            checks.append(cb);
+            swl->addWidget(cb);
+        }
+        if (m_suiteNames.isEmpty())
+            swl->addWidget(new QLabel(QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8a\xa0\xe8\xbd\xbd\xe6\xb5\x8b\xe8\xaf\x95")));
+        swl->addStretch();
+        scroll->setWidget(sw);
+        sl->addWidget(scroll, 1);
+        // 全选/取消按钮
+        auto* selAllRow = new QHBoxLayout;
+        auto* btnSelAll = new QPushButton(QString::fromUtf8("\xe5\x85\xa8\xe9\x80\x89"));
+        auto* btnSelNone = new QPushButton(QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88\xe5\x85\xa8\xe9\x80\x89"));
+        selAllRow->addWidget(btnSelAll);
+        selAllRow->addWidget(btnSelNone);
+        selAllRow->addStretch();
+        sl->addLayout(selAllRow);
+        connect(btnSelAll, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(true); });
+        connect(btnSelNone, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(false); });
+        auto* sb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        connect(sb, &QDialogButtonBox::accepted, &selDlg, &QDialog::accept);
+        connect(sb, &QDialogButtonBox::rejected, &selDlg, &QDialog::reject);
+        sl->addWidget(sb);
+        if (selDlg.exec() == QDialog::Accepted) {
+            QStringList sel;
+            for (auto* cb : checks) if (cb->isChecked()) sel << cb->text();
+            item->setText(1, sel.join(", "));
+        }
+    });
     auto* catBtns = new QHBoxLayout;
     auto* btnAddCat = new QPushButton(QString::fromUtf8("\xe6\xb7\xbb\xe5\x8a\xa0"));
     auto* btnDelCat = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
@@ -601,7 +690,6 @@ void MainWindow::onEditConfig() {
             item->setFlags(item->flags() | Qt::ItemIsEditable);
         }
     };
-    tabs->addTab(catTab, QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"));
 
     // 环境变量标签页
     auto* envTab = new QWidget;
@@ -618,6 +706,7 @@ void MainWindow::onEditConfig() {
     edEnv->setMaximumHeight(200);
     envLay->addWidget(edEnv, 1);
     tabs->addTab(envTab, QString::fromUtf8("\xe7\x8e\xaf\xe5\xa2\x83\xe5\x8f\x98\xe9\x87\x8f"));
+    tabs->addTab(catTab, QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"));
 
     // 连接
     connect(btnBrowseBin, &QPushButton::clicked, [&]() {
@@ -660,8 +749,45 @@ void MainWindow::onEditConfig() {
         auto* item = new QTreeWidgetItem(catTree);
         item->setText(0, QString::fromUtf8("\xe6\x96\xb0\xe5\x88\x86\xe7\xb1\xbb"));
         item->setText(1, "");
-        item->setFlags(item->flags() | Qt::ItemIsEditable);
-        catTree->editItem(item, 0);
+        // 自动弹出套件选择
+        QTimer::singleShot(0, [&, item]() {
+            // 触发双击逻辑（通过直接调用）
+            QDialog selDlg(&dlg);
+            selDlg.setWindowTitle(QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe5\x8c\xb9\xe9\x85\x8d\xe5\xa5\x97\xe4\xbb\xb6"));
+            selDlg.resize(400, 500);
+            auto* sl = new QVBoxLayout(&selDlg);
+            auto* scroll = new QScrollArea;
+            scroll->setWidgetResizable(true);
+            auto* sw = new QWidget;
+            auto* swl = new QVBoxLayout(sw);
+            QVector<QCheckBox*> checks;
+            for (const auto& sn : m_suiteNames) {
+                auto* cb = new QCheckBox(sn); checks.append(cb); swl->addWidget(cb);
+            }
+            if (m_suiteNames.isEmpty())
+                swl->addWidget(new QLabel(QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8a\xa0\xe8\xbd\xbd\xe6\xb5\x8b\xe8\xaf\x95")));
+            swl->addStretch();
+            scroll->setWidget(sw);
+            sl->addWidget(scroll, 1);
+            auto* selAllRow = new QHBoxLayout;
+            auto* btnSelAll = new QPushButton(QString::fromUtf8("\xe5\x85\xa8\xe9\x80\x89"));
+            auto* btnSelNone = new QPushButton(QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88\xe5\x85\xa8\xe9\x80\x89"));
+            selAllRow->addWidget(btnSelAll);
+            selAllRow->addWidget(btnSelNone);
+            selAllRow->addStretch();
+            sl->addLayout(selAllRow);
+            connect(btnSelAll, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(true); });
+            connect(btnSelNone, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(false); });
+            auto* sb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+            connect(sb, &QDialogButtonBox::accepted, &selDlg, &QDialog::accept);
+            connect(sb, &QDialogButtonBox::rejected, &selDlg, &QDialog::reject);
+            sl->addWidget(sb);
+            if (selDlg.exec() == QDialog::Accepted) {
+                QStringList sel;
+                for (auto* cb : checks) if (cb->isChecked()) sel << cb->text();
+                item->setText(1, sel.join(", "));
+            }
+        });
     });
     connect(btnDelCat, &QPushButton::clicked, [&]() {
         for (auto* s : catTree->selectedItems()) delete s;
@@ -699,8 +825,11 @@ void MainWindow::onEditConfig() {
                 auto* item = catTree->topLevelItem(i);
                 TestCategory c;
                 c.name = item->text(0);
-                for (const auto& pr : item->text(1).split(',', Qt::SkipEmptyParts))
-                    c.prefixes << pr.trimmed();
+                for (const auto& pr : item->text(1).split(',', Qt::SkipEmptyParts)) {
+                    QString p = pr.trimmed();
+                    if (p.startsWith(QString::fromUtf8("\xe2\x98\x91"))) p = p.mid(2).trimmed();
+                    if (!p.isEmpty()) c.prefixes << p;
+                }
                 if (!c.name.isEmpty()) cats << c;
             }
             p.categories = cats;

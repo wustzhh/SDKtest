@@ -22,7 +22,8 @@ void TestRunner::run(const QString& binaryPath,
                      const QStringList& extraArgs,
                      const QString& workingDir,
                      const QStringList& dependencies,
-                     const QMap<QString, QString>& envVars)
+                     const QMap<QString, QString>& envVars,
+                     int actualTotal)
 {
     if (isRunning()) {
         emit errorOccurred("Already running.");
@@ -32,23 +33,33 @@ void TestRunner::run(const QString& binaryPath,
     m_binaryPath = binaryPath;
     m_workingDir = workingDir;
     m_envVars = envVars;
-    m_totalCount = cases.size();
+    m_lastRunCount = 0;
+    m_lastDoneCount = 0;
+    m_totalCount = qMax(actualTotal, cases.size());
     m_doneCount  = 0;
 
     if (m_totalCount == 0) { emit allFinished(); return; }
 
-    // 合并 filter: Suite1.Case1:Suite1.Case2:Suite2.Case3
+    // 合并 filter: Suite1.Case1:Suite1.Case2:Suite2.*:*
     QStringList filters;
-    for (const auto& tc : cases)
-        filters << tc.fullName();
+    for (const auto& tc : cases) {
+        if (tc.suiteName == "*") { filters = {"*"}; break; }
+        if (tc.caseName == "*") filters << tc.suiteName + ".*";
+        else filters << tc.fullName();
+    }
+    // 去重后长度超限时降级为 *
     QString filter = filters.join(":");
+    // 全选时直接 *
+    if (filter == "*" || filters.size() > 2000) {
+        filter = "*";
+        LOG("RUN", "Filter too long, using *");
+    }
 
     m_gtestXmlPath = QDir::tempPath() + "/gtest_batch.xml";
     m_accumulatedStdout.clear();
 
     QStringList args;
     args << "--gtest_filter=" + filter
-         << "--gtest_also_run_disabled_tests"
          << "--gtest_output=xml:" + m_gtestXmlPath
          << extraArgs;
 
@@ -109,6 +120,18 @@ void TestRunner::onReadyReadStdout() {
     QString text = QString::fromLocal8Bit(m_process->readAllStandardOutput());
     m_accumulatedStdout += text;
     emit rawOutput(text);
+    // 实时进度：以 [ RUN ] 行数做总量，[ OK/FAILED/SKIPPED ] 做已完成量
+    static QRegularExpression runRe(R"(\[ RUN      \] )");
+    static QRegularExpression doneRe(R"(\[       OK \] |\[  FAILED  \] |\[  SKIPPED \] |\[ DISABLED \] )");
+    auto runIt = runRe.globalMatch(m_accumulatedStdout);
+    int runs = 0; while (runIt.hasNext()) { runIt.next(); runs++; }
+    auto doneIt = doneRe.globalMatch(m_accumulatedStdout);
+    int dones = 0; while (doneIt.hasNext()) { doneIt.next(); dones++; }
+    if (runs != m_lastRunCount || dones != m_lastDoneCount) {
+        m_lastRunCount = runs;
+        m_lastDoneCount = dones;
+        emit progressUpdated(dones, m_totalCount);
+    }
 }
 
 void TestRunner::onReadyReadStderr() {
@@ -130,32 +153,44 @@ void TestRunner::onProcessFinished(int exitCode, QProcess::ExitStatus status) {
             QString xml = QString::fromUtf8(f.readAll());
             f.close(); f.remove();
             LOG("XML", "XML size: " + QString::number(xml.size()) + " bytes");
-            LOG("XML", "XML preview: " + xml.left(300));
+            LOG("XML", "XML preview: " + xml.left(5000));
             // 每个 testcase 的 properties
             // <testcase name="Case1" classname="Suite1"> ... <property name="k" value="v"/> ...
-            QRegularExpression tcRe(
-                R"tc(<testcase\s+name="([^"]+)"[^>]*classname="([^"]+)"[^>]*>)tc"
-                R"tc((.*?)</testcase>)tc",
+            // 兼容 name 和 classname 任意顺序
+            // 排除自闭合标签（/>），只匹配有成对标签的 testcase
+            // 用 (?<!/)> 确保不是自闭合标签（排除 />）
+            // 先去掉自闭合的 <testcase ... />（没有 body，干扰正则）
+            xml.replace(QRegularExpression("<testcase[^>]*/>"), "");
+            QRegularExpression tcRe1(
+                R"tc(<testcase\s+name="([^"]+)"[^>]*classname="([^"]+)"[^>]*>(.*?)</testcase>)tc",
+                QRegularExpression::DotMatchesEverythingOption);
+            QRegularExpression tcRe2(
+                R"tc(<testcase\s+classname="([^"]+)"[^>]*name="([^"]+)"[^>]*>(.*?)</testcase>)tc",
                 QRegularExpression::DotMatchesEverythingOption);
             QRegularExpression propRe(
                 R"pr(<property name="([^"]+)" value="([^"]+)"/?>)pr",
                 QRegularExpression::DotMatchesEverythingOption);
-            auto tcIt = tcRe.globalMatch(xml);
-            while (tcIt.hasNext()) {
-                auto m = tcIt.next();
-                QString caseName = m.captured(1);
-                QString suiteName = m.captured(2);
-                QString body = m.captured(3);
-                QString full = suiteName + "." + caseName;
-                auto pIt = propRe.globalMatch(body);
-                while (pIt.hasNext()) {
-                    auto pm = pIt.next();
-                    QString key = pm.captured(1);
-                    QString val = pm.captured(2);
-                    allProps[full][key] = val;
-                    LOG("PROP", full, key + " = " + val);
+            // 尝试两种顺序解析
+            auto parseXmlTc = [&](const QRegularExpression& re) {
+                auto it = re.globalMatch(xml);
+                while (it.hasNext()) {
+                    auto m = it.next();
+                    QString caseName = m.captured(1);
+                    QString suiteName = m.captured(2);
+                    QString body = m.captured(3);
+                    QString full = suiteName + "." + caseName;
+                    auto pIt = propRe.globalMatch(body);
+                    while (pIt.hasNext()) {
+                        auto pm = pIt.next();
+                        QString key = pm.captured(1);
+                        QString val = pm.captured(2);
+                        allProps[full][key] = val;
+                        LOG("PROP", full, key + " = " + val);
+                    }
                 }
-            }
+            };
+            parseXmlTc(tcRe1);
+            parseXmlTc(tcRe2);
             LOG("XML", "Parsed " + QString::number(allProps.size()) + " testcases with properties");
         } else {
             LOG("XML", "No XML: " + m_gtestXmlPath);
@@ -166,7 +201,8 @@ void TestRunner::onProcessFinished(int exitCode, QProcess::ExitStatus status) {
     auto blocks = parseCombinedOutput(m_accumulatedStdout);
     LOG("RUN", "Parsed " + QString::number(blocks.size()) + " test blocks from stdout");
 
-    // 3. 逐个发射结果
+    // 3. 逐个发射结果（来自 stdout）
+    QSet<QString> seenFullNames;
     for (const auto& b : blocks) {
         TestRunResult res;
         res.testCase.suiteName = b.suite;
@@ -175,10 +211,34 @@ void TestRunner::onProcessFinished(int exitCode, QProcess::ExitStatus status) {
         res.durationMs = b.durationMs;
         res.rawStdout = b.output;
         res.properties = allProps.value(res.testCase.fullName());
+        seenFullNames.insert(res.testCase.fullName());
 
         m_doneCount++;
         emit testFinished(res);
         emit progressUpdated(m_doneCount, m_totalCount);
+    }
+
+    // 4. 补充 XML 中有属性但未运行（如 DISABLED）的用例
+    for (auto it = allProps.begin(); it != allProps.end(); ++it) {
+        if (seenFullNames.contains(it.key())) continue;
+        if (it.value().isEmpty()) continue;
+        QString full = it.key();
+        int dot = full.lastIndexOf('.');
+        if (dot < 0) continue;
+        TestRunResult res;
+        res.testCase.suiteName = full.left(dot);
+        res.testCase.caseName  = full.mid(dot + 1);
+        res.status = "SKIPPED";
+        res.properties = it.value();
+        m_doneCount++;
+        emit testFinished(res);
+        emit progressUpdated(m_doneCount, m_totalCount);
+    }
+
+    // 5. 补上进度缺口（部分用例崩溃导致 stdout 里缺结束标记）
+    if (m_doneCount < m_totalCount) {
+        LOG("RUN", QString("Filling progress gap: %1 -> %2").arg(m_doneCount).arg(m_totalCount));
+        emit progressUpdated(m_totalCount, m_totalCount);
     }
 
     emit allFinished();
@@ -193,6 +253,7 @@ QVector<TestRunner::ParsedBlock> TestRunner::parseCombinedOutput(const QString& 
     // 状态行
     static QRegularExpression okRe(R"(\[       OK \] [^ ]+ \((\d+) ms\))");
     static QRegularExpression failRe(R"(\[  FAILED  \] [^ ]+ \((\d+) ms\))");
+    static QRegularExpression skipRe(R"(\[  SKIPPED \] [^ ]+ \((\d+) ms\))");
 
     // 找到所有 [RUN] 位置
     auto it = splitRe.globalMatch(allOutput);
@@ -212,12 +273,16 @@ QVector<TestRunner::ParsedBlock> TestRunner::parseCombinedOutput(const QString& 
             // 解析状态
             auto okM = okRe.match(block.output);
             auto fM  = failRe.match(block.output);
+            auto sM  = skipRe.match(block.output);
             if (okM.hasMatch()) {
                 block.status = "PASSED";
                 block.durationMs = okM.captured(1).toDouble();
             } else if (fM.hasMatch()) {
                 block.status = "FAILED";
                 block.durationMs = fM.captured(1).toDouble();
+            } else if (sM.hasMatch()) {
+                block.status = "SKIPPED";
+                block.durationMs = sM.captured(1).toDouble();
             } else {
                 block.status = "ERROR";
             }
@@ -237,12 +302,16 @@ QVector<TestRunner::ParsedBlock> TestRunner::parseCombinedOutput(const QString& 
         block.output = allOutput.mid(lastPos);
         auto okM = okRe.match(block.output);
         auto fM  = failRe.match(block.output);
+        auto sM  = skipRe.match(block.output);
         if (okM.hasMatch()) {
             block.status = "PASSED";
             block.durationMs = okM.captured(1).toDouble();
         } else if (fM.hasMatch()) {
             block.status = "FAILED";
             block.durationMs = fM.captured(1).toDouble();
+        } else if (sM.hasMatch()) {
+            block.status = "SKIPPED";
+            block.durationMs = sM.captured(1).toDouble();
         } else {
             block.status = "ERROR";
         }

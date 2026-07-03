@@ -247,15 +247,21 @@ void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,
 {
     QMap<QString, QVector<TestCase>> groups;
     for (const auto& tc : cases) groups[tc.suiteName].append(tc);
-    auto catOf = [&](const QString& s) -> QString {
+    // 分类匹配：精确匹配套件名或完整用例名
+    auto catOf = [&](const QString& suite, const QVector<TestCase>& suiteCases) -> QString {
         for (const auto& c : categories)
-            for (const auto& p : c.prefixes)
-                if (s.startsWith(p)) return c.name;
+            for (const auto& p : c.prefixes) {
+                // 精确匹配套件名
+                if (suite == p) return c.name;
+                // 也检查完整用例名（suite.case）
+                for (const auto& tc : suiteCases)
+                    if ((suite + "." + tc.caseName) == p) return c.name;
+            }
         return "Other";
     };
     QMap<QString, QMap<QString, QVector<TestCase>>> catGroups;
     for (auto it = groups.begin(); it != groups.end(); ++it)
-        catGroups[catOf(it.key())][it.key()] = it.value();
+        catGroups[catOf(it.key(), it.value())][it.key()] = it.value();
 
     for (auto ci = catGroups.begin(); ci != catGroups.end(); ++ci) {
         int catTotal = 0;
@@ -300,6 +306,7 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
         auto* item = new QTreeWidgetItem(m_tree);
         item->setText(0, MARK_NO + "  " + title);
         item->setData(0, Role_Type, "category");
+        item->setData(0, Role_SuiteName, title);
         QFont f = item->font(0); f.setBold(true); item->setFont(0, f);
         item->setExpanded(true);
         buildGroupTree(item, group, categories);
@@ -537,5 +544,12 @@ void TestListPanel::updatePathLabel(QTreeWidgetItem* item) {
         if (!t.isEmpty()) parts.prepend(t);
         cur = cur->parent();
     }
-    m_pathLabel->setText(parts.isEmpty() ? "" : "> " + parts.join(" > "));
+    if (parts.isEmpty()) { m_pathLabel->setText(""); return; }
+    // 每个层级一行，缩进表示深度
+    QString html;
+    for (int i = 0; i < parts.size(); i++) {
+        if (i > 0) html += "<br>";
+        html += QString("&nbsp;&nbsp;&nbsp;&nbsp;").repeated(i) + parts[i];
+    }
+    m_pathLabel->setText(html);
 }

@@ -21,7 +21,8 @@ public:
              const QStringList& extraArgs = {},
              const QString& workingDir = {},
              const QStringList& dependencies = {},
-             const QMap<QString, QString>& envVars = {});
+             const QMap<QString, QString>& envVars = {},
+             int actualTotal = 0);
 
     void cancel();
     bool isRunning() const;
@@ -63,4 +64,6 @@ private:
     QString         m_accumulatedStdout;
     QString         m_gtestXmlPath;
     QMap<QString, QString> m_envVars;
+    int             m_lastRunCount = 0;
+    int             m_lastDoneCount = 0;
 };

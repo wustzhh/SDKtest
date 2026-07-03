@@ -6,6 +6,8 @@
 #include <QTextEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QTimer>
+#include <QElapsedTimer>
 
 // ────────────────────────────────────────────────────────────
 //  进度 + 实时日志面板
@@ -37,6 +39,10 @@ private:
     QVBoxLayout*    m_layout;
     QProgressBar*   m_progressBar;
     QLabel*         m_lblProgress;
+    QLabel*         m_lblElapsed;
     QTextEdit*      m_logView;
     QPushButton*    m_btnCancel;
+    QTimer*         m_elapsedTimer;
+    QElapsedTimer   m_startTime;
+    void updateElapsed();
 };

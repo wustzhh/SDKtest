@@ -147,12 +147,6 @@ int main(int argc, char* argv[]) {
         }
 
         QCheckBox, QRadioButton { color:#1e293b; font-size:13px; spacing:6px; }
-        QCheckBox::indicator, QRadioButton::indicator {
-            width:16px; height:16px; border-radius:3px;
-            border:2px solid #cbd5e1; background:#ffffff;
-        }
-        QCheckBox::indicator:checked { background:#6366f1; border-color:#6366f1; }
-        QCheckBox::indicator:hover { border-color:#6366f1; }
 
         QProgressBar {
             background:#f1f5f9; border:none; border-radius:4px;

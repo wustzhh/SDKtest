@@ -13,11 +13,18 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
     m_progressBar->setValue(0);
     m_progressBar->setTextVisible(true);
     m_progressBar->setStyleSheet(
-        "QProgressBar { background:#f1f5f9; border:none; border-radius:4px; text-align:center; height:22px; font-size:11px; color:#64748b; }"
+        "QProgressBar { background:#f1f5f9; border:none; border-radius:4px; text-align:center; height:22px; font-size:11px; color:#0f172a; font-weight:700; }"
         "QProgressBar::chunk { background:#6366f1; border-radius:4px; }");
 
     m_lblProgress = new QLabel("就绪", this);
     m_lblProgress->setStyleSheet("font-size: 13px; color: #64748b;");
+
+    // ── 计时 ──
+    m_lblElapsed = new QLabel("", this);
+    m_lblElapsed->setStyleSheet("font-size: 12px; color: #94a3b8; font-family: Consolas, monospace;");
+    m_lblElapsed->setVisible(false);
+    m_elapsedTimer = new QTimer(this);
+    connect(m_elapsedTimer, &QTimer::timeout, this, &TestProgressPanel::updateElapsed);
 
     // ── 日志 ──
     m_logView = new QTextEdit(this);
@@ -37,6 +44,7 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
     connect(m_btnCancel, &QPushButton::clicked, this, &TestProgressPanel::cancelRequested);
 
     m_layout->addWidget(m_lblProgress);
+    m_layout->addWidget(m_lblElapsed);
     m_layout->addWidget(m_progressBar);
     m_layout->addWidget(m_logView);
     m_layout->addWidget(m_btnCancel);
@@ -46,13 +54,38 @@ void TestProgressPanel::startRun(int totalTests) {
     m_progressBar->setValue(0);
     m_progressBar->setMaximum(totalTests);
     m_lblProgress->setText(QString("运行中... 0 / %1").arg(totalTests));
+    m_lblElapsed->setVisible(true);
+    m_startTime.start();
+    m_elapsedTimer->start(1000);
+    updateElapsed();
     m_logView->clear();
     m_btnCancel->setEnabled(true);
 }
 
+void TestProgressPanel::updateElapsed() {
+    qint64 ms = m_startTime.elapsed();
+    int secs = ms / 1000;
+    int mins = secs / 60;
+    int hrs  = mins / 60;
+    int days = hrs / 24;
+    secs %= 60; mins %= 60; hrs %= 24;
+    QString text;
+    if (days > 0)
+        text = QString("%1:%2:%3:%4").arg(days, 2, 10, QChar('0'))
+               .arg(hrs, 2, 10, QChar('0')).arg(mins, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    else if (hrs > 0)
+        text = QString("%1:%2:%3").arg(hrs, 2, 10, QChar('0'))
+               .arg(mins, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    else
+        text = QString("%1:%2").arg(mins, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    m_lblElapsed->setText(QString::fromUtf8("\xe2\x96\xb7 %1").arg(text));
+}
+
 void TestProgressPanel::updateProgress(int done, int total) {
     m_progressBar->setValue(done);
-    m_progressBar->setMaximum(total);
+    m_progressBar->setFormat(QString("%1%")
+        .arg(total > 0 ? QString::number(done * 100.0 / total, 'f', 1) : "0.0"));
+    // 不修改 maximum（startRun 已设好，防止分母变化）
     m_lblProgress->setText(QString("运行中... %1 / %2").arg(done).arg(total));
 }
 
@@ -64,13 +97,17 @@ void TestProgressPanel::appendLog(const QString& line) {
 }
 
 void TestProgressPanel::finishRun() {
+    m_elapsedTimer->stop();
     m_btnCancel->setEnabled(false);
     m_progressBar->setValue(m_progressBar->maximum());
-    m_lblProgress->setText("运行完成 ✓");
+    updateElapsed();
+    m_lblProgress->setText(QString::fromUtf8("\xe8\xbf\x90\xe8\xa1\x8c\xe5\xae\x8c\xe6\x88\x90 \xe2\x9c\x93"));
     appendLog("\n══════ 运行完成 ══════");
 }
 
 void TestProgressPanel::reset() {
+    m_elapsedTimer->stop();
+    m_lblElapsed->setVisible(false);
     m_progressBar->setValue(0);
     m_lblProgress->setText("就绪");
     m_logView->clear();
