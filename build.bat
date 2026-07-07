@@ -37,6 +37,7 @@ copy /Y "C:\Qt\6.11.1\msvc2022_64\bin\Qt6OpenGLWidgets.dll" "%SCRIPT_DIR%dist\" 
 if not exist "%SCRIPT_DIR%dist\platforms" mkdir "%SCRIPT_DIR%dist\platforms"
 copy /Y "C:\Qt\6.11.1\msvc2022_64\plugins\platforms\qwindows.dll" "%SCRIPT_DIR%dist\platforms\" >nul 2>&1
 copy "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.50.35710\x64\Microsoft.VC145.CRT\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+copy /Y "%SCRIPT_DIR%src\template_report.html" "%SCRIPT_DIR%dist\" >nul
 echo [OK]
 
 echo.
