@@ -51,12 +51,15 @@ private:
     void setupConnections();
     void updateButtonStates();
     void refreshProfileCombo();
+    void refreshScenarioCombo();
     void saveLayout();
 
     ConfigManager     m_config;
     TestLoader        m_loader;
     TestRunner*       m_runner;
     TestReport        m_report;
+    QVector<TestReport> m_allRuns;
+    QStringList       m_runNames;
 
     QSplitter*        m_mainSplitter    = nullptr;
     QSplitter*        m_centerSplitter  = nullptr;
@@ -74,6 +77,7 @@ private:
     QAction* m_actConfig = nullptr;
     QPushButton* m_profileBtn = nullptr;
     QMenu* m_profileMenu = nullptr;
+    QComboBox* m_scenarioCombo = nullptr;
     int m_restoreLW = 0, m_restoreRW = 0, m_restoreVP = 0, m_restoreVP2 = 0;
     QStringList m_suiteNames;
 };

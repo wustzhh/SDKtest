@@ -42,6 +42,7 @@ MainWindow::MainWindow(QWidget* parent)
     LOG("APP", "Started");
     if (m_config.load()) {
         refreshProfileCombo();
+        refreshScenarioCombo();
         LOG("CFG", "Config loaded: " + m_config.configPath());
         LOG("LOAD", QString("ui state: geo=%1,%2 %3x%4 max=%5")
             .arg(m_config.uiState.windowX).arg(m_config.uiState.windowY)
@@ -157,7 +158,7 @@ void MainWindow::setupUi() {
     bCfg->setFixedHeight(30);bCfg->setStyleSheet(mainBtn);
     auto* bLd  = new QPushButton(QString::fromUtf8("\U0001F4C2 \xE5\x8A\xA0\xE8\xBD\xBD"));
     bLd->setFixedHeight(30);bLd->setStyleSheet(mainBtn);
-    auto* bExp = new QPushButton(QString::fromUtf8("\U0001F4CA \xE5\xAF\xBC\xE5\x87\xBA"));
+    auto* bExp = new QPushButton(QString::fromUtf8("\U0001F4CA \xE6\x9F\xA5\xE7\x9C\x8B\xE7\xBB\x93\xE6\x9E\x9C"));
     bExp->setFixedHeight(30);bExp->setStyleSheet(mainBtn);
     auto* bRun = new QPushButton(QString::fromUtf8("\u25B6 \xE8\xBF\x90\xE8\xA1\x8C"));
     bRun->setFixedHeight(30);
@@ -177,7 +178,20 @@ void MainWindow::setupUi() {
     m_profileMenu = new QMenu(this);
     refreshProfileCombo();
     m_profileBtn->setMenu(m_profileMenu);
+    refreshScenarioCombo();
     bl->addWidget(m_profileBtn);
+    bl->addWidget(new QLabel(QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88:")));
+    m_scenarioCombo = new QComboBox;
+    m_scenarioCombo->setMinimumWidth(120);
+    m_scenarioCombo->setStyleSheet("QComboBox{background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 8px;height:26px;font-size:12px}");
+    bl->addWidget(m_scenarioCombo);
+    QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+        if (idx <= 0) return; // 第一项是占位提示
+        auto& prof = m_config.currentProfile();
+        if (idx-1 < prof.scenarios.size())
+            m_testList->setSelectedTestNames(prof.scenarios[idx-1].selectedTests);
+    });
+
     bl->addWidget(bLd);
     bl->addStretch();
     bl->addWidget(bExp);
@@ -206,7 +220,7 @@ void MainWindow::setupMenu() {
     m_actLoad   = f->addAction("\U0001F4C2 加载用例",    this, &MainWindow::onLoadTests);
     m_actRun    = f->addAction("\u25B6 运行选中",        this, &MainWindow::onRunSelected, QKeySequence("Ctrl+R"));
     m_actCancel = f->addAction("\u274C 取消运行",        this, &MainWindow::onCancelRun);
-    m_actExport = f->addAction("\U0001F4CA 导出报告",    this, &MainWindow::onExportReport);
+    m_actExport = f->addAction("\U0001F4CA \xe6\x9f\xa5\xe7\x9c\x8b\xe7\xbb\x93\xe6\x9e\x9c", this, &MainWindow::onExportReport);
     f->addSeparator();
     m_actConfig = f->addAction("\u2699 配置", this, &MainWindow::onEditConfig);
     f->addSeparator();
@@ -479,26 +493,17 @@ void MainWindow::onCancelRun() {
 }
 
 void MainWindow::onExportReport() {
-    if (m_report.results.isEmpty()) {
-        QMessageBox::information(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba"), QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8f\xaf\xe5\xaf\xbc\xe5\x87\xba\xe7\x9a\x84\xe7\xbb\x93\xe6\x9e\x9c"));
+    QString dir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
+    QString htmlPath = dir + "/test_report.html";
+    if (!QFile::exists(htmlPath)) {
+        QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xbf\x98\xe6\xb2\xa1\xe6\x9c\x89\xe5\xb7\xb2\xe5\xaf\xbc\xe5\x87\xba\xe7\x9a\x84\xe6\x8a\xa5\xe5\x91\x8a\xef\xbc\x8c\xe8\xaf\xb7\xe5\x85\x88\xe8\xbf\x90\xe8\xa1\x8c\xe6\xb5\x8b\xe8\xaf\x95"));
         return;
     }
-    QString exeDir = QCoreApplication::applicationDirPath();
-    QString outDir = exeDir + "/output";
-    QDir().mkpath(outDir);
-    QString base = outDir + "/test_report_"
-                   + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-
-    QString err;
-    if (ReportExporter::exportBoth(m_report, base, &err)) {
-        statusBar()->showMessage("Exported: " + base + ".xlsx/.txt", 5000);
-        auto r = QMessageBox::question(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba\xe5\xae\x8c\xe6\x88\x90"),
-            QString::fromUtf8("\xe5\xb7\xb2\xe4\xbf\x9d\xe5\xad\x98:\n  ") + base + ".xlsx\n  " + base + ".txt\n\n" + QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9?"));
-        if (r == QMessageBox::Yes)
-            QDesktopServices::openUrl(QUrl::fromLocalFile(outDir));
-    } else {
-        QMessageBox::critical(this, "Export Failed", err);
-    }
+    auto r = QMessageBox::question(this, QString::fromUtf8("\xe6\x9f\xa5\xe7\x9c\x8b\xe7\xbb\x93\xe6\x9e\x9c"),
+        QString::fromUtf8("\xe6\x8a\xa5\xe5\x91\x8a\xe5\xb7\xb2\xe4\xbf\x9d\xe5\xad\x98\xe5\x88\xb0:\n") + htmlPath + QString::fromUtf8("\n\n\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9?"),
+        QMessageBox::Yes | QMessageBox::No);
+    if (r == QMessageBox::Yes)
+        QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
 }
 
 // 分类树编辑委托——确保内联编辑器高度足够显示全部字符
@@ -538,6 +543,7 @@ void MainWindow::onEditConfig() {
     // 用 std::function 以支持 forward reference
     QTextEdit* edEnv = nullptr; // forward decl
     std::function<void(int)> loadProfile;
+    QTreeWidget* sceneTree = nullptr;
     // 当前编辑的 profile 索引（不修改全局 activeProfile，避免影响其他逻辑）
     int currentEditIdx = m_config.activeProfile();
     auto fillMenu = [&]() {
@@ -689,6 +695,17 @@ void MainWindow::onEditConfig() {
             item->setText(1, c.prefixes.join(", "));
             item->setFlags(item->flags() | Qt::ItemIsEditable);
         }
+        sceneTree->clear();
+        for (const auto& sc : p.scenarios) {
+            auto* item = new QTreeWidgetItem(sceneTree);
+            item->setText(0, sc.name);
+            item->setText(1, QString::number(sc.selectedTests.size()));
+            if (!sc.selectedTests.isEmpty()) {
+                QStringList preview = sc.selectedTests.mid(0, 5);
+                if (sc.selectedTests.size() > 5) preview.append("...");
+                item->setToolTip(0, preview.join("\n"));
+            }
+        }
     };
 
     // 环境变量标签页
@@ -707,6 +724,100 @@ void MainWindow::onEditConfig() {
     envLay->addWidget(edEnv, 1);
     tabs->addTab(envTab, QString::fromUtf8("\xe7\x8e\xaf\xe5\xa2\x83\xe5\x8f\x98\xe9\x87\x8f"));
     tabs->addTab(catTab, QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"));
+
+    // ── 方案标签页 ──
+    auto* sceneTab = new QWidget;
+    auto* sceneLay = new QVBoxLayout(sceneTab);
+    sceneTree = new QTreeWidget(sceneTab);
+    sceneTree->setHeaderLabels({QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88\xe5\x90\x8d"), QString::fromUtf8("\xe6\x95\xb0\xe9\x87\x8f")});
+    sceneTree->setRootIsDecorated(false);
+    sceneTree->setStyleSheet("QTreeWidget::item{padding:6px 10px;min-height:32px;font-size:13px}");
+    sceneLay->addWidget(sceneTree, 1);
+    auto* sceneBtns = new QHBoxLayout;
+    auto* btnSceneSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98\xe5\xbd\x93\xe5\x89\x8d\xe9\x80\x89\xe6\x8b\xa9"));
+    auto* btnSceneRename = new QPushButton(QString::fromUtf8("\xe9\x87\x8d\xe5\x91\xbd\xe5\x90\x8d"));
+    auto* btnSceneDel = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
+    sceneBtns->addWidget(btnSceneSave);
+    sceneBtns->addWidget(btnSceneRename);
+    sceneBtns->addWidget(btnSceneDel);
+    sceneBtns->addStretch();
+    sceneLay->addLayout(sceneBtns);
+
+    // 保存：覆盖当前选中的方案
+    connect(btnSceneSave, &QPushButton::clicked, &dlg, [&]() {
+        auto selItems = sceneTree->selectedItems();
+        if (selItems.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
+        QStringList sel = m_testList->selectedTestNames();
+        if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe5\x9c\xa8\xe5\xb7\xa6\xe4\xbe\xa7\xe9\x80\x89\xe6\x8b\xa9\xe7\x94\xa8\xe4\xbe\x8b")); return; }
+        int idx = sceneTree->indexOfTopLevelItem(selItems[0]);
+        m_config.currentProfile().scenarios[idx].selectedTests = sel;
+        selItems[0]->setText(1, QString::number(sel.size()));
+    });
+    // 另存为：新建方案
+    auto* btnSceneSaveAs = new QPushButton(QString::fromUtf8("\xe5\x8f\xa6\xe5\xad\x98\xe4\xb8\xba\xe6\x96\xb0\xe6\x96\xb9\xe6\xa1\x88"));
+    sceneBtns->insertWidget(1, btnSceneSaveAs);
+    connect(btnSceneSaveAs, &QPushButton::clicked, &dlg, [&]() {
+        QStringList sel = m_testList->selectedTestNames();
+        if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe7\x94\xa8\xe4\xbe\x8b")); return; }
+        bool ok; QString name = QInputDialog::getText(&dlg, QString::fromUtf8("\xe6\x96\xb0\xe6\x96\xb9\xe6\xa1\x88"),
+            QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88\xe5\x90\x8d"), QLineEdit::Normal,
+            QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88 %1").arg(m_config.currentProfile().scenarios.size()+1), &ok);
+        if (!ok || name.isEmpty()) return;
+        TestScenario s; s.name = name; s.selectedTests = sel;
+        m_config.addScenario(s);
+        auto* item = new QTreeWidgetItem(sceneTree);
+        item->setText(0, name); item->setText(1, QString::number(sel.size()));
+    });
+    // 从上次运行结果更新默认方案
+    auto* btnSceneUpdate = new QPushButton(QString::fromUtf8("\xe6\x9b\xb4\xe6\x96\xb0"));
+    bool hasResults = !m_report.results.isEmpty();
+    btnSceneUpdate->setEnabled(hasResults);
+    btnSceneUpdate->setStyleSheet(hasResults
+        ? "QPushButton{background:#22c55e;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:12px}"
+        : "QPushButton{background:#e2e8f0;color:#94a3b8;border:none;border-radius:4px;padding:4px 12px;font-size:12px}");
+    sceneBtns->addWidget(btnSceneUpdate);
+    connect(btnSceneUpdate, &QPushButton::clicked, &dlg, [&]() {
+        QStringList withProp, withoutProp;
+        for (const auto& r : m_report.results) {
+            QString full = r.testCase.fullName();
+            if (r.properties.isEmpty()) withoutProp << full;
+            else withProp << full;
+        }
+        for (auto& s : m_config.currentProfile().scenarios) {
+            if (s.name == QString::fromUtf8("\xe6\x9c\x89\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) { s.selectedTests = withProp; }
+            else if (s.name == QString::fromUtf8("\xe6\x97\xa0\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) { s.selectedTests = withoutProp; }
+        }
+        sceneTree->clear();
+        for (const auto& sc : m_config.currentProfile().scenarios) {
+            auto* item = new QTreeWidgetItem(sceneTree);
+            item->setText(0, sc.name);
+            item->setText(1, QString::number(sc.selectedTests.size()));
+            if (!sc.selectedTests.isEmpty()) {
+                QStringList preview = sc.selectedTests.mid(0, 5);
+                if (sc.selectedTests.size() > 5) preview.append("...");
+                item->setToolTip(0, preview.join("\n"));
+            }
+        }
+    });
+
+    connect(btnSceneRename, &QPushButton::clicked, &dlg, [&]() {
+        auto sel = sceneTree->selectedItems();
+        if (sel.isEmpty()) return;
+        int idx = sceneTree->indexOfTopLevelItem(sel[0]);
+        auto& s = m_config.currentProfile().scenarios[idx];
+        bool ok; QString name = QInputDialog::getText(&dlg, QString::fromUtf8("\xe9\x87\x8d\xe5\x91\xbd\xe5\x90\x8d"),
+            QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88\xe5\x90\x8d"), QLineEdit::Normal, s.name, &ok);
+        if (ok && !name.isEmpty()) { s.name = name; sel[0]->setText(0, name); }
+    });
+    connect(btnSceneDel, &QPushButton::clicked, &dlg, [&]() {
+        auto sel = sceneTree->selectedItems();
+        if (sel.isEmpty()) return;
+        int idx = sceneTree->indexOfTopLevelItem(sel[0]);
+        m_config.currentProfile().scenarios.remove(idx);
+        delete sel[0];
+    });
+
+    tabs->addTab(sceneTab, QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88"));
 
     // 连接
     connect(btnBrowseBin, &QPushButton::clicked, [&]() {
@@ -842,6 +953,7 @@ void MainWindow::onEditConfig() {
             m_config.setActiveProfile(idx);
             m_config.save();
             refreshProfileCombo();
+            refreshScenarioCombo();
         }
     }
 }
@@ -873,6 +985,10 @@ void MainWindow::onProgressUpdated(int done, int total) {
 
 void MainWindow::onAllFinished() {
     m_report.endTime = QDateTime::currentDateTime();
+    // 保存到历史
+    m_allRuns.append(m_report);
+    QString profileName = m_config.profiles().value(m_config.activeProfile()).name;
+    m_runNames.append(profileName.isEmpty() ? QString::number(m_report.results.size()) + " tests" : profileName);
     m_progress->finishRun();
     m_centerResultView->showResults(m_report.results);
 
@@ -882,6 +998,36 @@ void MainWindow::onAllFinished() {
         QString("Done! Passed=%1 Failed=%2 Total=%3 ms")
             .arg(p).arg(f).arg(m_report.totalDurationMs(), 0, 'f', 0), 10000);
     updateButtonStates();
+    // 仅首次自动生成默认方案（如果还不存在）
+    auto& prof = m_config.currentProfile();
+    bool foundWith = false, foundWithout = false;
+    for (const auto& s : prof.scenarios) {
+        if (s.name == QString::fromUtf8("\xe6\x9c\x89\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) foundWith = true;
+        else if (s.name == QString::fromUtf8("\xe6\x97\xa0\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) foundWithout = true;
+    }
+    // 自动导出（静默，不弹窗）
+    QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
+    if (!m_report.results.isEmpty()) {
+        QString autoName = m_config.profiles().value(m_config.activeProfile()).name;
+        if (autoName.isEmpty()) autoName = QDateTime::currentDateTime().toString("HH:mm:ss");
+        QString err;
+        ReportExporter::exportRun(m_report, reportDir, autoName, &err);
+        m_allRuns.clear();
+        m_runNames.clear();
+    }
+
+    if (!foundWith || !foundWithout) {
+        QStringList withProp, withoutProp;
+        for (const auto& r : m_report.results) {
+            QString full = r.testCase.fullName();
+            if (r.properties.isEmpty()) withoutProp << full;
+            else withProp << full;
+        }
+        if (!foundWith && !withProp.isEmpty()) { TestScenario s; s.name = QString::fromUtf8("\xe6\x9c\x89\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba"); s.selectedTests = withProp; prof.scenarios.push_back(s); }
+        if (!foundWithout && !withoutProp.isEmpty()) { TestScenario s; s.name = QString::fromUtf8("\xe6\x97\xa0\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba"); s.selectedTests = withoutProp; prof.scenarios.push_back(s); }
+        m_config.save();
+        refreshScenarioCombo();
+    }
     if (f > 0) m_progress->appendLog(QString("\n%1 tests failed.").arg(f));
 }
 
@@ -893,6 +1039,16 @@ void MainWindow::onRawOutput(const QString& line) {
 
 void MainWindow::onSelectionChanged(int count) {
     updateButtonStates();
+}
+
+void MainWindow::refreshScenarioCombo() {
+    if (!m_scenarioCombo) return;
+    m_scenarioCombo->blockSignals(true);
+    m_scenarioCombo->clear();
+    m_scenarioCombo->addItem(QString::fromUtf8("\xe2\x80\x94 \xe6\x96\xb9\xe6\xa1\x88 \xe2\x80\x94"));
+    for (const auto& s : m_config.currentProfile().scenarios)
+        m_scenarioCombo->addItem(s.name);
+    m_scenarioCombo->blockSignals(false);
 }
 
 void MainWindow::refreshProfileCombo() {

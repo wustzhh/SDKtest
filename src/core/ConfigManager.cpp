@@ -184,6 +184,13 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
             cat.prefixes << pr.toString();
         p.categories.push_back(cat);
     }
+    for (const auto& sv : obj["scenarios"].toArray()) {
+        QJsonObject so = sv.toObject();
+        TestScenario s; s.name = so["name"].toString();
+        for (const auto& t : so["selectedTests"].toArray())
+            s.selectedTests << t.toString();
+        p.scenarios.push_back(s);
+    }
     auto envObj = obj["env_vars"].toObject();
     for (auto it = envObj.begin(); it != envObj.end(); ++it)
         p.envVars[it.key()] = it.value().toString();
@@ -203,14 +210,18 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
     obj["extra_args"] = args;
     QJsonArray cats;
     for (const auto& c : p.categories) {
-        QJsonObject co;
-        co["name"] = c.name;
-        QJsonArray prefs;
-        for (const auto& pr : c.prefixes) prefs.append(pr);
-        co["prefixes"] = prefs;
-        cats.append(co);
+        QJsonObject co; co["name"] = c.name;
+        QJsonArray cp; for (const auto& pr : c.prefixes) cp.append(pr);
+        co["prefixes"] = cp; cats.append(co);
     }
     obj["categories"] = cats;
+    QJsonArray scs;
+    for (const auto& s : p.scenarios) {
+        QJsonObject so; so["name"] = s.name;
+        QJsonArray st; for (const auto& t : s.selectedTests) st.append(t);
+        so["selectedTests"] = st; scs.append(so);
+    }
+    obj["scenarios"] = scs;
     QJsonObject envObj;
     for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
         envObj[it.key()] = it.value();
@@ -224,3 +235,7 @@ void ConfigManager::setExtraArgs(const QStringList& v) { currentProfile().extraA
 void ConfigManager::addCategory(const TestCategory& c) { currentProfile().categories.push_back(c); }
 void ConfigManager::removeCategory(int idx) { if (idx >= 0 && idx < currentProfile().categories.size()) currentProfile().categories.remove(idx); }
 void ConfigManager::setCategories(const QVector<TestCategory>& cats) { currentProfile().categories = cats; }
+
+void ConfigManager::addScenario(const TestScenario& s) { currentProfile().scenarios.push_back(s); }
+void ConfigManager::removeScenario(int idx) { if (idx >= 0 && idx < currentProfile().scenarios.size()) currentProfile().scenarios.remove(idx); }
+void ConfigManager::updateScenario(int idx, const TestScenario& s) { if (idx >= 0 && idx < currentProfile().scenarios.size()) currentProfile().scenarios[idx] = s; }

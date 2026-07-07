@@ -18,6 +18,14 @@ struct TestCategory {
 // ────────────────────────────────────────────────────────────
 //  一个 Exe 配置 Profile
 // ────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+//  一个方案（选中的用例集合）
+// ────────────────────────────────────────────────────────────
+struct TestScenario {
+    QString     name;
+    QStringList selectedTests;  // "Suite.Case" 列表
+};
+
 struct ExeProfile {
     QString     name;             // 配置名
     QString     testBinary;       // exe 路径
@@ -26,6 +34,7 @@ struct ExeProfile {
     QStringList extraArgs;        // 额外参数
     QMap<QString, QString> envVars;  // 自定义环境变量
     QVector<TestCategory> categories;
+    QVector<TestScenario> scenarios;
 
     bool isValid() const { return !testBinary.isEmpty(); }
 };
@@ -67,6 +76,11 @@ public:
     void addCategory(const TestCategory& c);
     void removeCategory(int idx);
     void setCategories(const QVector<TestCategory>& cats);
+
+    // ── 方案管理 ──
+    void addScenario(const TestScenario& s);
+    void removeScenario(int idx);
+    void updateScenario(int idx, const TestScenario& s);
 
     // ── UI 状态 ──
     struct UIState {

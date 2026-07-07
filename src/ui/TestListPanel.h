@@ -22,6 +22,8 @@ public:
                    const QVector<TestCategory>& categories = {});
 
     QVector<TestCase> selectedTests() const;
+    QStringList selectedTestNames() const;
+    void setSelectedTestNames(const QStringList& names);
     void selectAll(bool select);
 
 signals:
@@ -56,6 +58,7 @@ private:
     int  countVisibleLeaf() const;
     int  countVisibleLeafRec(QTreeWidgetItem* item) const;
     void updateStats();
+    QTreeWidgetItem* m_lastHighlighted = nullptr;
 
     QLineEdit*      m_searchEdit;
     QLabel*         m_pathLabel = nullptr;

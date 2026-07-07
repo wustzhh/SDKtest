@@ -1,112 +1,175 @@
-# Test Runner UI — 华为 SDK gtest Qt GUI 前端
+# Test Runner UI — gtest 可视化测试运行器
 
-## 功能
-
-- 加载 gtest 测试 binary，列出所有用例
-- 全量运行或指定运行（`--gtest_filter`）
-- 实时进度显示 + 日志
-- 结果树查看 + 模型属性显示
-- XLSX 报告导出
-- 3D 模型查看（STEP 文件）
+基于 Qt 6 + OpenCASCADE 的 gtest GUI 前端，支持测试用例管理、批量运行、3D 模型渲染、属性可视化。
 
 ---
 
-## 编译方法
+## 快速开始
 
-### 方法一：MinGW + OpenGL（推荐）
+### 1. 配置测试 exe
 
-```bash
-.\build.bat
-```
+启动后点击底部 **⚙ 配置** → 在「配置」标签页设置：
 
-编译产物：`build/test_runner_ui.exe`
-运行：将 `build/` 下的 exe + DLL 复制到任意目录执行。
+| 字段 | 说明 |
+|------|------|
+| 配置名 | 给当前配置起个名字，方便识别 |
+| Exe 路径 | 你的 gtest 可执行文件路径，点击「浏览」选择 |
+| 依赖路径 | exe 运行所需的 DLL 目录，每行一个，启动时会加到 PATH |
+| 工作目录 | exe 的工作目录，留空则用 exe 所在目录 |
+| 额外参数 | 传给 gtest 的命令行参数，如 `--gtest_also_run_disabled_tests` |
 
-### 方法二：MSVC + OCCT（实体 3D 渲染）
+### 2. 设置环境变量
 
-需要 vcpkg + MSVC Qt6。
+切换到「环境变量」标签页，每行一个 `KEY=VALUE`，运行 exe 时会自动设置。
 
-#### 1. 安装 vcpkg
+### 3. 加载测试
 
-```bash
-git clone https://github.com/microsoft/vcpkg D:\vcpkg
-D:\vcpkg\bootstrap-vcpkg.bat
-```
+点击 **📂 加载**，程序会执行 `--gtest_list_tests` 发现所有用例。
 
-#### 2. 安装 OCCT
+### 4. 运行测试
 
-```bash
-D:\vcpkg\vcpkg.exe install opencascade:x64-windows
-```
+左侧树中勾选用例 → 点击 **▶ 运行**。支持：
 
-#### 3. 编译
-
-```batch
-call "C:\Program Files\Microsoft Visual Studio\17\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
-cmake -B build -G Ninja ^
-    -DCMAKE_BUILD_TYPE=Release ^
-    -DCMAKE_TOOLCHAIN_FILE="D:/vcpkg/scripts/buildsystems/vcpkg.cmake" ^
-    -DQt6_DIR="C:/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6"
-cmake --build build
-```
-
-> **注意：** Qt6_DIR 路径请根据你安装的 Qt 版本调整。
-> MSVC Qt6 需要用 Qt Online Installer 单独安装（选择 MSVC 2022 64-bit 组件）。
-
-#### 4. 运行
-
-编译完成后，将 `build/` 目录下的所有 `.dll` 文件复制到 exe 同目录，直接运行 `test_runner_ui.exe`。
-
-### 方法三：VTK + OCCT（完整方案，参考 cae-preprocessor）
-
-```bash
-D:\vcpkg\vcpkg.exe install vtk[qt]:x64-windows opencascade:x64-windows
-cmake -B build -DCMAKE_TOOLCHAIN_FILE="D:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-cmake --build build
-```
+- **批量运行**：一次跑完所有选中用例
+- **全选优化**：全选所有用例时自动使用 `--gtest_filter=*`
+- **套件优化**：整套选中时自动使用 `SuiteName.*`
+- **实时进度**：进度条 + 倒计时显示
 
 ---
 
-## 使用方法
+## 界面布局
 
-1. **配置测试 binary：** 编辑 `config/test_config.json`，设置 `test_binary` 为你的 gtest exe 路径
-2. **加载测试：** 点击「加载测试」或 `Ctrl+L`
-3. **运行测试：** 选择用例 → 点击「运行选中」或 `Ctrl+R`
-4. **查看结果：** 左侧用例树勾选，右侧显示详情
-5. **导出报告：** 点击「导出」或 `Ctrl+E`，生成 `.xlsx` 文件
-6. **3D 模型查看：**
-   - 打开 STEP 文件（右键结果树或菜单）
-   - 左键拖拽旋转
-   - 中键拖拽平移
-   - 滚轮缩放
-   - Ctrl+左键点击模型表面设置旋转锚点
-   - 复位视角按钮恢复默认视角
+```
+┌──────────────────────────────────────────────────────┐
+│  菜单栏                                              │
+├──────────┬───────────────────────────┬───────────────┤
+│  用例树   │  进度面板 + 日志          │  3D 模型视图  │
+│  (左)    │  结果树                   │  (右)         │
+│          │  属性面板                 │               │
+├──────────┴───────────────────────────┴───────────────┤
+│  [◄] [⚙ 配置] [默认 ▼] [📂 加载]     [📊 导出] [▶ 运行] [►] │
+└──────────────────────────────────────────────────────┘
+```
+
+### 左侧 — 用例树
+
+- **参数化测试**：套件名含 `/` 的 `TEST_P` 用例
+- **非参数化测试**：普通 `TEST` / `TEST_F` 用例
+- 每个分组下按配置的分类规则归类
+- 搜索框支持实时筛选
+- 右键菜单：全选/取消全选/展开/折叠/复制名称
+- 点击用例时顶部显示路径面包屑
+
+### 中间
+
+**上半部分：**
+- 进度条（百分比精确到 0.1%）
+- 计时器 `dd:HH:MM:SS`
+- 实时日志（stdout + stderr）
+- 取消运行按钮
+
+**下半部分：**
+- 测试结果树，按通过/失败/跳过过滤
+- 属性面板：选中结果后显示 RecordProperty
+
+### 右侧 — 3D 模型
+
+- 支持 STEP/IGES/BREP 文件
+- 面高亮（根据 `searchResultID` / `removeResultID`）
+- 包围盒高亮（根据 `searchResultBoxes` / `removeResultBoxes`）
+- 面 ID 显示
 
 ---
 
-## 项目结构
+## 配置管理
 
-```
-├── build.bat              MinGW 一键编译脚本
-├── CMakeLists.txt         构建配置
-├── config/
-│   └── test_config.json   测试 binary 配置
-├── src/
-│   ├── main.cpp           入口
-│   ├── core/              核心逻辑
-│   │   ├── ConfigManager   配置管理
-│   │   ├── TestLoader      用例加载
-│   │   ├── TestRunner      测试执行
-│   │   ├── ResultParser    结果解析
-│   │   ├── XlsxWriter      Excel 导出
-│   │   └── ReportExporter  报告导出
-│   └── ui/                界面
-│       ├── MainWindow      主窗口
-│       ├── TestListPanel   用例列表
-│       ├── TestProgressPanel 进度
-│       ├── ModelRenderView 结果树
-│       ├── ModelInfoPanel  模型信息
-│       └── Model3DViewer   3D 查看器
-├── models/                测试 STEP 文件
-└── README.md
-```
+### Profile（多配置）
+
+底部栏的配置名按钮可以切换配置。点击 **⚙ 配置** → 对话框顶部：
+
+| 操作 | 说明 |
+|------|------|
+| 配置名下拉 | 切换到其他配置 |
+| 新建 | 创建新配置（自动带默认分类） |
+| 删除 | 删除当前配置（至少保留一个） |
+
+每个配置独立保存：exe 路径、依赖、环境变量、分类、额外参数。
+
+### 分类
+
+分类用于左侧用例树分组。加载测试后，双击分类行 → 弹出套件选择框 → 勾选需要归入该分类的套件名。
+
+### 依赖路径
+
+exe 运行缺少 DLL 时会报错。添加方式：
+
+1. 在「配置」标签页的依赖路径框中每行一个目录
+2. 点击「添加目录」浏览选择
+
+程序启动 exe 时会将依赖目录加到 PATH 并设工作目录为 exe 所在目录。
+
+---
+
+## 结果与属性
+
+### RecordProperty
+
+gtest 中 `RecordProperty("key", "value")` 设置的属性会出现在：
+
+1. 属性面板（点击结果树中的用例）
+2. 导出的 XLSX/TXT 报告
+
+### 特殊属性
+
+| 属性名 | 类型 | 效果 |
+|--------|------|------|
+| `model` | 文件路径 | 自动加载 3D 模型 |
+| `resultModel` | 文件路径 | 3D 结果模型 |
+| `searchResultID` | 逗号分隔整数 | 高亮面 ID |
+| `removeResultID` | 逗号分隔整数 | 高亮面 ID |
+| `searchResultBoxes` | JSON 数组 | 搜索包围盒 |
+| `removeResultBoxes` | JSON 数组 | 移除包围盒 |
+| `interface` | 字符串 | 识别类型名称 |
+
+### 导出报告
+
+点击 **📊 导出**，生成：
+
+- `*_test_report.xlsx` — Excel 报告（含筛选器）
+- `*_test_report.txt` — 文本报告
+
+---
+
+## 注意事项
+
+### DISABLED 测试
+
+默认不运行 DISABLED 用例。如果选中了 DISABLED 用例：
+
+- 它们**不计入运行**（gtest 静默跳过）
+- 如果在 XML 中有 RecordProperty，会以 SKIPPED 状态出现在结果树中
+- 进度在进程结束后会补齐到 100%
+
+如果需要运行 DISABLED 用例，在「额外参数」中加入 `--gtest_also_run_disabled_tests`。
+
+### 配置文件位置
+
+`D:/.SDKtest/config.json`（优先 D 盘，无则 C 盘）
+
+### 快捷操作
+
+| 操作 | 快捷键 |
+|------|--------|
+| 运行选中 | `Ctrl+R` |
+| 折叠到 1 级 | `Alt+1` |
+| 展开到 1 级 | `Alt+Shift+1` |
+| 折叠/展开到 N 级 | `Alt+N` / `Alt+Shift+N` |
+
+---
+
+## 编译依赖
+
+- Qt 6.5+ (Widgets, OpenGL, OpenGLWidgets)
+- OpenCASCADE 7.7+
+- CMake 3.20+
+- MSVC 2022 / GCC 11+

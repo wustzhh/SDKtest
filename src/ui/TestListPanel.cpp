@@ -78,7 +78,16 @@ TestListPanel::TestListPanel(QWidget* parent)
     m_tree->setExpandsOnDoubleClick(false);
     connect(m_tree, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int) {
         if (!item || m_updating) return;
+        // 取消上次高亮
+        if (m_lastHighlighted) {
+            m_lastHighlighted->setBackground(0, QBrush());
+            m_lastHighlighted->setForeground(0, QBrush());
+        }
         toggleItem(item);
+        // 高亮当前项
+        m_lastHighlighted = item;
+        item->setBackground(0, QColor(0xee,0xf2,0xff));
+        item->setForeground(0, QColor(0x63,0x66,0xf1));
         updatePathLabel(item);
     });
     m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -325,6 +334,51 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
 
     addGroup(QString::fromUtf8("\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), paramCases);
     addGroup(QString::fromUtf8("\xe9\x9d\x9e\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), normalCases);
+}
+
+QStringList TestListPanel::selectedTestNames() const {
+    QStringList names;
+    std::function<void(QTreeWidgetItem*)> collect = [&](QTreeWidgetItem* item) {
+        if (!item) return;
+        QString t = item->data(0, Role_Type).toString();
+        if (t == "case" && itemChecked(item)) {
+            QString s = item->data(0, Role_SuiteName).toString();
+            QString c = item->data(0, Role_CaseName).toString();
+            if (!s.isEmpty()) names << s + "." + c;
+        }
+        for (int i = 0; i < item->childCount(); i++) collect(item->child(i));
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); i++) collect(m_tree->topLevelItem(i));
+    return names;
+}
+
+void TestListPanel::setSelectedTestNames(const QStringList& names) {
+    QSet<QString> ns(names.begin(), names.end());
+    m_updating = true;
+    // 第一遍：逐个设 case 的状态和文字（不改父节点）
+    std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
+        if (!item) return;
+        if (item->data(0, Role_Type).toString() == "case") {
+            QString s = item->data(0, Role_SuiteName).toString();
+            QString c = item->data(0, Role_CaseName).toString();
+            bool sel = ns.contains(s + "." + c);
+            setItemChecked(item, sel);
+            item->setText(0, (sel ? MARK_YES : MARK_NO) + "  " + c);
+        }
+        for (int i = 0; i < item->childCount(); i++) apply(item->child(i));
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); i++) apply(m_tree->topLevelItem(i));
+    // 第二遍：只刷新父节点（suite/category）
+    std::function<void(QTreeWidgetItem*)> refreshParents = [&](QTreeWidgetItem* item) {
+        if (!item) return;
+        if (item->data(0, Role_Type).toString() != "case" && item->childCount() > 0)
+            updateItemText(item);
+        for (int i = 0; i < item->childCount(); i++) refreshParents(item->child(i));
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); i++) refreshParents(m_tree->topLevelItem(i));
+    m_updating = false;
+    updateStats();
+    emit selectionChanged(selectedTests().size());
 }
 
 QVector<TestCase> TestListPanel::selectedTests() const {
