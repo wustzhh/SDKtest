@@ -69,6 +69,7 @@ bool ConfigManager::load() {
             c1.prefixes << "test_p";
             c2.name = "其他";
             def.categories << c1 << c2;
+            def.envVars["MODEL_DIR"] = "";
             m_profiles.append(def);
             m_activeProfile = 0;
             save();
@@ -115,6 +116,7 @@ void ConfigManager::fromJson(const QJsonObject& obj) {
         c1.prefixes << "test_p";
         c2.name = "其他";
         def.categories << c1 << c2;
+        def.envVars["MODEL_DIR"] = "";
         m_profiles.append(def);
     }
     if (m_activeProfile >= m_profiles.size()) m_activeProfile = 0;
@@ -194,6 +196,7 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
     auto envObj = obj["env_vars"].toObject();
     for (auto it = envObj.begin(); it != envObj.end(); ++it)
         p.envVars[it.key()] = it.value().toString();
+
     return p;
 }
 
@@ -226,6 +229,7 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
     for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
         envObj[it.key()] = it.value();
     obj["env_vars"] = envObj;
+
     return obj;
 }
 

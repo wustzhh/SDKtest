@@ -548,13 +548,17 @@ void MainWindow::onEditConfig() {
     int currentEditIdx = m_config.activeProfile();
     auto fillMenu = [&]() {
         dlgProfMenu->clear();
-        dlgProfBtn->setText(m_config.profiles()[currentEditIdx].name);
+        dlgProfBtn->setText(m_config.profiles()[currentEditIdx].name + QString::fromUtf8(" \xe2\x96\xbe"));
         for (int i = 0; i < m_config.profiles().size(); i++) {
             auto* act = dlgProfMenu->addAction(m_config.profiles()[i].name);
-            act->setEnabled(i != currentEditIdx);
-            connect(act, &QAction::triggered, &dlg, [this, i, &loadProfile, dlgProfBtn, &currentEditIdx]() {
+            act->setCheckable(true);
+            act->setChecked(i == currentEditIdx);
+            connect(act, &QAction::triggered, &dlg, [this, i, act, &loadProfile, dlgProfBtn, dlgProfMenu, &currentEditIdx]() {
                 currentEditIdx = i;
-                dlgProfBtn->setText(m_config.profiles()[i].name);
+                dlgProfBtn->setText(m_config.profiles()[i].name + QString::fromUtf8(" \xe2\x96\xbe"));
+                // 更新菜单项的勾选状态
+                for (auto* a : dlgProfMenu->actions())
+                    a->setChecked(a == act);
                 if (loadProfile) loadProfile(i);
             });
         }
@@ -711,11 +715,11 @@ void MainWindow::onEditConfig() {
     // 环境变量标签页
     auto* envTab = new QWidget;
     auto* envLay = new QVBoxLayout(envTab);
-    auto* envHelp = new QLabel(QString::fromUtf8("\xe6\xaf\x8f\xe8\xa1\x8c\xe4\xb8\x80\xe4\xb8\xaa KEY=VALUE\xef\xbc\x8c\xe4\xbe\x8b\xe5\xa6\x82:"));
+    auto* envHelp = new QLabel(QString::fromUtf8("\xe6\xaf\x8f\xe8\xa1\x8c\xe4\xb8\x80\xe4\xb8\xaa KEY=VALUE\xef\xbc\x8c\xe4\xbc\xa0\xe7\xbb\x99\xe6\xb5\x8b\xe8\xaf\x95 exe \xe4\xbd\x9c\xe4\xb8\xba\xe7\x8e\xaf\xe5\xa2\x83\xe5\x8f\x98\xe9\x87\x8f\xe3\x80\x82\xe5\x8f\xaf\xe7\x94\xa8\xe4\xba\x8e\xe4\xbc\xa0\xe9\x80\x92\xe6\x96\x87\xe4\xbb\xb6\xe8\xb7\xaf\xe5\xbe\x84\xef\xbc\x8c\xe7\x84\xb6\xe5\x90\x8e\xe5\x9c\xa8\xe6\xb5\x8b\xe8\xaf\x95\xe4\xb8\xad\xe7\x94\xa8 getenv() \xe8\xaf\xbb\xe5\x8f\x96\xe3\x80\x82"));
     envHelp->setStyleSheet("color:#64748b;font-size:12px");
     envHelp->setWordWrap(true);
     envLay->addWidget(envHelp);
-    auto* envExplain = new QLabel("QT_QPA_PLATFORM_PLUGIN_PATH=D:/sdk/plugins\nPYTHONPATH=D:/sdk/python");
+    auto* envExplain = new QLabel("MODEL_DIR=D:\\data\\models          # \xe6\xb5\x8b\xe8\xaf\x95\xe7\x94\xa8 getenv(\"MODEL_DIR\") \xe8\x8e\xb7\xe5\x8f\x96\nTEST_DATA_DIR=D:\\data\\tests        # \xe6\xb5\x8b\xe8\xaf\x95\xe7\x94\xa8 getenv(\"TEST_DATA_DIR\") \xe8\x8e\xb7\xe5\x8f\x96");
     envExplain->setStyleSheet("color:#94a3b8;font-size:11px;padding:0 0 4px 0");
     envLay->addWidget(envExplain);
     edEnv = new QTextEdit;

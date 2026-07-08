@@ -192,6 +192,7 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_hasAnchor=false;resetView();
 }
 void GLViewer::resetView(){
+    m_rot = QQuaternion();
     if(!m_verts.isEmpty()){
         QMatrix4x4 rmat;rmat.rotate(m_rot);
         float minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -223,10 +224,10 @@ QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double
                 minZ >= b.minZ-eps && minZ <= b.maxZ+eps)
                 result.append(fi);
         } else {
-            // 面/实体特征：近似相等匹配
-            if (qAbs(b.minX-minX)>eps||qAbs(b.maxX-maxX)>eps) continue;
-            if (qAbs(b.minY-minY)>eps||qAbs(b.maxY-maxY)>eps) continue;
-            if (qAbs(b.minZ-minZ)>eps||qAbs(b.maxZ-maxZ)>eps) continue;
+            // 面/边特征：查询盒是否与面包围盒重叠（包含/相交）
+            if (minX > b.maxX + eps || maxX < b.minX - eps) continue;
+            if (minY > b.maxY + eps || maxY < b.minY - eps) continue;
+            if (minZ > b.maxZ + eps || maxZ < b.minZ - eps) continue;
             result.append(fi);
         }
     }
@@ -243,14 +244,16 @@ void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.18f,.18f
     glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);glEnable(GL_COLOR_MATERIAL);}
 void GLViewer::resizeGL(int w,int h){glViewport(0,0,w,h);}
 void GLViewer::paintGL(){
-    glClear(GL_DEPTH_BUFFER_BIT);
-    // 渐变背景：深蓝→深紫
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // 渐变背景：深蓝→深紫（不写深度，避免污染模型深度测试）
+    glDepthMask(GL_FALSE);
     glMatrixMode(GL_PROJECTION);glLoadIdentity();glOrtho(0,1,1,0,-1,1);
     glMatrixMode(GL_MODELVIEW);glLoadIdentity();
     glDisable(GL_LIGHTING);glBegin(GL_QUADS);
     glColor3f(.08f,.1f,.18f);glVertex2f(0,0);glVertex2f(1,0);
     glColor3f(.12f,.08f,.18f);glVertex2f(1,1);glVertex2f(0,1);
     glEnd();glEnable(GL_LIGHTING);
+    glDepthMask(GL_TRUE);
 
     if(m_verts.isEmpty())return;
     float as=float(width())/float(height()),sz=m_modelSize*.6f/qMax(m_zoom,.01f);
