@@ -31,6 +31,7 @@
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
+#include <BRepBndLib.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 
@@ -78,14 +79,11 @@ void StepWorker::doWork() {
         QVector3D center(0,0,0); int vcnt=0;
         for (int i=1;i<=tri->NbNodes();i++) { gp_Pnt p=tri->Node(i).Transformed(loc.Transformation()); center+=QVector3D(p.X(),p.Y(),p.Z()); vcnt++; }
         if (vcnt>0) center/=vcnt; r.faceCenters.append(center);
-        // 面包围盒（从 mesh 顶点算，无公差膨胀）
-        {   double bx1=1e9,by1=1e9,bz1=1e9,bx2=-1e9,by2=-1e9,bz2=-1e9;
-            for (int i=1;i<=tri->NbNodes();i++) {
-                gp_Pnt p=tri->Node(i).Transformed(loc.Transformation());
-                if(p.X()<bx1)bx1=p.X();if(p.X()>bx2)bx2=p.X();
-                if(p.Y()<by1)by1=p.Y();if(p.Y()>by2)by2=p.Y();
-                if(p.Z()<bz1)bz1=p.Z();if(p.Z()>bz2)bz2=p.Z();
-            }
+        // 面包围盒（从 B-Rep 精确几何算，保证与测试端输出的 AABB 一致）
+        {   Bnd_Box bbox;
+            BRepBndLib::Add(face, bbox);
+            double bx1=0,by1=0,bz1=0,bx2=0,by2=0,bz2=0;
+            if (!bbox.IsVoid()) bbox.Get(bx1,by1,bz1,bx2,by2,bz2);
             r.faceBBoxes.append({bx1,by1,bz1,bx2,by2,bz2});
         }
         for (int ti=triStart;ti<triEnd;ti++) r.faceIds.append(faceIdx);
@@ -224,10 +222,10 @@ QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double
                 minZ >= b.minZ-eps && minZ <= b.maxZ+eps)
                 result.append(fi);
         } else {
-            // 面/边特征：查询盒是否与面包围盒重叠（包含/相交）
-            if (minX > b.maxX + eps || maxX < b.minX - eps) continue;
-            if (minY > b.maxY + eps || maxY < b.minY - eps) continue;
-            if (minZ > b.maxZ + eps || maxZ < b.minZ - eps) continue;
+            // 面特征：精确匹配（两边都是 B-Rep 精确 AABB，tolerance 内相等即命中）
+            if (qAbs(b.minX-minX)>eps||qAbs(b.maxX-maxX)>eps) continue;
+            if (qAbs(b.minY-minY)>eps||qAbs(b.maxY-maxY)>eps) continue;
+            if (qAbs(b.minZ-minZ)>eps||qAbs(b.maxZ-maxZ)>eps) continue;
             result.append(fi);
         }
     }
