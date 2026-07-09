@@ -188,6 +188,9 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     for(auto& vv:v){if(vv.x()<mx)mx=vv.x();if(vv.x()>Mx)Mx=vv.x();if(vv.y()<my)my=vv.y();if(vv.y()>My)My=vv.y();if(vv.z()<mz)mz=vv.z();if(vv.z()>Mz)Mz=vv.z();}
     m_modelSize=qMax(qMax(Mx-mx,My-my),Mz-mz);m_modelSize=qMax(m_modelSize,.001f);
     m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_hasAnchor=false;resetView();
+    LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7")
+        .arg(mx,0,'f',3).arg(Mx,0,'f',3).arg(my,0,'f',3).arg(My,0,'f',3)
+        .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3));
 }
 void GLViewer::resetView(){
     m_rot = QQuaternion();
@@ -222,11 +225,24 @@ QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double
                 minZ >= b.minZ-eps && minZ <= b.maxZ+eps)
                 result.append(fi);
         } else {
-            // 面特征：精确匹配（两边都是 B-Rep 精确 AABB，tolerance 内相等即命中）
-            if (qAbs(b.minX-minX)>eps||qAbs(b.maxX-maxX)>eps) continue;
-            if (qAbs(b.minY-minY)>eps||qAbs(b.maxY-maxY)>eps) continue;
-            if (qAbs(b.minZ-minZ)>eps||qAbs(b.maxZ-maxZ)>eps) continue;
-            result.append(fi);
+            // 特征盒匹配策略：先精确匹配，无精确匹配则取包含该盒的最小面（避免"面覆盖面"误匹配）
+            int exactCnt = 0, bestIdx = -1;
+            double bestVol = 1e30;
+            for (int fi=0;fi<m_faceBBoxes.size();fi++) {
+                const auto& b=m_faceBBoxes[fi];
+                bool exact = (qAbs(b.minX-minX)<=eps && qAbs(b.maxX-maxX)<=eps &&
+                              qAbs(b.minY-minY)<=eps && qAbs(b.maxY-maxY)<=eps &&
+                              qAbs(b.minZ-minZ)<=eps && qAbs(b.maxZ-maxZ)<=eps);
+                if (exact) { result.append(fi); exactCnt++; }
+                // 同时记录包含查询盒的最小面（备选）
+                if (minX >= b.minX-eps && maxX <= b.maxX+eps &&
+                    minY >= b.minY-eps && maxY <= b.maxY+eps &&
+                    minZ >= b.minZ-eps && maxZ <= b.maxZ+eps) {
+                    double vol = (b.maxX-b.minX)*(b.maxY-b.minY)*(b.maxZ-b.minZ);
+                    if (exactCnt==0 && (bestIdx<0 || vol<bestVol)) { bestIdx = fi; bestVol = vol; }
+                }
+            }
+            if (exactCnt==0 && bestIdx>=0) result.append(bestIdx);
         }
     }
     return result;
@@ -351,6 +367,7 @@ void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop()
     if(m_worker){m_worker->deleteLater();m_worker=nullptr;}m_workerThread=nullptr;}
 void Model3DViewer::loadFile(const QString& fp){
     cancelLoad();m_gl->clear();
+    m_pendingBoxesMap.clear();
     LOG("3D","Load: "+fp);m_status->setText(QString::fromUtf8("\xE5\x8A\xA0\xE8\xBD\xBD\xE4\xB8\xAD..."));
 #ifndef HAS_OCC
     m_status->setText("OCCT not available");LOG("3D","OCCT not available");return;
@@ -395,10 +412,20 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     QSet<int> allIds;
     QStringList faceParts, pointParts;
     double eps = 0.01;
+    int matchedBoxCount = 0, totalBoxCount = 0;
+    int unmatchedLogCnt = 0;
     for (const auto& box : boxes) {
-        if (box.size() < 6) continue;
+        if (box.size() < 6) { totalBoxCount++; continue; }
         bool isPoint = (qAbs(box[3]-box[0]) < eps && qAbs(box[4]-box[1]) < eps && qAbs(box[5]-box[2]) < eps);
         auto ids = m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
+        totalBoxCount++;
+        if (!ids.isEmpty()) matchedBoxCount++;
+        else if (unmatchedLogCnt < 3 && !propKey.isEmpty()) {
+            LOG("BOX",QString("  unmatched: [%1,%2,%3,%4,%5,%6]")
+                .arg(box[0],0,'f',3).arg(box[1],0,'f',3).arg(box[2],0,'f',3)
+                .arg(box[3],0,'f',3).arg(box[4],0,'f',3).arg(box[5],0,'f',3));
+            unmatchedLogCnt++;
+        }
         for (int id : ids) allIds.insert(id);
         QStringList idStrs;
         for (int id : ids) idStrs << QString::number(id);
@@ -409,6 +436,9 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     }
     QVector<int> ids(allIds.begin(), allIds.end());
     m_gl->setHighlightFaces(ids);
+    LOG("BOX",QString("%1: %2/%3 boxes matched, %4 unique face IDs")
+        .arg(propKey.isEmpty()?QString("anon"):propKey)
+        .arg(matchedBoxCount).arg(totalBoxCount).arg(ids.size()));
     if (!propKey.isEmpty()) {
         QString display;
         if (!faceParts.isEmpty()) display += QString::fromUtf8("\xE9\x9D\xA2: ") + faceParts.join(" | ");
