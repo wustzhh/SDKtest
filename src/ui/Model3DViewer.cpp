@@ -421,7 +421,7 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
         totalBoxCount++;
         if (!ids.isEmpty()) matchedBoxCount++;
         else if (unmatchedLogCnt < 3 && !propKey.isEmpty()) {
-            LOG("BOX",QString("  unmatched: [%1,%2,%3,%4,%5,%6]")
+            LOG("BOX",QString("  unmatched: x1=%1 y1=%2 z1=%3  x2=%4 y2=%5 z2=%6")
                 .arg(box[0],0,'f',3).arg(box[1],0,'f',3).arg(box[2],0,'f',3)
                 .arg(box[3],0,'f',3).arg(box[4],0,'f',3).arg(box[5],0,'f',3));
             unmatchedLogCnt++;
