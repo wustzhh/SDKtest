@@ -225,24 +225,35 @@ QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double
                 minZ >= b.minZ-eps && minZ <= b.maxZ+eps)
                 result.append(fi);
         } else {
-            // 特征盒匹配策略：先精确匹配，无精确匹配则取包含该盒的最小面（避免"面覆盖面"误匹配）
-            int exactCnt = 0, bestIdx = -1;
+            // 三步匹配：①精确 ②containment（取最小面）③overlap（edge盒横跨两个面）
+            int exactCnt = 0, containBest = -1;
             double bestVol = 1e30;
+            QVector<int> overlapList;
             for (int fi=0;fi<m_faceBBoxes.size();fi++) {
                 const auto& b=m_faceBBoxes[fi];
                 bool exact = (qAbs(b.minX-minX)<=eps && qAbs(b.maxX-maxX)<=eps &&
                               qAbs(b.minY-minY)<=eps && qAbs(b.maxY-maxY)<=eps &&
                               qAbs(b.minZ-minZ)<=eps && qAbs(b.maxZ-maxZ)<=eps);
                 if (exact) { result.append(fi); exactCnt++; }
-                // 同时记录包含查询盒的最小面（备选）
-                if (minX >= b.minX-eps && maxX <= b.maxX+eps &&
-                    minY >= b.minY-eps && maxY <= b.maxY+eps &&
-                    minZ >= b.minZ-eps && maxZ <= b.maxZ+eps) {
-                    double vol = (b.maxX-b.minX)*(b.maxY-b.minY)*(b.maxZ-b.minZ);
-                    if (exactCnt==0 && (bestIdx<0 || vol<bestVol)) { bestIdx = fi; bestVol = vol; }
+                if (exactCnt==0) {
+                    // containment：盒在面内部
+                    if (minX >= b.minX-eps && maxX <= b.maxX+eps &&
+                        minY >= b.minY-eps && maxY <= b.maxY+eps &&
+                        minZ >= b.minZ-eps && maxZ <= b.maxZ+eps) {
+                        double vol = (b.maxX-b.minX)*(b.maxY-b.minY)*(b.maxZ-b.minZ);
+                        if (containBest<0 || vol<bestVol) { containBest = fi; bestVol = vol; }
+                    }
+                    // overlap：盒与面有交集（edge盒场景）
+                    if (!(minX > b.maxX+eps || maxX < b.minX-eps ||
+                          minY > b.maxY+eps || maxY < b.minY-eps ||
+                          minZ > b.maxZ+eps || maxZ < b.minZ-eps)) {
+                        overlapList.append(fi);
+                    }
                 }
             }
-            if (exactCnt==0 && bestIdx>=0) result.append(bestIdx);
+            if (exactCnt>0) { /* exact match already added */ }
+            else if (containBest>=0) result.append(containBest);
+            else result = overlapList;
         }
     }
     return result;
@@ -413,19 +424,12 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     QStringList faceParts, pointParts;
     double eps = 0.01;
     int matchedBoxCount = 0, totalBoxCount = 0;
-    int unmatchedLogCnt = 0;
     for (const auto& box : boxes) {
         if (box.size() < 6) { totalBoxCount++; continue; }
         bool isPoint = (qAbs(box[3]-box[0]) < eps && qAbs(box[4]-box[1]) < eps && qAbs(box[5]-box[2]) < eps);
         auto ids = m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
         totalBoxCount++;
         if (!ids.isEmpty()) matchedBoxCount++;
-        else if (unmatchedLogCnt < 3 && !propKey.isEmpty()) {
-            LOG("BOX",QString("  unmatched: x1=%1 y1=%2 z1=%3  x2=%4 y2=%5 z2=%6")
-                .arg(box[0],0,'f',3).arg(box[1],0,'f',3).arg(box[2],0,'f',3)
-                .arg(box[3],0,'f',3).arg(box[4],0,'f',3).arg(box[5],0,'f',3));
-            unmatchedLogCnt++;
-        }
         for (int id : ids) allIds.insert(id);
         QStringList idStrs;
         for (int id : ids) idStrs << QString::number(id);
