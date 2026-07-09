@@ -424,12 +424,14 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     QStringList faceParts, pointParts;
     double eps = 0.01;
     int matchedBoxCount = 0, totalBoxCount = 0;
+    QVector<QVector<double>> unmatchedBoxes;
     for (const auto& box : boxes) {
         if (box.size() < 6) { totalBoxCount++; continue; }
         bool isPoint = (qAbs(box[3]-box[0]) < eps && qAbs(box[4]-box[1]) < eps && qAbs(box[5]-box[2]) < eps);
         auto ids = m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
         totalBoxCount++;
         if (!ids.isEmpty()) matchedBoxCount++;
+        else unmatchedBoxes.append(box);
         for (int id : ids) allIds.insert(id);
         QStringList idStrs;
         for (int id : ids) idStrs << QString::number(id);
@@ -443,6 +445,15 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     LOG("BOX",QString("%1: %2/%3 boxes matched, %4 unique face IDs")
         .arg(propKey.isEmpty()?QString("anon"):propKey)
         .arg(matchedBoxCount).arg(totalBoxCount).arg(ids.size()));
+    if (!unmatchedBoxes.isEmpty()) {
+        for (const auto& b : unmatchedBoxes) {
+            QVector<double> v = {b[0],b[1],b[2],b[3],b[4],b[5]};
+            std::sort(v.begin(), v.end());
+            LOG("BOX",QString("  noMatch: %1 %2 %3 %4 %5 %6")
+                .arg(v[0],0,'f',3).arg(v[1],0,'f',3).arg(v[2],0,'f',3)
+                .arg(v[3],0,'f',3).arg(v[4],0,'f',3).arg(v[5],0,'f',3));
+        }
+    }
     if (!propKey.isEmpty()) {
         QString display;
         if (!faceParts.isEmpty()) display += QString::fromUtf8("\xE9\x9D\xA2: ") + faceParts.join(" | ");
