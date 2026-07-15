@@ -515,12 +515,14 @@ static StepLoadResult parseNasFile(const QString& filePath)
                 }
             }
         } else if (card == "CTRIA3" || card == "CTRIA3*") {
-            if (parts.size() >= 5)
-                tris.append({parts[2].toInt(), parts[3].toInt(), parts[4].toInt()});
+            // CTRIA3: EID PID G1 G2 G3
+            if (parts.size() >= 6)
+                tris.append({parts[3].toInt(), parts[4].toInt(), parts[5].toInt()});
         } else if (card == "CQUAD4" || card == "CQUAD4*") {
-            if (parts.size() >= 6) {
-                int g1 = parts[2].toInt(), g2 = parts[3].toInt();
-                int g3 = parts[4].toInt(), g4 = parts[5].toInt();
+            // CQUAD4: EID PID G1 G2 G3 G4
+            if (parts.size() >= 7) {
+                int g1 = parts[3].toInt(), g2 = parts[4].toInt();
+                int g3 = parts[5].toInt(), g4 = parts[6].toInt();
                 tris.append({g1, g2, g3});
                 tris.append({g1, g3, g4});
             }
