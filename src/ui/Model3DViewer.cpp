@@ -10,6 +10,8 @@
 #include <QVector4D>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QFile>
+#include <QTextStream>
 #include <QMap>
 #include <QSet>
 #include <QApplication>
@@ -470,9 +472,126 @@ static QImage rasterizeTriangles(const QVector<QVector3D>& verts,
     return img;
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  NAS (Nastran) 网格文件解析器（纯文本，无需 OCCT）
+// ═══════════════════════════════════════════════════════════════
+
+static StepLoadResult parseNasFile(const QString& filePath)
+{
+    StepLoadResult r;
+    QElapsedTimer t; t.start();
+
+    QFile f(filePath);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        r.error = "Cannot open NAS file";
+        return r;
+    }
+
+    struct Node { double x, y, z; };
+    QMap<int, Node> nodes;
+    struct TriElem { int g1, g2, g3; };
+    QVector<TriElem> tris;
+
+    QTextStream in(&f);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        if (line.trimmed().isEmpty() || line.trimmed().startsWith('$'))
+            continue;
+        QString trimmed = line.trimmed();
+        if (trimmed.startsWith("BEGIN", Qt::CaseInsensitive) ||
+            trimmed.startsWith("ENDDATA", Qt::CaseInsensitive) ||
+            trimmed.startsWith("NASTRAN", Qt::CaseInsensitive))
+            continue;
+
+        QStringList parts = trimmed.split(QRegularExpression("[\\s,]+"), Qt::SkipEmptyParts);
+        if (parts.size() < 2) continue;
+        QString card = parts[0].toUpper();
+
+        if (card == "GRID" || card == "GRID*") {
+            if (parts.size() >= 5) {
+                bool ok; int id = parts[1].toInt(&ok);
+                if (ok) {
+                    nodes[id] = {parts[2].toDouble(), parts[3].toDouble(), parts[4].toDouble()};
+                }
+            }
+        } else if (card == "CTRIA3" || card == "CTRIA3*") {
+            if (parts.size() >= 5)
+                tris.append({parts[2].toInt(), parts[3].toInt(), parts[4].toInt()});
+        } else if (card == "CQUAD4" || card == "CQUAD4*") {
+            if (parts.size() >= 6) {
+                int g1 = parts[2].toInt(), g2 = parts[3].toInt();
+                int g3 = parts[4].toInt(), g4 = parts[5].toInt();
+                tris.append({g1, g2, g3});
+                tris.append({g1, g3, g4});
+            }
+        }
+    }
+    f.close();
+
+    if (nodes.isEmpty()) { r.error="No GRID nodes"; return r; }
+    if (tris.isEmpty())  { r.error="No CTRIA3/CQUAD4 elements"; return r; }
+
+    QMap<int,int> idToIdx;
+    for (auto it = nodes.begin(); it != nodes.end(); ++it)
+        idToIdx[it.key()] = idToIdx.size();
+
+    r.verts.resize(idToIdx.size());
+    for (auto it = nodes.begin(); it != nodes.end(); ++it)
+        r.verts[idToIdx[it.key()]] = QVector3D(it.value().x, it.value().y, it.value().z);
+
+    r.tris.reserve(tris.size() * 3);
+    for (const auto& tri : tris) {
+        if (!idToIdx.contains(tri.g1) || !idToIdx.contains(tri.g2) || !idToIdx.contains(tri.g3))
+            continue;
+        r.tris.append(idToIdx[tri.g1]);
+        r.tris.append(idToIdx[tri.g2]);
+        r.tris.append(idToIdx[tri.g3]);
+    }
+    if (r.tris.size() < 3) { r.error="No valid triangles after remap"; return r; }
+
+    r.normals.resize(r.verts.size());
+    for (int i = 0; i < r.tris.size(); i += 3) {
+        QVector3D n = QVector3D::crossProduct(
+            r.verts[r.tris[i+1]] - r.verts[r.tris[i]],
+            r.verts[r.tris[i+2]] - r.verts[r.tris[i]]);
+        float l = n.length();
+        if (l > 1e-10f) n /= l;
+        r.normals[r.tris[i]]   += n;
+        r.normals[r.tris[i+1]] += n;
+        r.normals[r.tris[i+2]] += n;
+    }
+    for (auto& n : r.normals) { float l = n.length(); if (l > 1e-10f) n /= l; }
+
+    float mx=1e9f,my=1e9f,mz=1e9f,Mx=-1e9f,My=-1e9f,Mz=-1e9f;
+    for (const auto& v : r.verts) {
+        if (v.x()<mx) mx=v.x(); if (v.x()>Mx) Mx=v.x();
+        if (v.y()<my) my=v.y(); if (v.y()>My) My=v.y();
+        if (v.z()<mz) mz=v.z(); if (v.z()>Mz) Mz=v.z();
+    }
+    QVector3D center(0,0,0);
+    for (const auto& v : r.verts) center += v;
+    if (!r.verts.isEmpty()) center /= r.verts.size();
+    r.faceCenterIds.append(0);
+    r.faceCenters.append(center);
+    r.faceBBoxes.append({mx, my, mz, Mx, My, Mz});
+    r.faceIds.resize(r.tris.size() / 3, 0);
+
+    r.ok = true;
+    r.elapsedMs = (int)t.elapsed();
+    LOG("3D", QString("NAS parsed: %1v %2t %3ms")
+        .arg(r.verts.size()).arg(r.tris.size()/3).arg(r.elapsedMs));
+    return r;
+}
+
 // 在子线程中读取 STEP 文件（带超时保护）
 static StepLoadResult readStepFileWithTimeout(const QString& filePath, int timeoutMs)
 {
+    // .nas 文件直接解析，无需 OCCT
+    QString ext = QFileInfo(filePath).suffix().toLower();
+    if (ext == "nas" || ext == "bdf" || ext == "dat") {
+        return parseNasFile(filePath);
+    }
+
     StepLoadResult result;
 
 #ifdef HAS_OCC
@@ -524,7 +643,7 @@ QImage Model3DViewer::renderModelScreenshot(const QString& filePath,
 {
     if (!QFile::exists(filePath)) return {};
 
-    // 读取 STEP 文件（子线程 + 超时）
+    // 读取模型文件（NAS 直接解析，STEP/IGES/BREP 走 OCCT 子线程 + 超时）
     auto result = readStepFileWithTimeout(filePath, timeoutMs);
     if (!result.ok || result.verts.isEmpty() || result.tris.size() < 3) return {};
 
@@ -563,6 +682,25 @@ void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop()
 void Model3DViewer::loadFile(const QString& fp){
     cancelLoad();m_gl->clear();
     m_pendingBoxesMap.clear();
+    if (!QFile::exists(fp)) return {};
+
+    // .nas 快速解析显示（直接返回，不入 OCCT 线程）
+    QString ext = QFileInfo(fp).suffix().toLower();
+    if (ext == "nas" || ext == "bdf" || ext == "dat") {
+        LOG("3D","Load NAS: "+fp);
+        StepLoadResult r = parseNasFile(fp);
+        if (r.ok) {
+            m_gl->loadMesh(r.verts,r.tris,r.normals,r.edges,r.faceIds,r.faceCenters,r.faceCenterIds,r.faceBBoxes);
+            m_status->setText(QString("NAS: %1v %2t").arg(r.verts.size()).arg(r.tris.size()/3));
+            m_status->setStyleSheet("color:#10b981;font-size:12px;padding:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:6px;");
+        } else {
+            m_status->setText(r.error);
+            m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");
+        }
+        emit modelLoaded();
+        return;
+    }
+
     LOG("3D","Load: "+fp);m_status->setText(QString::fromUtf8("\xE5\x8A\xA0\xE8\xBD\xBD\xE4\xB8\xAD..."));
 #ifndef HAS_OCC
     m_status->setText("OCCT not available");LOG("3D","OCCT not available");return;

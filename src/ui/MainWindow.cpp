@@ -123,7 +123,7 @@ void MainWindow::setupUi() {
     connect(btnOpen, &QPushButton::clicked, this, [this]() {
         QString path = QFileDialog::getOpenFileName(
             this, "选择模型文件",
-            QString(), "模型文件 (*.step *.stp *.iges *.igs *.brep);;所有文件 (*)");
+            QString(), "模型文件 (*.step *.stp *.iges *.igs *.brep *.nas *.bdf *.dat);;所有文件 (*)");
         if (!path.isEmpty()) {
             LOG("MODEL", "Open: " + path);
             m_model3D->loadFile(path);
