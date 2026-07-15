@@ -682,7 +682,7 @@ void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop()
 void Model3DViewer::loadFile(const QString& fp){
     cancelLoad();m_gl->clear();
     m_pendingBoxesMap.clear();
-    if (!QFile::exists(fp)) return {};
+    if (!QFile::exists(fp)) return;
 
     // .nas 快速解析显示（直接返回，不入 OCCT 线程）
     QString ext = QFileInfo(fp).suffix().toLower();
