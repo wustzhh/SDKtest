@@ -25,6 +25,12 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QSplitter>
+#include <QSet>
+#include <QVector>
+#include <QPair>
+#include <QEventLoop>
+#include <QRegularExpression>
+#include <QProgressDialog>
 
 #include "core/Logger.h"
 
@@ -185,7 +191,7 @@ void MainWindow::setupUi() {
     m_scenarioCombo->setMinimumWidth(120);
     m_scenarioCombo->setStyleSheet("QComboBox{background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 8px;height:26px;font-size:12px}");
     bl->addWidget(m_scenarioCombo);
-    QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+    QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::activated), this, [this](int idx) {
         if (idx <= 0) return; // 第一项是占位提示
         auto& prof = m_config.currentProfile();
         if (idx-1 < prof.scenarios.size())
@@ -492,15 +498,156 @@ void MainWindow::onCancelRun() {
     updateButtonStates();
 }
 
+void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
+    QDir().mkpath(screenshotDir);
+    
+    // 收集所有唯一模型路径
+    QSet<QString> modelPaths;
+    for (const auto& result : m_report.results) {
+        if (result.properties.contains("model"))
+            modelPaths.insert(result.properties["model"]);
+        if (result.properties.contains("resultModel"))
+            modelPaths.insert(result.properties["resultModel"]);
+    }
+    
+    if (modelPaths.isEmpty()) return;
+    
+    // 进度对话框
+    QProgressDialog prog(QString::fromUtf8("\u622a\u56fe\u6a21\u578b\u56fe\u7247..."),
+                         QString::fromUtf8("\u53d6\u6d88"), 0, modelPaths.size(), this);
+    prog.setWindowTitle(QString::fromUtf8("\u751f\u6210\u62a5\u544a"));
+    prog.setWindowModality(Qt::WindowModal);
+    prog.setMinimumDuration(0);
+    prog.setValue(0);
+    
+    int idx = 0;
+    // 对每个唯一模型截图（软件渲染，快速同步，无 OpenGL）
+    for (const auto& path : modelPaths) {
+        if (prog.wasCanceled()) break;
+        
+        QString baseName = QFileInfo(path).completeBaseName();
+        prog.setLabelText(QString::fromUtf8("\u6b63\u5728\u622a\u56fe: %1").arg(baseName));
+        QApplication::processEvents();
+        
+        // 软件截图：直接读取 STEP + CPU 光栅化（自带 30 秒超时）
+        QImage img = Model3DViewer::renderModelScreenshot(path, 640, 480, 30000);
+        if (img.isNull()) continue;
+        
+        // 保存
+        QString safeName = QFileInfo(path).completeBaseName();
+        safeName.replace(QRegularExpression("[^a-zA-Z0-9_\\-]"), "_");
+        QString fileName = safeName + "_" +
+            QString::number(QDateTime::currentDateTime().toMSecsSinceEpoch()) + ".png";
+        img.save(QDir::fromNativeSeparators(screenshotDir + "/" + fileName), "PNG");
+        
+        // 存储相对路径（相对于 reports/ 目录），并确保正斜杠
+        QString relPath = QString("screenshots/%1").arg(fileName);
+        
+        // 将截图路径关联到所有引用此模型的结果
+        for (auto& result : m_report.results) {
+            if (result.properties.value("model") == path)
+                result.properties["_screenshot_import"] = relPath;
+            if (result.properties.value("resultModel") == path)
+                result.properties["_screenshot_export"] = relPath;
+        }
+        idx++;
+        prog.setValue(idx);
+        QApplication::processEvents();
+    }
+    prog.close();
+}
+
 void MainWindow::onExportReport() {
     QString dir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
     QString htmlPath = dir + "/test_report.html";
-    if (!QFile::exists(htmlPath)) {
-        QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xbf\x98\xe6\xb2\xa1\xe6\x9c\x89\xe5\xb7\xb2\xe5\xaf\xbc\xe5\x87\xba\xe7\x9a\x84\xe6\x8a\xa5\xe5\x91\x8a\xef\xbc\x8c\xe8\xaf\xb7\xe5\x85\x88\xe8\xbf\x90\xe8\xa1\x8c\xe6\xb5\x8b\xe8\xaf\x95"));
+
+    // 生成报告前先截取模型图片
+    captureAllModelScreenshots(dir + "/screenshots");
+
+    // 将更新后的截图路径写回 JSON 数据文件（持久化）
+    if (!m_report.results.isEmpty()) {
+        QString runName = m_config.profiles().value(m_config.activeProfile()).name;
+        if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
+        QString err;
+        ReportExporter::saveJson(m_report, dir, runName, &err);
+    }
+
+    // 收集所有数据条目（来自 JSON 文件 + 当前运行）
+    QVector<QPair<TestReport, QString>> entries;
+
+    // 1. 读取所有历史 JSON 数据文件
+    QStringList jsonFiles = QDir(dir + "/data").entryList({"report_*.json"}, QDir::Files, QDir::Name);
+    QSet<QString> seenIds;  // 去重
+    for (const auto& fn : jsonFiles) {
+        QFile f(dir + "/data/" + fn);
+        if (!f.open(QIODevice::ReadOnly)) continue;
+        QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+        f.close();
+        QJsonObject obj = doc.object();
+        QString id = obj["id"].toString();
+        if (seenIds.contains(id)) continue;  // 跳过重复
+        seenIds.insert(id);
+
+        TestReport r;
+        r.startTime = QDateTime::fromString(id, "yyyyMMdd_HHmmss_zzz");
+        r.testBinary = obj["binary"].toString();
+        for (const auto& jr : obj["results"].toArray()) {
+            QJsonObject jo = jr.toObject();
+            TestRunResult tr;
+            tr.testCase.suiteName = jo["s"].toString();
+            tr.testCase.caseName = jo["c"].toString();
+            tr.status = jo["st"].toString() == "PASSED" ? "PASSED" : "FAILED";
+            tr.durationMs = jo["d"].toDouble();
+            QJsonObject jp = jo["p"].toObject();
+            for (auto it = jp.begin(); it != jp.end(); ++it)
+                tr.properties[it.key()] = it.value().toString();
+            // 读取截图路径
+            if (jo.contains("si"))
+                tr.properties["_screenshot_import"] = jo["si"].toString();
+            if (jo.contains("se"))
+                tr.properties["_screenshot_export"] = jo["se"].toString();
+            r.results.append(tr);
+        }
+        QString runName = obj["name"].toString();
+        if (runName.isEmpty()) runName = obj["time"].toString();
+        entries.append({r, runName});
+    }
+
+    // 2. 如果当前 m_report 不在 JSON 文件中，也加入（若已在，替换为带截图的更新数据）
+    if (!m_report.results.isEmpty()) {
+        QString curId = m_report.startTime.toString("yyyyMMdd_HHmmss_zzz");
+        QString runName = m_config.profiles().value(m_config.activeProfile()).name;
+        if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
+        if (!seenIds.contains(curId)) {
+            entries.prepend({m_report, runName});
+        } else {
+            // 替换 JSON 文件中的旧条目（旧条目没有截图路径）
+            for (int i = 0; i < entries.size(); i++) {
+                QString eid = entries[i].first.startTime.toString("yyyyMMdd_HHmmss_zzz");
+                if (eid == curId) {
+                    entries[i] = {m_report, runName};
+                    break;
+                }
+            }
+        }
+    }
+
+    if (entries.isEmpty()) {
+        QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"),
+            QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8f\xaf\xe7\x94\x9f\xe6\x88\x90\xe6\x8a\xa5\xe5\x91\x8a\xe7\x9a\x84\xe6\x95\xb0\xe6\x8d\xae"));
         return;
     }
+
+    // 3. 一次性重建 HTML（先删除旧的）
+    QFile::remove(htmlPath);
+    QString err;
+    if (!ReportExporter::rebuildHtml(entries, dir, &err)) {
+        QMessageBox::warning(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba\xe5\xa4\xb1\xe8\xb4\xa5"), err);
+        return;
+    }
+
     auto r = QMessageBox::question(this, QString::fromUtf8("\xe6\x9f\xa5\xe7\x9c\x8b\xe7\xbb\x93\xe6\x9e\x9c"),
-        QString::fromUtf8("\xe6\x8a\xa5\xe5\x91\x8a\xe5\xb7\xb2\xe4\xbf\x9d\xe5\xad\x98\xe5\x88\xb0:\n") + htmlPath + QString::fromUtf8("\n\n\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9?"),
+        QString::fromUtf8("\xe6\x8a\xa5\xe5\x91\x8a\xe5\xb7\xb2\xe7\x94\x9f\xe6\x88\x90:\n") + htmlPath + QString::fromUtf8("\n\n\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9?"),
         QMessageBox::Yes | QMessageBox::No);
     if (r == QMessageBox::Yes)
         QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
@@ -989,7 +1136,7 @@ void MainWindow::onProgressUpdated(int done, int total) {
 
 void MainWindow::onAllFinished() {
     m_report.endTime = QDateTime::currentDateTime();
-    // 保存到历史
+    // 保存到历史（用于后续可能的对比）
     m_allRuns.append(m_report);
     QString profileName = m_config.profiles().value(m_config.activeProfile()).name;
     m_runNames.append(profileName.isEmpty() ? QString::number(m_report.results.size()) + " tests" : profileName);
@@ -1009,15 +1156,20 @@ void MainWindow::onAllFinished() {
         if (s.name == QString::fromUtf8("\xe6\x9c\x89\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) foundWith = true;
         else if (s.name == QString::fromUtf8("\xe6\x97\xa0\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) foundWithout = true;
     }
-    // 自动导出（静默，不弹窗）
+    // 自动导出：仅保存 JSON 数据文件，不操作 HTML（点击"查看结果"时才统一重建）
     QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
     if (!m_report.results.isEmpty()) {
         QString autoName = m_config.profiles().value(m_config.activeProfile()).name;
         if (autoName.isEmpty()) autoName = QDateTime::currentDateTime().toString("HH:mm:ss");
         QString err;
-        ReportExporter::exportRun(m_report, reportDir, autoName, &err);
-        m_allRuns.clear();
-        m_runNames.clear();
+        if (ReportExporter::saveJson(m_report, reportDir, autoName, &err)) {
+            statusBar()->showMessage(
+                QString::fromUtf8("\xe6\x95\xb0\xe6\x8d\xae\xe5\xb7\xb2\xe4\xbf\x9d\xe5\xad\x98\xef\xbc\x8c\xe7\x82\xb9\xe5\x87\xbb\xe2\x80\x9c\xe6\x9f\xa5\xe7\x9c\x8b\xe7\xbb\x93\xe6\x9e\x9c\xe2\x80\x9d\xe7\x94\x9f\xe6\x88\x90\xe6\x8a\xa5\xe5\x91\x8a"),
+                5000);
+        } else {
+            LOG("EXPORT", "saveJson failed: " + err);
+        }
+        // 不再清空 m_allRuns / m_runNames，保留运行历史
     }
 
     if (!foundWith || !foundWithout) {
@@ -1068,6 +1220,8 @@ void MainWindow::refreshProfileCombo() {
         connect(act, &QAction::triggered, this, [this, i]() {
             m_config.setActiveProfile(i);
             refreshProfileCombo();
+            m_centerResultView->clear();
+            m_report = {};
         });
     }
 }

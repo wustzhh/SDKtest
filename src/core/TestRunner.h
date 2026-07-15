@@ -15,7 +15,6 @@ class TestRunner : public QObject {
 public:
     explicit TestRunner(QObject* parent = nullptr);
 
-    // 一次跑完所有选中用例（合并 --gtest_filter）
     void run(const QString& binaryPath,
              const QVector<TestCase>& cases,
              const QStringList& extraArgs = {},
@@ -34,13 +33,7 @@ signals:
     void errorOccurred(const QString& message);
     void rawOutput(const QString& line);
 
-private slots:
-    void onReadyReadStdout();
-    void onReadyReadStderr();
-    void onProcessFinished(int exitCode, QProcess::ExitStatus status);
-
 private:
-    // 从合并的 stdout 中切分每个用例的输出
     struct ParsedBlock {
         QString suite;
         QString name;
@@ -48,22 +41,34 @@ private:
         double  durationMs = 0;
         QString status;
     };
+    struct BatchState {
+        QProcess*   process = nullptr;
+        QString     accumulatedStdout;
+        QString     xmlPath;
+        QVector<TestCase> cases;
+    };
     QVector<ParsedBlock> parseCombinedOutput(const QString& allOutput);
+    void startNextBatch();
+    void onBatchFinished(BatchState* batch);
+    void safeProgress(int done);
 
-    // 解析 gtest XML (RecordProperty)
-    void parseXmlProperties(const QString& xmlPath, QMap<QString, QString>& props);
-
-    QProcess*       m_process = nullptr;
-    QElapsedTimer   m_elapsed;
+    QVector<BatchState> m_batches;
+    int m_nextBatchIdx = 0;
+    int m_batchesFinished = 0;
+    int m_activeCount = 0;
+    static const int MAX_CONCURRENT = 10;
+    static const int MAX_FILTER_LEN = 2000;
 
     QString         m_binaryPath;
     QString         m_workingDir;
     int             m_totalCount = 0;
     int             m_doneCount  = 0;
-
-    QString         m_accumulatedStdout;
-    QString         m_gtestXmlPath;
+    QStringList     m_extraArgs;
+    QStringList     m_dependencies;
     QMap<QString, QString> m_envVars;
+    QElapsedTimer   m_elapsed;
+    bool            m_cancelled = false;
     int             m_lastRunCount = 0;
     int             m_lastDoneCount = 0;
+    int             m_lastEmittedProgress = 0;
 };

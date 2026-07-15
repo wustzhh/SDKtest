@@ -51,6 +51,7 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
 }
 
 void TestProgressPanel::startRun(int totalTests) {
+    m_totalTests = totalTests;
     m_progressBar->setValue(0);
     m_progressBar->setMaximum(totalTests);
     m_lblProgress->setText(QString("运行中... 0 / %1").arg(totalTests));
@@ -83,8 +84,9 @@ void TestProgressPanel::updateElapsed() {
 
 void TestProgressPanel::updateProgress(int done, int total) {
     m_progressBar->setValue(done);
+    double pct = total > 0 ? qMin(done * 100.0 / total, 100.0) : 0.0;
     m_progressBar->setFormat(QString("%1%")
-        .arg(total > 0 ? QString::number(done * 100.0 / total, 'f', 1) : "0.0"));
+        .arg(QString::number(pct, 'f', 1)));
     // 不修改 maximum（startRun 已设好，防止分母变化）
     m_lblProgress->setText(QString("运行中... %1 / %2").arg(done).arg(total));
 }
@@ -101,7 +103,7 @@ void TestProgressPanel::finishRun() {
     m_btnCancel->setEnabled(false);
     m_progressBar->setValue(m_progressBar->maximum());
     updateElapsed();
-    m_lblProgress->setText(QString::fromUtf8("\xe8\xbf\x90\xe8\xa1\x8c\xe5\xae\x8c\xe6\x88\x90 \xe2\x9c\x93"));
+    m_lblProgress->setText(QString("运行完成 \u2713  (\u5171 %1 \u4e2a\u7528\u4f8b)").arg(m_totalTests));
     appendLog("\n══════ 运行完成 ══════");
 }
 

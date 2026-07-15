@@ -19,9 +19,6 @@
 #include <set>
 #include <map>
 #include <stdio.h>
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 // ═══════════════════════════════════════════════════════════════
 //  OCCT 读取线程实现（StepWorker 定义在 .h 中）
@@ -110,7 +107,8 @@ void StepWorker::doWork() {
     }
     if (r.normals.size()<r.verts.size()) { int o=r.normals.size(); r.normals.resize(r.verts.size()); for (int i=o;i<r.verts.size();i++) r.normals[i]=QVector3D(0,1,0); }
     // 调试输出（追加到统一日志）
-    {   FILE* df = fopen("test_runner_ui_debug.log", "a");
+    {   QString logPath = QCoreApplication::applicationDirPath() + "/test_runner_ui_debug.log";
+        FILE* df = fopen(logPath.toUtf8().constData(), "a");
         if (df) { fprintf(df, "\n===== %s =====\n", QFileInfo(m_path).fileName().toUtf8().constData()); }
         if (df) {
             fprintf(df, "=== OCCT Debug ===\nFile: %s\n\n", m_path.toUtf8().constData());
@@ -191,6 +189,14 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7")
         .arg(mx,0,'f',3).arg(Mx,0,'f',3).arg(my,0,'f',3).arg(My,0,'f',3)
         .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3));
+    // 所有面 AABB，6值排序输出
+    for (const auto& b : fbb) {
+        QVector<double> v = {b.minX,b.minY,b.minZ,b.maxX,b.maxY,b.maxZ};
+        std::sort(v.begin(), v.end());
+        LOG("3D",QString("  faceAABB: [%1, %2, %3, %4, %5, %6]")
+            .arg(v[0],0,'f',3).arg(v[1],0,'f',3).arg(v[2],0,'f',3)
+            .arg(v[3],0,'f',3).arg(v[4],0,'f',3).arg(v[5],0,'f',3));
+    }
 }
 void GLViewer::resetView(){
     m_rot = QQuaternion();
@@ -214,46 +220,52 @@ void GLViewer::resetView(){
 void GLViewer::setHighlightFaces(const QVector<int>& ids){m_hlFaces=ids;update();}
 QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double maxX,double maxY,double maxZ,double eps) const {
     QVector<int> result;
-    // 判断是否是退化点包围盒（min ≈ max）
     bool isPoint = (qAbs(maxX-minX) < eps && qAbs(maxY-minY) < eps && qAbs(maxZ-minZ) < eps);
-    for (int fi=0;fi<m_faceBBoxes.size();fi++) {
-        const auto& b=m_faceBBoxes[fi];
-        if (isPoint) {
-            // 点特征：找哪个面包围盒包含该点
+    if (isPoint) {
+        for (int fi=0;fi<m_faceBBoxes.size();fi++) {
+            const auto& b=m_faceBBoxes[fi];
             if (minX >= b.minX-eps && minX <= b.maxX+eps &&
                 minY >= b.minY-eps && minY <= b.maxY+eps &&
                 minZ >= b.minZ-eps && minZ <= b.maxZ+eps)
                 result.append(fi);
-        } else {
-            // 三步匹配：①精确 ②containment（取最小面）③overlap（edge盒横跨两个面）
-            int exactCnt = 0, containBest = -1;
-            double bestVol = 1e30;
-            QVector<int> overlapList;
-            for (int fi=0;fi<m_faceBBoxes.size();fi++) {
-                const auto& b=m_faceBBoxes[fi];
-                bool exact = (qAbs(b.minX-minX)<=eps && qAbs(b.maxX-maxX)<=eps &&
-                              qAbs(b.minY-minY)<=eps && qAbs(b.maxY-maxY)<=eps &&
-                              qAbs(b.minZ-minZ)<=eps && qAbs(b.maxZ-maxZ)<=eps);
-                if (exact) { result.append(fi); exactCnt++; }
-                if (exactCnt==0) {
-                    // containment：盒在面内部
-                    if (minX >= b.minX-eps && maxX <= b.maxX+eps &&
-                        minY >= b.minY-eps && maxY <= b.maxY+eps &&
-                        minZ >= b.minZ-eps && maxZ <= b.maxZ+eps) {
-                        double vol = (b.maxX-b.minX)*(b.maxY-b.minY)*(b.maxZ-b.minZ);
-                        if (containBest<0 || vol<bestVol) { containBest = fi; bestVol = vol; }
-                    }
-                    // overlap：盒与面有交集（edge盒场景）
-                    if (!(minX > b.maxX+eps || maxX < b.minX-eps ||
-                          minY > b.maxY+eps || maxY < b.minY-eps ||
-                          minZ > b.maxZ+eps || maxZ < b.minZ-eps)) {
-                        overlapList.append(fi);
-                    }
+        }
+    } else {
+        int exactCnt = 0, containBest = -1;
+        double bestVol = 1e30;
+        QVector<int> overlapList;
+        for (int fi=0;fi<m_faceBBoxes.size();fi++) {
+            const auto& b=m_faceBBoxes[fi];
+            bool exact = (qAbs(b.minX-minX)<=eps && qAbs(b.maxX-maxX)<=eps &&
+                          qAbs(b.minY-minY)<=eps && qAbs(b.maxY-maxY)<=eps &&
+                          qAbs(b.minZ-minZ)<=eps && qAbs(b.maxZ-maxZ)<=eps);
+            if (exact) { result.append(fi); exactCnt++; }
+            if (exactCnt==0) {
+                if (minX >= b.minX-eps && maxX <= b.maxX+eps &&
+                    minY >= b.minY-eps && maxY <= b.maxY+eps &&
+                    minZ >= b.minZ-eps && maxZ <= b.maxZ+eps) {
+                    double vol = (b.maxX-b.minX)*(b.maxY-b.minY)*(b.maxZ-b.minZ);
+                    if (containBest<0 || vol<bestVol) { containBest = fi; bestVol = vol; }
+                }
+                if (!(minX > b.maxX+eps || maxX < b.minX-eps ||
+                      minY > b.maxY+eps || maxY < b.minY-eps ||
+                      minZ > b.maxZ+eps || maxZ < b.minZ-eps)) {
+                    overlapList.append(fi);
                 }
             }
-            if (exactCnt>0) { /* exact match already added */ }
-            else if (containBest>=0) result.append(containBest);
-            else result = overlapList;
+        }
+        if (exactCnt>0) { /* exact match already added */ }
+        else if (containBest>=0) result.append(containBest);
+        else result = overlapList;
+    }
+    return result;
+}
+QVector<int> GLViewer::findFacesByCenter(double x, double y, double z, double eps) const {
+    QVector<int> result;
+    for (int fi = 0; fi < m_faceCenters.size(); fi++) {
+        const auto& c = m_faceCenters[fi];
+        if (qAbs(c.x() - x) < eps && qAbs(c.y() - y) < eps && qAbs(c.z() - z) < eps) {
+            int id = (fi < m_faceCenterIds.size()) ? m_faceCenterIds[fi] : fi;
+            result.append(id);
         }
     }
     return result;
@@ -261,9 +273,6 @@ QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double
 void GLViewer::setShowFaceIds(bool show){m_showFaceIds=show;update();}
 void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();m_faceCenterIds.clear();m_faceBBoxes.clear();m_hlFaces.clear();update();}
 void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.18f,.18f,.22f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
-#ifdef _WIN32
-    if(!m_fontBase){HDC hdc=::GetDC((HWND)winId());HFONT hf=CreateFontA(15,0,0,0,FW_BOLD,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,FF_DONTCARE|FIXED_PITCH,"Consolas");SelectObject(hdc,hf);m_fontBase=glGenLists(128);wglUseFontBitmaps(hdc,0,128,m_fontBase);DeleteObject(hf);ReleaseDC((HWND)winId(),hdc);}
-#endif
     GLfloat a0[]={.4f,.4f,.45f,1};glLightfv(GL_LIGHT0,GL_AMBIENT,a0);GLfloat d0[]={.6f,.6f,.7f,1};glLightfv(GL_LIGHT0,GL_DIFFUSE,d0);GLfloat s0[]={.2f,.2f,.2f,1};glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
     GLfloat a1[]={.15f,.15f,.2f,1};glLightfv(GL_LIGHT1,GL_AMBIENT,a1);GLfloat d1[]={.3f,.3f,.4f,1};glLightfv(GL_LIGHT1,GL_DIFFUSE,d1);
     glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);glEnable(GL_COLOR_MATERIAL);}
@@ -298,8 +307,14 @@ void GLViewer::paintGL(){
         for(int i=0;i<m_verts.size();i++){va[i*3]=m_verts[i].x();va[i*3+1]=m_verts[i].y();va[i*3+2]=m_verts[i].z();
             if(i<m_normals.size()){na[i*3]=m_normals[i].x();na[i*3+1]=m_normals[i].y();na[i*3+2]=m_normals[i].z();}else{na[i*3]=0;na[i*3+1]=1;na[i*3+2]=0;}}
         glVertexPointer(3,GL_FLOAT,0,va);glNormalPointer(GL_FLOAT,0,na);
-        glColor3f(.55f,.62f,.72f);
+        // 显示面ID时模型半透明渲染
+        if (m_showFaceIds) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+        glColor4f(.55f,.62f,.72f, m_showFaceIds ? .35f : 1.f);
         glDrawElements(GL_TRIANGLES,m_tri.size(),GL_UNSIGNED_INT,m_tri.data());
+        if (m_showFaceIds) glDisable(GL_BLEND);
         glDisableClientState(GL_NORMAL_ARRAY);glDisableClientState(GL_VERTEX_ARRAY);delete[]va;delete[]na;
     }
     // 高亮面
@@ -320,33 +335,202 @@ void GLViewer::paintGL(){
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
         // 有高亮时关掉深度测试，让边缘线不被高亮 fill 遮挡
-        if (!m_hlFaces.isEmpty()) glDisable(GL_DEPTH_TEST);
+        // 显示面ID时关掉深度测试，让边缘线在半透明模型上可见
+        if (m_showFaceIds) glDisable(GL_DEPTH_TEST);
         glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
         for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
         glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(3);
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
-        if (!m_hlFaces.isEmpty()) glEnable(GL_DEPTH_TEST);
+        if (m_showFaceIds) glEnable(GL_DEPTH_TEST);
     }
-
-    // 显示面 ID（OpenGL 光栅文字）
-#ifdef _WIN32
-    if(m_showFaceIds&&!m_faceCenters.isEmpty()&&m_fontBase){
-        glDisable(GL_DEPTH_TEST);
-        glColor3f(1,1,0);
-        for(int fi=0;fi<m_faceCenters.size();fi++){
-            QVector3D c=m_faceCenters[fi];
-            glRasterPos3f(c.x(),c.y(),c.z());
-            int faceId = (fi<m_faceCenterIds.size()) ? m_faceCenterIds[fi] : fi;
-            QByteArray txt=QString("F%1").arg(faceId).toLatin1();
-            glListBase(m_fontBase);glCallLists(txt.size(),GL_UNSIGNED_BYTE,txt.constData());
-        }
-    }
-#endif
 }
+
+
 void GLViewer::mousePressEvent(QMouseEvent* e){m_lastPos=e->pos();m_dragging=true;}
 void GLViewer::mouseMoveEvent(QMouseEvent* e){if(!m_dragging)return;float dx=e->position().x()-m_lastPos.x(),dy=e->position().y()-m_lastPos.y();if(e->buttons()&Qt::LeftButton){QQuaternion dq=QQuaternion::fromAxisAndAngle(QVector3D(0,1,0),dx*.4f)*QQuaternion::fromAxisAndAngle(QVector3D(1,0,0),dy*.4f);m_rot=dq*m_rot;m_rot.normalize();}else if(e->buttons()&Qt::MiddleButton){m_panX+=dx*.005f*m_modelSize/m_zoom;m_panY-=dy*.005f*m_modelSize/m_zoom;}m_lastPos=e->pos();update();}
 void GLViewer::wheelEvent(QWheelEvent* e){if(e->angleDelta().y()>0)m_zoom=qMin(m_zoom*1.15f,100.f);else m_zoom=qMax(m_zoom*.85f,.01f);update();}
+
+QImage GLViewer::grabScreenshot() const {
+    // Qt 6: QOpenGLWidget::grab() returns QPixmap
+    return const_cast<GLViewer*>(this)->grab().toImage();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  快速软件截图（CPU 光栅化，无 OpenGL）
+// ═══════════════════════════════════════════════════════════════
+
+// 软件光栅化：将三角形网格渲染为 QImage
+static QImage rasterizeTriangles(const QVector<QVector3D>& verts,
+                                  const QVector<int>& tris,
+                                  const QVector<QVector3D>& normals,
+                                  int width, int height)
+{
+    if (verts.isEmpty() || tris.size() < 3) return {};
+
+    // 计算模型中心
+    double cx = 0, cy = 0, cz = 0;
+    for (const auto& v : verts) { cx += v.x(); cy += v.y(); cz += v.z(); }
+    int n = verts.size();
+    cx /= n; cy /= n; cz /= n;
+
+    // 固定视角旋转（参考 CADShoter: Y-35°, X-25°）
+    QMatrix4x4 rotMat;
+    rotMat.rotate(-35, 0, 1, 0);  // Y 轴旋转
+    rotMat.rotate(-25, 1, 0, 0);  // X 轴旋转
+
+    // 投影所有顶点
+    QVector<QVector3D> proj;
+    proj.reserve(verts.size());
+    double minX = 1e18, minY = 1e18, maxX = -1e18, maxY = -1e18;
+    for (const auto& v : verts) {
+        QVector3D c = v - QVector3D(cx, cy, cz);
+        QVector3D r = rotMat * c;
+        proj.append(r);
+        if (r.x() < minX) minX = r.x(); if (r.x() > maxX) maxX = r.x();
+        if (r.y() < minY) minY = r.y(); if (r.y() > maxY) maxY = r.y();
+    }
+
+    // 缩放到图像尺寸（留 10% 边距）
+    double range = qMax(maxX - minX, maxY - minY);
+    if (range < 0.001) return {};
+    double scale = qMin(width, height) * 0.85 / range;
+    double offX = width / 2.0;
+    double offY = height / 2.0;
+
+    // 光方向（与 CADShoter 一致）
+    QVector3D lightDir(0.4f, 0.8f, 0.5f);
+    lightDir.normalize();
+
+    // 构建三角形列表（含深度和亮度）
+    struct TriData {
+        QPolygonF poly;
+        double depth;
+        double brightness;
+    };
+    QVector<TriData> triData;
+    triData.reserve(tris.size() / 3);
+
+    for (int i = 0; i < tris.size() / 3; i++) {
+        int i0 = tris[i * 3], i1 = tris[i * 3 + 1], i2 = tris[i * 3 + 2];
+        if (i0 >= proj.size() || i1 >= proj.size() || i2 >= proj.size()) continue;
+
+        QPolygonF poly;
+        poly << QPointF(proj[i0].x() * scale + offX, proj[i0].y() * scale + offY)
+             << QPointF(proj[i1].x() * scale + offX, proj[i1].y() * scale + offY)
+             << QPointF(proj[i2].x() * scale + offX, proj[i2].y() * scale + offY);
+
+        double depth = (proj[i0].z() + proj[i1].z() + proj[i2].z()) / 3.0;
+
+        // 计算面法线（从投影后的顶点）
+        QVector3D e1 = proj[i1] - proj[i0];
+        QVector3D e2 = proj[i2] - proj[i0];
+        QVector3D normal = QVector3D::crossProduct(e1, e2);
+        if (normal.length() < 1e-10) continue;
+        normal.normalize();
+
+        // Lambertian 漫反射
+        double dot = QVector3D::dotProduct(normal, lightDir);
+        double brightness = qBound(0.35, 0.5 + 0.5 * dot, 1.0);
+
+        triData.append({poly, depth, brightness});
+    }
+
+    if (triData.isEmpty()) return {};
+
+    // Painter's algorithm：从远到近排序
+    std::sort(triData.begin(), triData.end(), [](const TriData& a, const TriData& b) {
+        return a.depth > b.depth;
+    });
+
+    // 渲染
+    QImage img(width, height, QImage::Format_ARGB32);
+    img.fill(QColor(20, 25, 46));  // 深色渐变背景
+    QPainter painter(&img);
+
+    // 渐变背景
+    QLinearGradient bgGrad(0, 0, 0, height);
+    bgGrad.setColorAt(0, QColor(20, 25, 46));
+    bgGrad.setColorAt(1, QColor(30, 20, 46));
+    painter.fillRect(QRect(0, 0, width, height), bgGrad);
+
+    painter.setRenderHint(QPainter::Antialiasing, false);
+
+    for (const auto& td : triData) {
+        int g = qBound(0, (int)(td.brightness * 255), 255);
+        QColor fill(
+            qBound(0, (int)(g * 0.55), 255),
+            qBound(0, (int)(g * 0.62), 255),
+            qBound(0, (int)(g * 0.72), 255));
+        painter.setBrush(fill);
+        painter.setPen(Qt::NoPen);
+        painter.drawPolygon(td.poly);
+    }
+    painter.end();
+    return img;
+}
+
+// 在子线程中读取 STEP 文件（带超时保护）
+static StepLoadResult readStepFileWithTimeout(const QString& filePath, int timeoutMs)
+{
+    StepLoadResult result;
+
+#ifdef HAS_OCC
+    QThread workerThread;
+    StepWorker worker(filePath);
+    worker.moveToThread(&workerThread);
+
+    bool done = false;
+    QObject::connect(&workerThread, &QThread::started, &worker, &StepWorker::doWork);
+    QObject::connect(&worker, &StepWorker::finished, [&](const StepLoadResult& r) {
+        result = r;
+        done = true;
+        workerThread.quit();
+    });
+
+    // 超时定时器
+    QTimer timeoutTimer;
+    timeoutTimer.setSingleShot(true);
+    QObject::connect(&timeoutTimer, &QTimer::timeout, [&]() {
+        workerThread.requestInterruption();
+        workerThread.quit();
+        done = true;
+    });
+
+    workerThread.start();
+    timeoutTimer.start(timeoutMs);
+
+    // 等待完成或超时
+    QEventLoop loop;
+    QObject::connect(&workerThread, &QThread::finished, &loop, &QEventLoop::quit);
+    if (!done) loop.exec();
+
+    if (!workerThread.isFinished()) {
+        workerThread.requestInterruption();
+        workerThread.wait(1000);
+        if (!workerThread.isFinished()) workerThread.terminate();
+    }
+#else
+    Q_UNUSED(filePath)
+    Q_UNUSED(timeoutMs)
+#endif
+
+    return result;
+}
+
+QImage Model3DViewer::renderModelScreenshot(const QString& filePath,
+                                             int width, int height,
+                                             int timeoutMs)
+{
+    if (!QFile::exists(filePath)) return {};
+
+    // 读取 STEP 文件（子线程 + 超时）
+    auto result = readStepFileWithTimeout(filePath, timeoutMs);
+    if (!result.ok || result.verts.isEmpty() || result.tris.size() < 3) return {};
+
+    // 软件光栅化
+    return rasterizeTriangles(result.verts, result.tris, result.normals, width, height);
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  Model3DViewer
@@ -392,8 +576,9 @@ void Model3DViewer::loadFile(const QString& fp){
             m_gl->loadMesh(r.verts,r.tris,r.normals,r.edges,r.faceIds,r.faceCenters,r.faceCenterIds,r.faceBBoxes);
             applyPendingBoxes();
             m_status->setText(QString("OCCT: %1v %2t %3e").arg(r.verts.size()).arg(r.tris.size()/3).arg(r.edges.size()));
-            m_status->setStyleSheet("color:#10b981;font-size:12px;padding:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:6px;");}
-        else{m_status->setText(r.error);m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");LOG("3D","FAIL: "+r.error);}
+            m_status->setStyleSheet("color:#10b981;font-size:12px;padding:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:6px;");
+            emit modelLoaded();}
+        else{m_status->setText(r.error);m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");LOG("3D","FAIL: "+r.error);emit modelLoaded();}
         if(m_workerThread){m_workerThread->quit();m_workerThread->wait();m_workerThread=nullptr;}if(m_worker){m_worker->deleteLater();m_worker=nullptr;}
     });
     connect(m_workerThread,&QThread::finished,this,[this](){if(m_worker){m_worker->deleteLater();m_worker=nullptr;}});
@@ -420,6 +605,15 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     m_pendingBoxesMap[propKey] = boxes;
     // 模型还没加载时不解析，保持"解析中..."不变
     if (m_gl->faceBBoxCount() == 0 && !propKey.isEmpty()) return;
+    // 输出XML包围盒，6值排序
+    for (const auto& b : boxes) {
+        if (b.size() < 6) continue;
+        QVector<double> v = {b[0],b[1],b[2],b[3],b[4],b[5]};
+        std::sort(v.begin(), v.end());
+        LOG("BOX",QString("  xmlBox: [%1, %2, %3, %4, %5, %6]")
+            .arg(v[0],0,'f',3).arg(v[1],0,'f',3).arg(v[2],0,'f',3)
+            .arg(v[3],0,'f',3).arg(v[4],0,'f',3).arg(v[5],0,'f',3));
+    }
     QSet<int> allIds;
     QStringList faceParts, pointParts;
     double eps = 0.01;
@@ -428,7 +622,7 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
     for (const auto& box : boxes) {
         if (box.size() < 6) { totalBoxCount++; continue; }
         bool isPoint = (qAbs(box[3]-box[0]) < eps && qAbs(box[4]-box[1]) < eps && qAbs(box[5]-box[2]) < eps);
-        auto ids = m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
+        auto ids = isPoint ? m_gl->findFacesByCenter(box[0], box[1], box[2]) : m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
         totalBoxCount++;
         if (!ids.isEmpty()) matchedBoxCount++;
         else unmatchedBoxes.append(box);
@@ -449,7 +643,7 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
         for (const auto& b : unmatchedBoxes) {
             QVector<double> v = {b[0],b[1],b[2],b[3],b[4],b[5]};
             std::sort(v.begin(), v.end());
-            LOG("BOX",QString("  noMatch: %1 %2 %3 %4 %5 %6")
+            LOG("BOX",QString("  noMatch: [%1, %2, %3, %4, %5, %6]")
                 .arg(v[0],0,'f',3).arg(v[1],0,'f',3).arg(v[2],0,'f',3)
                 .arg(v[3],0,'f',3).arg(v[4],0,'f',3).arg(v[5],0,'f',3));
         }
@@ -469,7 +663,9 @@ QVector<int> Model3DViewer::resolveBoxes(const QVector<QVector<double>>& boxes) 
     QSet<int> allIds;
     for (const auto& box : boxes) {
         if (box.size() < 6) continue;
-        auto ids = m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
+        double eps = 0.01;
+        bool isPoint = (qAbs(box[3]-box[0]) < eps && qAbs(box[4]-box[1]) < eps && qAbs(box[5]-box[2]) < eps);
+        auto ids = isPoint ? m_gl->findFacesByCenter(box[0], box[1], box[2]) : m_gl->findFacesInBox(box[0], box[1], box[2], box[3], box[4], box[5]);
         for (int id : ids) allIds.insert(id);
     }
     return QVector<int>(allIds.begin(), allIds.end());

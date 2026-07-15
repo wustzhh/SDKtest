@@ -90,8 +90,6 @@ TestListPanel::TestListPanel(QWidget* parent)
         item->setForeground(0, QColor(0x63,0x66,0xf1));
         updatePathLabel(item);
     });
-    m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_tree, &QTreeWidget::customContextMenuRequested, this, &TestListPanel::onTreeContextMenu);
     layout->addWidget(m_tree, 1);
 
     m_contextMenu = new QMenu(this);
@@ -235,6 +233,7 @@ void TestListPanel::updateStats() {
 void TestListPanel::loadTests(const QVector<TestCase>& cases,
                                const QVector<TestCategory>& categories)
 {
+    m_lastHighlighted = nullptr;
     m_tree->clear();
     m_searchEdit->clear();
     if (cases.isEmpty()) {
@@ -289,9 +288,11 @@ void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,
                 caseItem->setData(0, Role_Type, "case");
                 caseItem->setData(0, Role_SuiteName, tc.suiteName);
                 caseItem->setData(0, Role_CaseName, tc.caseName);
+                caseItem->setToolTip(0, tc.suiteName + "." + tc.caseName);
             }
             int sc = si.value().size(); catTotal += sc;
             suiteItem->setText(0, MARK_NO + "  " + si.key() + QString(" (%1)").arg(sc));
+            suiteItem->setToolTip(0, si.key());
         }
         catItem->setData(0, Role_SuiteName, ci.key());
         catItem->setText(0, MARK_NO + "  " + ci.key() + QString(" (%1)").arg(catTotal));
@@ -339,7 +340,7 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
 QStringList TestListPanel::selectedTestNames() const {
     QStringList names;
     std::function<void(QTreeWidgetItem*)> collect = [&](QTreeWidgetItem* item) {
-        if (!item) return;
+        if (!item || item->isHidden()) return;
         QString t = item->data(0, Role_Type).toString();
         if (t == "case" && itemChecked(item)) {
             QString s = item->data(0, Role_SuiteName).toString();
@@ -513,6 +514,7 @@ void TestListPanel::onReverseFilterClicked() {
             bool wasHidden = item->isHidden();
             item->setHidden(!wasHidden);
             if (!wasHidden) { setItemChecked(item, false); item->setText(0, MARK_NO + "  " + item->data(0, Role_CaseName).toString()); }
+            else { setItemChecked(item, true); item->setText(0, MARK_YES + "  " + item->data(0, Role_CaseName).toString()); }
         } else {
             bool anyVis = false;
             for (int i = 0; i < item->childCount(); i++) {

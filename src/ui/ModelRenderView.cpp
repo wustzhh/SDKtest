@@ -60,11 +60,12 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_searchEdit = new QLineEdit(m_content);
     m_searchEdit->setPlaceholderText("搜索模型数据...");
     m_searchEdit->setStyleSheet("padding:2px 4px; font-size:12px;");
-    connect(m_searchEdit, &QLineEdit::textChanged, this, &ModelRenderView::onSearchChanged);
-    m_filterCombo = new QComboBox(m_content);
-    m_filterCombo->addItems({"全部", "通过", "失败", "跳过"});
-    connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ModelRenderView::onFilterChanged);
+    connect(m_searchEdit, &QLineEdit::editingFinished, this, [this]() {
+        onSearchChanged(m_searchEdit->text());
+    });
+    connect(m_searchEdit, &QLineEdit::returnPressed, this, [this]() {
+        onSearchChanged(m_searchEdit->text());
+    });
     QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
                     "padding:3px 10px;font-size:12px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
     m_btnExpand = new QPushButton("展开", m_content);
@@ -73,13 +74,21 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_btnCollapse = new QPushButton("折叠", m_content);
     m_btnCollapse->setFixedHeight(28);m_btnCollapse->setStyleSheet(tbBtn);
     connect(m_btnCollapse, &QPushButton::clicked, this, &ModelRenderView::onCollapseAll);
+    m_btnLocate = new QPushButton("\xE2\x97\x8A", m_content);
+    m_btnLocate->setFixedSize(28,28);
+    m_btnLocate->setStyleSheet(
+        "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}"
+        "QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}"
+        "QPushButton:disabled{color:#cbd5e1;background:#f8f9fb;}");
+    m_btnLocate->setToolTip("定位到当前选中结果");
+    m_btnLocate->setEnabled(false);
     m_lblStats = new QLabel("", m_content);
     m_lblStats->setStyleSheet("color:#8892a6; font-size:11px;");
     toolbar->addWidget(m_btnCollapsePanel);
     toolbar->addWidget(m_searchEdit, 2);
-    toolbar->addWidget(m_filterCombo);
     toolbar->addWidget(m_btnExpand);
     toolbar->addWidget(m_btnCollapse);
+    toolbar->addWidget(m_btnLocate);
     toolbar->addWidget(m_lblStats);
     contentLayout->addLayout(toolbar);
 
@@ -94,6 +103,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
     m_tree->setRootIsDecorated(true);
     m_tree->setAnimated(true);
+    m_tree->setSelectionMode(QAbstractItemView::NoSelection);
     m_tree->setAlternatingRowColors(true);
     m_tree->setWordWrap(true);
     m_tree->setStyleSheet(
@@ -103,6 +113,10 @@ ModelRenderView::ModelRenderView(QWidget* parent)
         "QTreeWidget::item:hover { background:#f8f9fb; }"
         "QTreeWidget{outline:none;}");
     connect(m_tree, &QTreeWidget::itemClicked, this, &ModelRenderView::onTreeItemClicked);
+    connect(m_btnLocate, &QPushButton::clicked, this, [this]() {
+        if (m_lastHighlighted)
+            m_tree->scrollToItem(m_lastHighlighted, QAbstractItemView::EnsureVisible);
+    });
 
     // Splitter: result tree + property tree
     m_bottomSplit = new QSplitter(Qt::Vertical, m_content);
@@ -169,11 +183,13 @@ void ModelRenderView::clear() {
     m_propTree->clear();
     m_results.clear();
     m_resultMap.clear();
+    m_lastHighlighted = nullptr;
     m_lblStats->setText("");
     m_searchEdit->clear();  // 留在内容页，只是清空数据
 }
 
 void ModelRenderView::buildResultTree(const QVector<TestRunResult>& results) {
+    m_lastHighlighted = nullptr;
     m_tree->clear();
 
     for (const auto& result : results) {
@@ -276,24 +292,26 @@ void ModelRenderView::onSearchChanged(const QString& text) {
     }
 }
 
-void ModelRenderView::onFilterChanged(int index) {
-    for (int i = 0; i < m_tree->topLevelItemCount(); i++) {
-        auto* item = m_tree->topLevelItem(i);
-        if (index == 0) {
-            item->setHidden(false);
-        } else {
-            QString status = item->text(1);
-            bool show = (index == 1 && status.contains("✅")) ||
-                        (index == 2 && status.contains("❌")) ||
-                        (index == 3 && status.contains("⏭"));
-            item->setHidden(!show);
-        }
-    }
-}
-
 void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     Q_UNUSED(column);
     if (!item) return;
+
+    // 取消上次高亮
+    if (m_lastHighlighted && m_lastHighlighted != item) {
+        for (int c = 0; c < 3; c++) {
+            m_lastHighlighted->setBackground(c, QBrush());
+            m_lastHighlighted->setForeground(c, QBrush());
+        }
+    }
+    // 高亮当前项
+    m_lastHighlighted = item;
+    for (int c = 0; c < 3; c++) {
+        item->setBackground(c, QColor(0x63,0x66,0xf1));
+        item->setForeground(c, QColor(0xff,0xff,0xff));
+    }
+    QFont bf = item->font(1); bf.setBold(true); item->setFont(1, bf);
+    m_btnLocate->setEnabled(true);
+    m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
 
     // 点击 stdout 节点弹出完整内容
     if (item->text(1) == "stdout" && item->text(2).length() > 300) {

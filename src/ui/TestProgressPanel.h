@@ -44,5 +44,6 @@ private:
     QPushButton*    m_btnCancel;
     QTimer*         m_elapsedTimer;
     QElapsedTimer   m_startTime;
+    int             m_totalTests = 0;
     void updateElapsed();
 };

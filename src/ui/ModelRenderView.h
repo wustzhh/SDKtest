@@ -45,7 +45,6 @@ signals:
 
 private slots:
     void onSearchChanged(const QString& text);
-    void onFilterChanged(int index);
     void onTreeItemClicked(QTreeWidgetItem* item, int column);
     void onExpandAll();
     void onCollapseAll();
@@ -53,7 +52,6 @@ private slots:
 private:
     void buildResultTree(const QVector<TestRunResult>& results);
     void addNodeToTree(QTreeWidgetItem* parent, const ResultNode& node);
-    void highlightMatches(QTreeWidgetItem* item, const QString& text);
     void updateDetailPanel(const TestRunResult* result);
 
     // UI 组件
@@ -65,15 +63,16 @@ private:
     QWidget*        m_content;
     QPushButton*    m_btnCollapsePanel;
     QLineEdit*      m_searchEdit;
-    QComboBox*      m_filterCombo;
     QPushButton*    m_btnExpand;
     QPushButton*    m_btnCollapse;
+    QPushButton*    m_btnLocate;
     QLabel*         m_lblStats;
     QTreeWidget*    m_tree;
     QTreeWidget*    m_propTree;
 
     // 数据
     QVector<TestRunResult> m_results;
+    QTreeWidgetItem* m_lastHighlighted = nullptr;
     QSplitter* m_bottomSplit = nullptr;
     QMap<QString, TestRunResult*> m_resultMap;  // fullName → result
 };

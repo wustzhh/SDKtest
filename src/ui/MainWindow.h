@@ -53,6 +53,8 @@ private:
     void refreshProfileCombo();
     void refreshScenarioCombo();
     void saveLayout();
+    // 模型截图
+    void captureAllModelScreenshots(const QString& screenshotDir);
 
     ConfigManager     m_config;
     TestLoader        m_loader;

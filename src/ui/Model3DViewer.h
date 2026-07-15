@@ -64,9 +64,13 @@ public:
     QVector<int> findFacesInBox(double minX, double minY, double minZ,
                                  double maxX, double maxY, double maxZ,
                                  double eps = 0.01) const;
+    QVector<int> findFacesByCenter(double x, double y, double z,
+                                    double eps = 0.01) const;
     void setShowFaceIds(bool show);
     int faceBBoxCount() const { return m_faceBBoxes.size(); }
     void clear();
+    // 截图当前 OpenGL 视图
+    QImage grabScreenshot() const;
 protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
@@ -85,9 +89,6 @@ private:
     QVector<FaceBBox> m_faceBBoxes;
     QVector<int> m_hlFaces;
     bool m_showFaceIds=false;
-#ifdef _WIN32
-    GLuint m_fontBase=0;
-#endif
     QQuaternion m_rot;
     float m_zoom=1,m_modelSize=1;
     float m_panX=0,m_panY=0;
@@ -104,8 +105,15 @@ public:
     explicit Model3DViewer(QWidget* parent = nullptr);
     ~Model3DViewer() override;
     void loadFile(const QString& filePath);
+
+    // 快速软件截图（CPU 光栅化，无 OpenGL，OCCT 读取 + QPainter 渲染）
+    static QImage renderModelScreenshot(const QString& filePath,
+                                         int width = 640, int height = 480,
+                                         int timeoutMs = 30000);
 signals:
     void boxesResolved(const QString& propKey, const QString& displayText);
+    // 模型加载完成信号（用于截图串联）
+    void modelLoaded();
 
 public:
     void highlightFaces(const QVector<int>& ids);
