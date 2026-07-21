@@ -306,12 +306,10 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     Q_UNUSED(column);
     if (!item) return;
 
-    // 取消上次高亮
+    // 取消上次高亮（只清背景，保留原有状态色）
     if (m_lastHighlighted && m_lastHighlighted != item) {
-        for (int c = 0; c < 2; c++) {
-            m_lastHighlighted->setBackground(c, QBrush());
-            m_lastHighlighted->setForeground(c, QBrush());
-        }
+        m_lastHighlighted->setBackground(0, QBrush());
+        m_lastHighlighted->setBackground(1, QBrush());
     }
     // 高亮当前项
     m_lastHighlighted = item;
