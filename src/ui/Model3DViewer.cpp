@@ -279,7 +279,7 @@ QVector<int> GLViewer::findFacesByCenter(double x, double y, double z, double ep
 }
 void GLViewer::setShowFaceIds(bool show){m_showFaceIds=show;update();}
 void GLViewer::setNoDepthEdges(bool on){m_noDepthEdges=on;update();}
-void GLViewer::setEdgeWidth(int w){m_edgeWidth=qBound(1,w,8);update();}
+void GLViewer::setEdgeWidthPct(float pct){m_edgeWidthPct=qBound(0.01f,pct,2.0f);update();}
 void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();m_faceCenterIds.clear();m_faceBBoxes.clear();m_hlFaces.clear();update();}
 void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.18f,.18f,.22f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
     GLfloat a0[]={.4f,.4f,.45f,1};glLightfv(GL_LIGHT0,GL_AMBIENT,a0);GLfloat d0[]={.6f,.6f,.7f,1};glLightfv(GL_LIGHT0,GL_DIFFUSE,d0);GLfloat s0[]={.2f,.2f,.2f,1};glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
@@ -346,7 +346,9 @@ void GLViewer::paintGL(){
         glEnable(GL_POLYGON_OFFSET_LINE);glPolygonOffset(-1,-1);
         glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
         for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
-        glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(m_edgeWidth);
+        glVertexPointer(3,GL_FLOAT,0,ea);
+        float lw=m_edgeWidthPct*width()/100.0f;
+        glLineWidth(qMax(0.5f,lw));
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
         glDisable(GL_POLYGON_OFFSET_LINE);

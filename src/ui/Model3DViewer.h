@@ -68,9 +68,9 @@ public:
                                     double eps = 0.01) const;
     void setShowFaceIds(bool show);
     void setNoDepthEdges(bool on);
-    void setEdgeWidth(int w);
+    void setEdgeWidthPct(float pct);
     int faceBBoxCount() const { return m_faceBBoxes.size(); }
-    int edgeWidth() const { return m_edgeWidth; }
+    float edgeWidthPct() const { return m_edgeWidthPct; }
     void clear();
     GLViewer* glViewer() { return this; }
     // 截图当前 OpenGL 视图
@@ -94,7 +94,7 @@ private:
     QVector<int> m_hlFaces;
     bool m_showFaceIds=false;
     bool m_noDepthEdges=false;
-    int  m_edgeWidth=2;
+    float m_edgeWidthPct=0.1f;  // 默认屏幕宽度0.1%
     QQuaternion m_rot;
     float m_zoom=1,m_modelSize=1;
     float m_panX=0,m_panY=0;

@@ -254,19 +254,29 @@ void MainWindow::setupMenu() {
     v->addAction(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\x8f\xb3\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"), this, [=](){ if(m_rightPanel)m_rightPanel->setVisible(!m_rightPanel->isVisible()); });
     v->addSeparator();
 
-    // ── 线宽 ──
+    // ── 线宽（屏幕宽度百分比）──
     auto* lwMenu = v->addMenu(QString::fromUtf8("\xe7\xba\xbf\xe5\xae\xbd"));
-    for (int w : {1, 2, 3, 4}) {
-        auto* act = lwMenu->addAction(QString("%1 px").arg(w));
+    for (float pct : {0.05f, 0.1f, 0.15f, 0.2f, 0.3f, 0.5f}) {
+        auto* act = lwMenu->addAction(QString("%1%").arg(pct, 0, 'f', 2));
         act->setCheckable(true);
-        if (w == 2) act->setChecked(true);
-        connect(act, &QAction::triggered, this, [this, w, lwMenu]() {
-            m_model3D->glViewer()->setEdgeWidth(w);
-            // 更新勾选状态
+        if (qAbs(pct - 0.1f) < 0.001f) act->setChecked(true);
+        connect(act, &QAction::triggered, this, [this, pct, lwMenu]() {
+            m_model3D->glViewer()->setEdgeWidthPct(pct);
             for (auto* a : lwMenu->actions()) a->setChecked(false);
             qobject_cast<QAction*>(sender())->setChecked(true);
         });
     }
+    lwMenu->addSeparator();
+    lwMenu->addAction(QString::fromUtf8("\xe8\x87\xaa\xe5\xae\x9a\xe4\xb9\x89..."), this, [this, lwMenu]() {
+        bool ok;
+        double val = QInputDialog::getDouble(this, QString::fromUtf8("\xe7\xba\xbf\xe5\xae\xbd"),
+            QString::fromUtf8("\xe5\xb1\x8f\xe5\xb9\x95\xe5\xae\xbd\xe5\xba\xa6\xe7\x99\xbe\xe5\x88\x86\xe6\xaf\x94 (0.01-2.0):"),
+            m_model3D->glViewer()->edgeWidthPct(), 0.01, 2.0, 2, &ok);
+        if (ok) {
+            m_model3D->glViewer()->setEdgeWidthPct((float)val);
+            for (auto* a : lwMenu->actions()) a->setChecked(false);
+        }
+    });
 
     // ── 主题选择 ──
     auto* themeMenu = v->addMenu(QString::fromUtf8("\xF0\x9F\x8E\xA8 \xe4\xb8\xbb\xe9\xa2\x98"));
