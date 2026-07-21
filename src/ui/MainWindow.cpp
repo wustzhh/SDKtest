@@ -548,18 +548,20 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
         
         // GL 截图：加载到现有渲染器，grab 真实渲染效果
         QImage img;
-        QEventLoop loop;
-        QTimer::singleShot(30000, &loop, &QEventLoop::quit);
-        bool loaded = false;
-        QMetaObject::Connection conn = connect(m_model3D, &Model3DViewer::modelLoaded,
-            [&]() { loaded = true; loop.quit(); });
-        m_model3D->loadFile(path);
-        if (!loaded) loop.exec();  // NAS 文件会同步发射，跳过等待
-        QObject::disconnect(conn);
-        if (loaded) {
-            QImage raw = m_model3D->glViewer()->grab().toImage();
-            if (!raw.isNull())
-                img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        if (QFile::exists(path)) {
+            QEventLoop loop;
+            QTimer::singleShot(30000, &loop, &QEventLoop::quit);
+            bool loaded = false;
+            QMetaObject::Connection conn = connect(m_model3D, &Model3DViewer::modelLoaded,
+                [&]() { loaded = true; loop.quit(); });
+            m_model3D->loadFile(path);
+            if (!loaded) loop.exec();
+            QObject::disconnect(conn);
+            if (loaded) {
+                QImage raw = m_model3D->glViewer()->grab().toImage();
+                if (!raw.isNull())
+                    img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
         }
         if (img.isNull()) continue;
         
