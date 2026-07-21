@@ -549,8 +549,8 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
         QObject::disconnect(conn);
         if (loaded) {
             QImage raw = m_model3D->glViewer()->grab().toImage();
-            if (!raw.isNull())  // 加载失败时GL为空，跳过
-                img = raw.scaled(640, 480, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            if (!raw.isNull())
+                img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
         if (img.isNull()) continue;
         

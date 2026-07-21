@@ -219,9 +219,7 @@ void ModelRenderView::buildResultTree(const QVector<TestRunResult>& results) {
         caseItem->setData(1, Qt::UserRole, result.testCase.fullName());
 
         // 颜色
-        QColor statusColor = result.status == "PASSED" ? COLOR_PASS :
-                             result.status == "FAILED" ? COLOR_FAIL :
-                             result.status == "CRASHED" ? COLOR_CRASHED : COLOR_SKIP;
+        QColor statusColor = COLOR_NORMAL;
         caseItem->setForeground(1, statusColor);
         QFont f = caseItem->font(1);
         f.setBold(true);
@@ -320,7 +318,7 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     }
     m_lastHighlighted = item;
     for (int c = 0; c < 2; c++) {
-        item->setBackground(c, QColor(0x63,0x66,0xf1));
+        item->setBackground(c, QColor(0xe8,0xf5,0xe9));   // 淡绿背景
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
     QFont bf = item->font(1); bf.setBold(true); item->setFont(1, bf);
