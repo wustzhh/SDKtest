@@ -98,7 +98,7 @@ void StepWorker::doWork() {
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size(); if (nf==0) continue;
         QVector3D col=(nf==1)?QVector3D(1,0.15f,0.15f):((nf==2)?QVector3D(0.15f,0.85f,0.15f):QVector3D(1,0.85f,0.1f));
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        int ns=qMax(3,qMin(36,(int)((l-f)/0.5))); double st=(l-f)/ns; int prev=-1;
+        int ns=36; double st=(l-f)/ns; int prev=-1;
         for (int s=0;s<=ns;s++) {
             double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u); int idx=-1;
             for (int i=0;i<r.verts.size();i++) { if (qAbs(r.verts[i].x()-pt.X())<1e-6&&qAbs(r.verts[i].y()-pt.Y())<1e-6&&qAbs(r.verts[i].z()-pt.Z())<1e-6) { idx=i; break; } }
@@ -318,7 +318,7 @@ void GLViewer::paintGL(){
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
-        glColor4f(.55f,.62f,.72f, m_showFaceIds ? .35f : 1.f);
+        glColor4f(.75f,.80f,.88f, m_showFaceIds ? .35f : 1.f);
         glDrawElements(GL_TRIANGLES,m_tri.size(),GL_UNSIGNED_INT,m_tri.data());
         if (m_showFaceIds) glDisable(GL_BLEND);
         glDisableClientState(GL_NORMAL_ARRAY);glDisableClientState(GL_VERTEX_ARRAY);delete[]va;delete[]na;
@@ -696,7 +696,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
         r.normals[r.tris[i+1]] += n;
         r.normals[r.tris[i+2]] += n;
     }
-    for (auto& n : r.normals) { float l = n.length(); if (l > 1e-10f) n /= l; }
+    for (auto& n : r.normals) { float l = n.length(); if (l > 1e-10f) n /= l; else n = QVector3D(0, 1, 0); }
 
     float mx=1e9f,my=1e9f,mz=1e9f,Mx=-1e9f,My=-1e9f,Mz=-1e9f;
     for (const auto& v : r.verts) {
