@@ -254,6 +254,20 @@ void MainWindow::setupMenu() {
     v->addAction(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba/\xe9\x9a\x90\xe8\x97\x8f \xe5\x8f\xb3\xe4\xbe\xa7\xe9\x9d\xa2\xe6\x9d\xbf"), this, [=](){ if(m_rightPanel)m_rightPanel->setVisible(!m_rightPanel->isVisible()); });
     v->addSeparator();
 
+    // ── 线宽 ──
+    auto* lwMenu = v->addMenu(QString::fromUtf8("\xe7\xba\xbf\xe5\xae\xbd"));
+    for (int w : {1, 2, 3, 4}) {
+        auto* act = lwMenu->addAction(QString("%1 px").arg(w));
+        act->setCheckable(true);
+        if (w == 2) act->setChecked(true);
+        connect(act, &QAction::triggered, this, [this, w, lwMenu]() {
+            m_model3D->glViewer()->setEdgeWidth(w);
+            // 更新勾选状态
+            for (auto* a : lwMenu->actions()) a->setChecked(false);
+            qobject_cast<QAction*>(sender())->setChecked(true);
+        });
+    }
+
     // ── 主题选择 ──
     auto* themeMenu = v->addMenu(QString::fromUtf8("\xF0\x9F\x8E\xA8 \xe4\xb8\xbb\xe9\xa2\x98"));
     static int curTheme = 0;
