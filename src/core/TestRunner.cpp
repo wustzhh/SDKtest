@@ -171,6 +171,7 @@ void TestRunner::startNextBatch() {
     if (!batch->process->waitForStarted(10000)) {
         LOG("RUN", QString("Batch %1 FAILED to start: %2").arg(batchIdx+1).arg(batch->process->errorString()));
         emit errorOccurred(QString("Batch %1 cannot start: %2").arg(batchIdx+1).arg(batch->process->errorString()));
+        m_anyCrashed = true;
         onBatchFinished(batch);
     }
 }
