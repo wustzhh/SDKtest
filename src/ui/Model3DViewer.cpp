@@ -529,7 +529,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
         QString card = cardParts[0].toUpper();
 
         if (card == "GRID" || card == "GRID*") {
-            // GRID: ID CP X Y Z — 支持坐标字段粘连（无空格分隔）
+            // GRID: ID CP X Y Z — 支持固定宽度格式（坐标字段之间无空格）
             bool ok; int id = cardParts[1].toInt(&ok);
             if (!ok) { cardParts.clear(); return; }
             double x=0, y=0, z=0;
@@ -538,19 +538,10 @@ static StepLoadResult parseNasFile(const QString& filePath)
                 y = cardParts[3].toDouble();
                 z = cardParts[4].toDouble();
             } else {
-                // 坐标字段粘连：从 ID 后所有 token 拼起来，按 [+-]?\d+\.?\d* 模式切分
-                QString coords;
-                for (int i = 2; i < cardParts.size(); i++)
-                    coords += cardParts[i];
-                static QRegularExpression numRe(R"([+-]?\d+\.?\d*(?:[eE][+-]?\d+)?)");
-                QVector<double> vals;
-                auto it = numRe.globalMatch(coords);
-                while (it.hasNext() && vals.size() < 3) {
-                    vals.append(it.next().captured(0).toDouble());
-                }
-                if (vals.size() >= 1) x = vals[0];
-                if (vals.size() >= 2) y = vals[1];
-                if (vals.size() >= 3) z = vals[2];
+                // 固定宽度格式：cols 25-32=X, 33-40=Y, 41-48=Z（每列8字符）
+                x = cardLine.mid(24, 8).trimmed().toDouble();
+                y = cardLine.mid(32, 8).trimmed().toDouble();
+                z = cardLine.mid(40, 8).trimmed().toDouble();
             }
             if (ok) {
                 nodes[id] = {x, y, z};
