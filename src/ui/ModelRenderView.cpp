@@ -6,12 +6,16 @@
 #include <QDialog>
 #include <QPlainTextEdit>
 #include <QVBoxLayout>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QDir>
 
 
 // ── 颜色 ──
 static const QColor COLOR_PASS(0x4C, 0xAF, 0x50);   // 绿色
 static const QColor COLOR_FAIL(0xF4, 0x43, 0x36);    // 红色
 static const QColor COLOR_SKIP(0xFF, 0x98, 0x00);     // 橙色
+static const QColor COLOR_CRASHED(0x9C, 0x27, 0xB0);  // 紫色（崩溃）
 static const QColor COLOR_HIGHLIGHT(0xFF, 0xFF, 0x99); // 黄色高亮
 static const QColor COLOR_SECTION(0x21, 0x96, 0xF3);  // 蓝色标题
 static const QColor COLOR_NORMAL(0x33, 0x33, 0x33);    // 深灰正文
@@ -94,13 +98,12 @@ ModelRenderView::ModelRenderView(QWidget* parent)
 
     // Result tree
     m_tree = new QTreeWidget(m_content);
-    m_tree->setHeaderLabels({"", "Node", "Value"});
+    m_tree->setHeaderLabels({"", "Node"});
     m_tree->setMinimumHeight(100);
     m_tree->setColumnWidth(0, 24);
-    m_tree->setColumnWidth(1, 280);
-    m_tree->setColumnWidth(2, 80);
     m_tree->header()->setStretchLastSection(false);
     m_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_tree->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_tree->setRootIsDecorated(true);
     m_tree->setAnimated(true);
     m_tree->setSelectionMode(QAbstractItemView::NoSelection);
@@ -127,10 +130,12 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     // Property tree
     m_propTree = new QTreeWidget(m_bottomSplit);
     m_propTree->setHeaderLabels({"Key", "Value", ""});
-    m_propTree->setColumnWidth(0, 160);
+    m_propTree->setColumnWidth(0, 180);
+    m_propTree->setColumnWidth(1, 400);
     m_propTree->setColumnWidth(2, 64);
     m_propTree->header()->setStretchLastSection(false);
-    m_propTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_propTree->header()->setSectionResizeMode(QHeaderView::Fixed);
+    m_propTree->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_propTree->setWordWrap(true);
     m_propTree->setMinimumHeight(40);
     m_propTree->setRootIsDecorated(false);
@@ -145,6 +150,10 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_bottomSplit->setStretchFactor(0, 4);
     m_bottomSplit->setStretchFactor(1, 1);
     m_bottomSplit->setSizes({400, 80});
+    // 属性树右键菜单
+    m_propTree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_propTree, &QTreeWidget::customContextMenuRequested,
+            this, &ModelRenderView::onPropTreeContextMenu);
     contentLayout->addWidget(m_bottomSplit, 1);
 
     m_stack->addWidget(m_content);  // page 1
@@ -199,14 +208,16 @@ void ModelRenderView::buildResultTree(const QVector<TestRunResult>& results) {
 
         // 状态图标
         QString icon = result.status == "PASSED" ? "✅" :
-                       result.status == "FAILED" ? "❌" : "⏭";
+                       result.status == "FAILED" ? "❌" :
+                       result.status == "CRASHED" ? "💥" : "⏭";
         caseItem->setText(1, QString("%1 %2").arg(icon, result.testCase.fullName()));
-        caseItem->setText(2, QString("%1 ms").arg(result.durationMs, 0, 'f', 1));
+        caseItem->setToolTip(1, QString("%1 ms").arg(result.durationMs, 0, 'f', 1));
         caseItem->setData(1, Qt::UserRole, result.testCase.fullName());
 
         // 颜色
         QColor statusColor = result.status == "PASSED" ? COLOR_PASS :
-                             result.status == "FAILED" ? COLOR_FAIL : COLOR_SKIP;
+                             result.status == "FAILED" ? COLOR_FAIL :
+                             result.status == "CRASHED" ? COLOR_CRASHED : COLOR_SKIP;
         caseItem->setForeground(1, statusColor);
         QFont f = caseItem->font(1);
         f.setBold(true);
@@ -232,21 +243,17 @@ void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& n
             QString icon = child.value == "PASSED" ? "✅" :
                            child.value == "FAILED" ? "❌" : "⏭";
             item->setText(1, icon + " " + child.name);
-            item->setText(2, child.value);
             QColor c = child.value == "PASSED" ? COLOR_PASS :
                        child.value == "FAILED" ? COLOR_FAIL : COLOR_SKIP;
             item->setForeground(1, c);
-            item->setForeground(2, c);
             break;
         }
         case NodeType::KeyValue:
-            item->setText(1, child.name);
-            item->setText(2, child.value);
+            item->setText(1, child.name + ": " + child.value);
             item->setForeground(1, COLOR_NORMAL);
             break;
         case NodeType::Array:
-            item->setText(1, QString("📋 %1").arg(child.name));
-            item->setText(2, QString("[%1 项]").arg(child.children.size()));
+            item->setText(1, QString("📋 %1  [%2 项]").arg(child.name).arg(child.children.size()));
             item->setForeground(1, COLOR_NORMAL);
             for (const auto& elem : child.children) {
                 auto* elemItem = new QTreeWidgetItem(item);
@@ -256,10 +263,9 @@ void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& n
             break;
         case NodeType::Scalar:
         default:
-            item->setText(1, child.name);
-            item->setText(2, child.value);
+            item->setText(1, child.value.isEmpty() ? child.name : child.name + ": " + child.value);
             if (child.name == "stdout" && child.rawData.isValid())
-                item->setToolTip(2, child.rawData.toString());
+                item->setToolTip(1, child.rawData.toString());
             break;
         }
 
@@ -270,7 +276,7 @@ void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& n
 
         // 搜索高亮
         if (child.matchScore > 0) {
-            for (int c = 0; c < 3; c++)
+            for (int c = 0; c < 2; c++)
                 item->setBackground(c, COLOR_HIGHLIGHT);
         }
     }
@@ -282,8 +288,8 @@ void ModelRenderView::onSearchChanged(const QString& text) {
     for (auto* item : allItems) {
         bool match = text.isEmpty() ||
                      item->text(1).contains(text, Qt::CaseInsensitive) ||
-                     item->text(2).contains(text, Qt::CaseInsensitive);
-        for (int c = 0; c < 3; c++) {
+                     item->toolTip(1).contains(text, Qt::CaseInsensitive);
+        for (int c = 0; c < 2; c++) {
             item->setBackground(c, match && !text.isEmpty() ? COLOR_HIGHLIGHT : QColor());
         }
         if (!text.isEmpty() && match) {
@@ -314,8 +320,8 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
 
     // 点击 stdout 节点弹出完整内容
-    if (item->text(1) == "stdout" && item->text(2).length() > 300) {
-        showFullOutput("stdout", item->toolTip(2).isEmpty() ? item->text(2) : item->toolTip(2));
+    if (item->text(1) == "stdout" && item->toolTip(1).length() > 300) {
+        showFullOutput("stdout", item->toolTip(1));
         return;
     }
 
@@ -479,4 +485,34 @@ void ModelRenderView::restoreBottomSplitPos(int pos) {
 
 void ModelRenderView::onCollapseAll() {
     m_tree->collapseAll();
+}
+
+void ModelRenderView::onPropTreeContextMenu(const QPoint& pos) {
+    QTreeWidgetItem* item = m_propTree->itemAt(pos);
+    if (!item) return;
+
+    QString value = item->text(1);
+    if (value.isEmpty()) return;
+
+    // 去掉可能的前缀图标（✓ / ✗）
+    QString path = value;
+    if (path.startsWith("\xe2\x9c\x93 ") || path.startsWith("\xe2\x9c\x97 "))
+        path = path.mid(2);
+
+    QFileInfo fi(path);
+    if (!fi.exists()) return;
+
+    QMenu menu(this);
+    // "打开文件夹" 动作
+    QAction* actOpenFolder = menu.addAction(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9"));
+    // "打开文件" 动作
+    QAction* actOpenFile = menu.addAction(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6"));
+
+    QAction* chosen = menu.exec(m_propTree->viewport()->mapToGlobal(pos));
+    if (chosen == actOpenFolder) {
+        QString dirPath = QDir::toNativeSeparators(fi.absolutePath());
+        QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
+    } else if (chosen == actOpenFile) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
+    }
 }

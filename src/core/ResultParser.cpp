@@ -21,8 +21,9 @@ TestRunResult ResultParser::parse(const TestCase& tc,
 
     // 提取测试输出本体（去掉 gtest 框架行）
     QString body = rawOutput;
-    // 去掉 [==========] / [----------] / [ RUN      ] / [       OK ] / [  FAILED  ] 行
-    static QRegularExpression gtestLine(R"(\[[^\]]+\].*)");
+    // 只去掉标准的 gtest 框架行，保留 [PROP] 等用户自定义属性行
+    static QRegularExpression gtestLine(
+        R"(\[(       OK |  FAILED  |  SKIPPED | RUN      |==========|----------)\].*)");
     body.replace(gtestLine, "");
 
     // 解析结构化数据

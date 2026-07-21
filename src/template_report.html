@@ -41,7 +41,7 @@ body{font-family:'Microsoft YaHei','PingFang SC',-apple-system,sans-serif;backgr
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center}
 .card .n{font-size:24px;font-weight:700;line-height:1.3}.card .l{font-size:12px;color:var(--text3);margin-top:2px}
-.card.pri .n{color:var(--primary)}.card.suc .n{color:var(--success)}.card.dan .n{color:var(--danger)}.card.war .n{color:var(--warn)}
+.card.pri .n{color:var(--primary)}.card.suc .n{color:var(--success)}.card.dan .n{color:var(--danger)}.card.war .n{color:var(--warn)}.card.inf .n{color:var(--info)}
 .info{font-size:12px;color:var(--text3);text-align:right;margin-bottom:8px}
 .flt-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .flt-bar .btn{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px;font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--card-bg);color:var(--text2);cursor:pointer;white-space:nowrap}
@@ -51,6 +51,7 @@ body{font-family:'Microsoft YaHei','PingFang SC',-apple-system,sans-serif;backgr
 .flt-bar .btn-add:hover{border-color:var(--primary);color:var(--primary);border-style:solid}
 .flt-bar .btn.pri:hover{background:#337ecc;border-color:#337ecc}
 .flt-panel{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:10px;display:none;width:100%}
+.tag.dis{background:#f4f4f5;color:#909399}
 .flt-panel.show{display:block}
 .flt-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .flt-row select,.flt-row input{height:28px;border:1px solid var(--border);border-radius:4px;padding:0 8px;font-size:12px;color:var(--text);outline:none;background:var(--card-bg)}
@@ -64,7 +65,7 @@ body{font-family:'Microsoft YaHei','PingFang SC',-apple-system,sans-serif;backgr
 .mode-group .md+.md{border-left:1px solid var(--border)}
 /* ── 表格 ── */
 .tbl-wrap{flex:1;overflow:auto;border:1px solid var(--border);border-radius:4px;background:var(--card-bg);min-height:0}
-.tbl-wrap table{table-layout:fixed;width:100%;border-collapse:collapse;font-size:13px}
+.tbl-wrap table{table-layout:fixed;width:auto;min-width:100%;border-collapse:collapse;font-size:13px}
 .tbl-wrap th{position:sticky;top:0;background:#f5f7fa;color:var(--text2);font-weight:600;padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);z-index:1;white-space:nowrap;user-select:none;cursor:pointer}
 .tbl-wrap th:hover{color:var(--primary)}
 .tbl-wrap th .sort{font-size:10px;color:var(--text3);margin-left:4px}
@@ -216,6 +217,7 @@ function render(d){
   x+='<div class=card suc><div class=n>'+d.passed+'</div><div class=l>通过</div></div>';
   x+='<div class=card dan><div class=n>'+d.failed+'</div><div class=l>失败</div></div>';
   x+='<div class=card war><div class=n>'+(d.skipped||0)+'</div><div class=l>跳过</div></div>';
+  x+='<div class=card inf><div class=n>'+(d.disabled||0)+'</div><div class=l>禁用</div></div>';
   x+='<div class=card pri><div class=n>'+rt+'%</div><div class=l>通过率</div></div></div>';
   x+='<div class=info>'+esc(rn(d))+' | '+d.time+' | '+(d.durationMs/1000).toFixed(0)+'s</div>';
   // 筛选栏
@@ -246,7 +248,7 @@ function renderRows(){
       var rs=[];
       conds.forEach(function(c){
         if(!c.v)return;
-        var v=H[c.c]==='#'?'':H[c.c]==='状态'?(r.st==='PASSED'?'✅ 通过':'❌ 失败'):H[c.c]==='套件'?r.s:H[c.c]==='用例'?r.c:H[c.c]==='耗时(ms)'?r.d.toFixed(1):(r.p[H[c.c]]||'');
+        var v=H[c.c]==='#'?'':H[c.c]==='状态'?(r.st==='PASSED'?'✅ 通过':(r.st==='SKIPPED'?'⏭ 跳过':(r.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):H[c.c]==='套件'?r.s:H[c.c]==='用例'?r.c:H[c.c]==='耗时(ms)'?r.d.toFixed(1):(r.p[H[c.c]]||'');
         rs.push(match(v,c.o,c.v));
       });
       if(!rs.length)return true;
@@ -257,8 +259,8 @@ function renderRows(){
   if(sCol>=0){
     var sc=sCol,sa=sAsc;
     rows.sort(function(a,b){
-      var va=H[sc]==='状态'?(a.st==='PASSED'?'✅ 通过':'❌ 失败'):H[sc]==='套件'?a.s:H[sc]==='用例'?a.c:H[sc]==='耗时(ms)'?a.d.toFixed(1):(a.p[H[sc]]||'');
-      var vb=H[sc]==='状态'?(b.st==='PASSED'?'✅ 通过':'❌ 失败'):H[sc]==='套件'?b.s:H[sc]==='用例'?b.c:H[sc]==='耗时(ms)'?b.d.toFixed(1):(b.p[H[sc]]||'');
+      var va=H[sc]==='状态'?(a.st==='PASSED'?'✅ 通过':(a.st==='SKIPPED'?'⏭ 跳过':(a.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):H[sc]==='套件'?a.s:H[sc]==='用例'?a.c:H[sc]==='耗时(ms)'?a.d.toFixed(1):(a.p[H[sc]]||'');
+      var vb=H[sc]==='状态'?(b.st==='PASSED'?'✅ 通过':(b.st==='SKIPPED'?'⏭ 跳过':(b.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):H[sc]==='套件'?b.s:H[sc]==='用例'?b.c:H[sc]==='耗时(ms)'?b.d.toFixed(1):(b.p[H[sc]]||'');
       var na=parseFloat(va),nb=parseFloat(vb);
       if(!isNaN(na)&&!isNaN(nb))return sa?na-nb:nb-na;
       return sa?va.localeCompare(vb):vb.localeCompare(va);
@@ -268,8 +270,8 @@ function renderRows(){
   rows.forEach(function(r){
     ri++;
     var st=r.st||'';
-    var status=st==='PASSED'?'✅ 通过':(st==='SKIPPED'?'⏭ 跳过':'❌ 失败');
-    var cls=st==='PASSED'?'ok':(st==='SKIPPED'?'skip':'fail');
+    var status=st==='PASSED'?'✅ 通过':(st==='SKIPPED'?'⏭ 跳过':(st==='DISABLED'?'🔒 禁用':'❌ 失败'));
+    var cls=st==='PASSED'?'ok':(st==='SKIPPED'?'skip':(st==='DISABLED'?'dis':'fail'));
     h+='<tr>';
     H.forEach(function(hd,i){
       var cn=H[i];
@@ -406,13 +408,14 @@ function reorderCols(from,to){
     var cs={};
     try{cs=JSON.parse(getStore('tr_cols_'+DATA[cur].id));}catch(e){}
     cs.h=H.slice();
-    // 列宽跟随列名一起移动
+    // 列宽跟随列名一起移动（用数组 splice 保持同步）
     if(cs.w){
-      var wi=cs.w[from];
-      delete cs.w[from];
+      var widthArr=[];
+      Object.keys(cs.w).forEach(function(k){widthArr[parseInt(k)]=cs.w[k];});
+      var wi=widthArr.splice(from,1)[0];
+      widthArr.splice(to,0,wi||'');
       var newW={};
-      Object.keys(cs.w).forEach(function(k){var kk=parseInt(k);if(kk<to&&kk>=from)newW[kk+1]=cs.w[k];else newW[k]=cs.w[k];});
-      newW[to]=wi||'';
+      widthArr.forEach(function(w,idx){newW[idx]=w;});
       cs.w=newW;
     }
     setStore('tr_cols_'+DATA[cur].id,JSON.stringify(cs));
@@ -474,7 +477,7 @@ function getColVals(ci){
   var d=DATA[cur];if(!d||!d.results)return[];
   var set={};
   d.results.forEach(function(r){
-    var v=ci===1?(r.st==='PASSED'?'✅ 通过':'❌ 失败'):ci===2?r.s:ci===3?r.c:ci===4?r.d.toFixed(1):(r.p[H[ci]]||'');
+    var v=ci===1?(r.st==='PASSED'?'✅ 通过':(r.st==='SKIPPED'?'⏭ 跳过':(r.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):ci===2?r.s:ci===3?r.c:ci===4?r.d.toFixed(1):(r.p[H[ci]]||'');
     if(v)set[v]=1;
   });
   _cvCache[ci]=Object.keys(set).sort();

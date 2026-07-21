@@ -40,6 +40,7 @@ static QJsonObject runToJson(const TestReport& report, const QString& runName) {
     entry["passed"] = report.passed();
     entry["failed"] = report.failed();
     entry["skipped"] = report.skipped();
+    entry["disabled"] = report.disabled();
     entry["durationMs"] = (int)report.totalDurationMs();
     entry["savedFilters"] = QJsonArray();
     QJsonArray results;

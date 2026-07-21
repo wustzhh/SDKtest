@@ -16,7 +16,9 @@ void TestRunner::run(const QString& binaryPath,
                      const QString& workingDir,
                      const QStringList& dependencies,
                      const QMap<QString, QString>& envVars,
-                     int actualTotal)
+                     int actualTotal,
+                     const QVector<TestCase>& expectedTests,
+                     bool singleTest)
 {
     if (isRunning()) {
         emit errorOccurred("Already running.");
@@ -28,13 +30,17 @@ void TestRunner::run(const QString& binaryPath,
     m_envVars = envVars;
     m_extraArgs = extraArgs;
     m_dependencies = dependencies;
-    m_totalCount = qMax(actualTotal, cases.size());
+    m_expectedTests = expectedTests.isEmpty() ? cases : expectedTests;
+    m_singleTest = singleTest;
+    m_totalCount = qMax(actualTotal, m_expectedTests.size());
     m_doneCount = 0;
     m_nextBatchIdx = 0;
     m_batchesFinished = 0;
     m_activeCount = 0;
     m_cancelled = false;
     m_batches.clear();
+    m_seen.clear();
+    m_anyCrashed = false;
     m_lastRunCount = 0;
     m_lastDoneCount = 0;
     m_lastEmittedProgress = 0;
@@ -56,7 +62,8 @@ void TestRunner::run(const QString& binaryPath,
     for (const auto& tc : cases) {
         QString seg = makeSeg(tc);
         int add = seg.length() + (batchLen > 0 ? 1 : 0);
-        if (batchLen > 0 && batchLen + add > MAX_FILTER_LEN) flush();
+        int limit = m_singleTest ? 0 : MAX_FILTER_LEN;  // 逐个模式：1用例1批
+        if (batchLen > 0 && batchLen + add > limit) flush();
         batch.append(tc);
         batchLen += add;
     }
@@ -68,7 +75,7 @@ void TestRunner::run(const QString& binaryPath,
     for (int i = 0; i < rawBatches.size(); i++) {
         BatchState bs;
         bs.cases = rawBatches[i];
-        bs.xmlPath = QDir::tempPath() + QString("/gtest_batch_%1.xml").arg(i);
+        bs.xmlPath = QDir::toNativeSeparators(QDir::tempPath() + QString("/gtest_batch_%1.xml").arg(i));
         m_batches.append(bs);
     }
 
@@ -158,12 +165,12 @@ void TestRunner::startNextBatch() {
     QFileInfo binInfo(m_binaryPath);
     batch->process->setWorkingDirectory(m_workingDir.isEmpty() ? binInfo.absolutePath() : m_workingDir);
 
+    LOG("RUN", QString("Batch %1 started, XML: %2").arg(batchIdx+1).arg(batch->xmlPath));
     m_elapsed.start();
     batch->process->start(m_binaryPath, args);
     if (!batch->process->waitForStarted(10000)) {
         LOG("RUN", QString("Batch %1 FAILED to start: %2").arg(batchIdx+1).arg(batch->process->errorString()));
         emit errorOccurred(QString("Batch %1 cannot start: %2").arg(batchIdx+1).arg(batch->process->errorString()));
-        m_activeCount--;
         onBatchFinished(batch);
     }
 }
@@ -172,6 +179,14 @@ void TestRunner::onBatchFinished(BatchState* batch) {
     if (m_cancelled) return;
 
     LOG("RUN", "Batch done, stdout: " + QString::number(batch->accumulatedStdout.size()) + " bytes");
+    auto exitStatus = batch->process ? batch->process->exitStatus() : QProcess::NormalExit;
+    auto exitCode   = batch->process ? batch->process->exitCode() : -1;
+    LOG("RUN", QString("Batch exit: code=%1  status=%2")
+        .arg(exitCode)
+        .arg(exitStatus == QProcess::CrashExit ? "CRASHED" : "normal"));
+    if (exitStatus == QProcess::CrashExit || exitCode < 0)
+        m_anyCrashed = true;
+    bool batchFailed = (exitStatus == QProcess::CrashExit) || (exitCode < 0);
 
     // 解析 XML
     QMap<QString, QMap<QString, QString>> allProps;
@@ -180,6 +195,7 @@ void TestRunner::onBatchFinished(BatchState* batch) {
         if (f.open(QIODevice::ReadOnly)) {
             QString xml = QString::fromUtf8(f.readAll());
             f.close(); f.remove();
+            LOG("RUN", "XML size: " + QString::number(xml.size()) + " bytes");
             xml.replace(QRegularExpression("<testcase[^>]*/>"), "");
             QRegularExpression tcRe1(
                 R"tc(<testcase\s+name="([^"]+)"[^>]*classname="([^"]+)"[^>]*>(.*?)</testcase>)tc",
@@ -204,14 +220,26 @@ void TestRunner::onBatchFinished(BatchState* batch) {
             };
             parseXmlTc(tcRe1);
             parseXmlTc(tcRe2);
+        } else {
+            LOG("RUN", "XML file not found or unreadable: " + batch->xmlPath);
         }
     }
+    if (!allProps.isEmpty())
+        LOG("RUN", "XML properties found for " + QString::number(allProps.size()) + " testcases");
+    else
+        LOG("RUN", "XML contains no properties");
 
     // 解析 stdout
     auto blocks = parseCombinedOutput(batch->accumulatedStdout);
 
-    // 发射结果
-    QSet<QString> seen;
+    // 崩溃定位：打印最后一个输出块的用例
+    if (batchFailed && !blocks.isEmpty()) {
+        const auto& last = blocks.last();
+        LOG("RUN", QString("CRASH: last seen test = %1.%2  [%3]")
+            .arg(last.suite).arg(last.name).arg(last.status));
+    }
+
+    // 发射结果（使用成员 m_seen 避免跨批次重复）
     for (const auto& b : blocks) {
         TestRunResult res;
         res.testCase.suiteName = b.suite;
@@ -220,12 +248,12 @@ void TestRunner::onBatchFinished(BatchState* batch) {
         res.durationMs = b.durationMs;
         res.rawStdout = b.output;
         res.properties = allProps.value(res.testCase.fullName());
-        seen.insert(res.testCase.fullName());
+        m_seen.insert(res.testCase.fullName());
         m_doneCount++;
         emit testFinished(res);
     }
     for (auto it = allProps.begin(); it != allProps.end(); ++it) {
-        if (seen.contains(it.key()) || it.value().isEmpty()) continue;
+        if (m_seen.contains(it.key()) || it.value().isEmpty()) continue;
         int dot = it.key().lastIndexOf('.');
         if (dot < 0) continue;
         TestRunResult res;
@@ -234,20 +262,11 @@ void TestRunner::onBatchFinished(BatchState* batch) {
         res.status = "SKIPPED";
         res.properties = it.value();
         m_doneCount++;
-        emit testFinished(res);
-    }
-    // 补充未出现（DISABLED）的用例（跳过通配符 "*" 条目）
-    for (const auto& tc : batch->cases) {
-        QString full = tc.fullName();
-        if (tc.caseName == "*" || seen.contains(full)) continue;
-        TestRunResult res;
-        res.testCase = tc;
-        res.status = "SKIPPED";
-        m_doneCount++;
+        m_seen.insert(it.key());
         emit testFinished(res);
     }
 
-    // 进度（只发射一次，避免与 stdout 处理器抢跑）
+    // 进度
     safeProgress(m_doneCount);
 
     // 清理
@@ -256,17 +275,28 @@ void TestRunner::onBatchFinished(BatchState* batch) {
     m_activeCount--;
     m_batchesFinished++;
 
-    // 启动下一批（队列补位）
+    // 启动下一批
     startNextBatch();
 
-    // 全部完成
+    // 全部完成时才处理未出现的用例（避免跨批次重复计数）
     if (m_batchesFinished >= m_batches.size()) {
+        for (const auto& tc : m_expectedTests) {
+            QString full = tc.fullName();
+            if (tc.caseName == "*" || m_seen.contains(full)) continue;
+            TestRunResult res;
+            res.testCase = tc;
+            res.status = m_anyCrashed ? "CRASHED" : "SKIPPED";
+            m_doneCount++;
+            m_seen.insert(full);
+            emit testFinished(res);
+        }
         safeProgress(m_totalCount);
         emit allFinished();
     }
 }
 
 void TestRunner::safeProgress(int done) {
+    done = qMin(done, m_totalCount);
     if (done > m_lastEmittedProgress) {
         m_lastEmittedProgress = done;
         emit progressUpdated(done, m_totalCount);
@@ -276,11 +306,23 @@ void TestRunner::safeProgress(int done) {
 void TestRunner::cancel() {
     m_cancelled = true;
     for (auto& b : m_batches) {
-        if (b.process && b.process->state() != QProcess::NotRunning) {
-            b.process->kill();
-            b.process->waitForFinished(2000);
+        if (b.process) {
+            if (b.process->state() != QProcess::NotRunning)
+                b.process->kill();
+            b.process->deleteLater();
+            b.process = nullptr;
         }
     }
+    // 重置全部计数器，让 isRunning() 返回 false，UI 恢复可用
+    m_activeCount = 0;
+    m_nextBatchIdx = m_batches.size();
+    m_batchesFinished = m_batches.size();
+    m_doneCount = 0;
+    m_lastRunCount = 0;
+    m_lastDoneCount = 0;
+    m_lastEmittedProgress = 0;
+
+    emit allFinished();
 }
 
 bool TestRunner::isRunning() const {

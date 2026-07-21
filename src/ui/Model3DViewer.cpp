@@ -177,7 +177,11 @@ void StepWorker::doWork() {
 // ═══════════════════════════════════════════════════════════════
 //  GLViewer
 // ═══════════════════════════════════════════════════════════════
-GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouseTracking(true);}
+GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouseTracking(true);
+    // 默认等角视角：让平面模型也能看清
+    m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
+          * QQuaternion::fromAxisAndAngle(QVector3D(1,0,0), -25);
+}
 void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const QVector<QVector3D>& n,const QVector<EdgeLine>& e,const QVector<int>& fi,const QVector<QVector3D>& fc,const QVector<int>& fci,const QVector<FaceBBox>& fbb){
     m_verts=v;m_tri=t;m_normals=n;m_edges=e;m_faceIds=fi;m_faceCenters=fc;m_faceCenterIds=fci;m_faceBBoxes=fbb;
     LOG("3D",QString("Faces=%1 Centers: first=(%2,%3,%4) last=(%5,%6,%7)")
@@ -201,7 +205,8 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     }
 }
 void GLViewer::resetView(){
-    m_rot = QQuaternion();
+    m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
+          * QQuaternion::fromAxisAndAngle(QVector3D(1,0,0), -25);
     if(!m_verts.isEmpty()){
         QMatrix4x4 rmat;rmat.rotate(m_rot);
         float minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -336,15 +341,13 @@ void GLViewer::paintGL(){
     }
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
-        // 有高亮时关掉深度测试，让边缘线不被高亮 fill 遮挡
-        // 显示面ID时关掉深度测试，让边缘线在半透明模型上可见
-        if (m_showFaceIds) glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
         glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
         for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
-        glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(3);
+        glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(1);
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
-        if (m_showFaceIds) glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
     }
 }
 
@@ -491,47 +494,171 @@ static StepLoadResult parseNasFile(const QString& filePath)
     QMap<int, Node> nodes;
     struct TriElem { int g1, g2, g3; };
     QVector<TriElem> tris;
+    QSet<QPair<int,int>> wireEdges;
+
+    // 辅助：添加三角形并记录边
+    auto addTri = [&](int a, int b, int c) {
+        tris.append({a, b, c});
+        wireEdges.insert(qMakePair(qMin(a,b), qMax(a,b)));
+        wireEdges.insert(qMakePair(qMin(b,c), qMax(b,c)));
+        wireEdges.insert(qMakePair(qMin(c,a), qMax(c,a)));
+    };
+    // 辅助：将四边形拆成两个三角形
+    auto addQuad = [&](int a, int b, int c, int d) {
+        addTri(a, b, c);
+        addTri(a, c, d);
+    };
+
+    // 续行处理：累积当前卡片的所有字段
+    QStringList cardParts;
+    bool inCard = false;
+    QSet<QString> unsupportedCards;
+
+    auto finishCard = [&]() {
+        if (!inCard) return;
+        inCard = false;
+        if (cardParts.size() < 2) { cardParts.clear(); return; }
+        QString card = cardParts[0].toUpper();
+
+        if (card == "GRID" || card == "GRID*") {
+            // GRID: ID CP X Y Z
+            if (cardParts.size() >= 5) {
+                bool ok; int id = cardParts[1].toInt(&ok);
+                if (ok) {
+                    nodes[id] = {cardParts[2].toDouble(), cardParts[3].toDouble(), cardParts[4].toDouble()};
+                }
+            }
+        } else if (card == "CTRIA3" || card == "CTRIA3*" || card == "CTRIAR") {
+            // CTRIA3: EID PID G1 G2 G3
+            if (cardParts.size() >= 6) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt(), g3 = cardParts[5].toInt();
+                addTri(g1, g2, g3);
+            }
+        } else if (card == "CQUAD4" || card == "CQUAD4*" || card == "CQUADR") {
+            // CQUAD4: EID PID G1 G2 G3 G4
+            if (cardParts.size() >= 7) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt();
+                int g3 = cardParts[5].toInt(), g4 = cardParts[6].toInt();
+                addQuad(g1, g2, g3, g4);
+            }
+        } else if (card == "CTRIA6" || card == "CTRIA6*") {
+            // CTRIA6: EID PID G1 G2 G3 G4 G5 G6  (G4=mid G1-G2, G5=mid G2-G3, G6=mid G3-G1)
+            // 渲染时只用角节点 G1 G2 G3（忽略中节点）
+            if (cardParts.size() >= 6) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt(), g3 = cardParts[5].toInt();
+                addTri(g1, g2, g3);
+            }
+        } else if (card == "CQUAD8" || card == "CQUAD8*") {
+            // CQUAD8: EID PID G1 G2 G3 G4 G5 G6 G7 G8  (G5..G8=mid-side)
+            // 渲染时只用角节点 G1 G2 G3 G4
+            if (cardParts.size() >= 7) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt();
+                int g3 = cardParts[5].toInt(), g4 = cardParts[6].toInt();
+                addQuad(g1, g2, g3, g4);
+            }
+        } else if (card == "CTETRA") {
+            // CTETRA: EID PID G1 G2 G3 G4 — 四面体，提取4个三角面
+            if (cardParts.size() >= 8) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt();
+                int g3 = cardParts[5].toInt(), g4 = cardParts[6].toInt();
+                addTri(g1, g2, g3);
+                addTri(g1, g2, g4);
+                addTri(g2, g3, g4);
+                addTri(g1, g3, g4);
+            }
+        } else if (card == "CPENTA") {
+            // CPENTA: EID PID G1 G2 G3 G4 G5 G6 — 五面体（楔形），提取外表面
+            if (cardParts.size() >= 9) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt(), g3 = cardParts[5].toInt();
+                int g4 = cardParts[6].toInt(), g5 = cardParts[7].toInt(), g6 = cardParts[8].toInt();
+                // 两个三角端面
+                addTri(g1, g2, g3);
+                addTri(g4, g5, g6);
+                // 三个四边形侧面
+                addQuad(g1, g2, g5, g4);
+                addQuad(g2, g3, g6, g5);
+                addQuad(g3, g1, g4, g6);
+            }
+        } else if (card == "CHEXA") {
+            // CHEXA: EID PID G1 G2 G3 G4 G5 G6 G7 G8 — 六面体，提取6个外表面
+            if (cardParts.size() >= 11) {
+                int g1 = cardParts[3].toInt(),  g2 = cardParts[4].toInt();
+                int g3 = cardParts[5].toInt(),  g4 = cardParts[6].toInt();
+                int g5 = cardParts[7].toInt(),  g6 = cardParts[8].toInt();
+                int g7 = cardParts[9].toInt(),  g8 = cardParts[10].toInt();
+                // 六个面，每个四边形拆两个三角
+                addQuad(g1, g2, g3, g4);  // 底面
+                addQuad(g5, g6, g7, g8);  // 顶面
+                addQuad(g1, g2, g6, g5);  // 前面
+                addQuad(g2, g3, g7, g6);  // 右面
+                addQuad(g3, g4, g8, g7);  // 后面
+                addQuad(g4, g1, g5, g8);  // 左面
+            }
+        } else if (card == "CPYRAM") {
+            // CPYRAM: EID PID G1 G2 G3 G4 G5 — 金字塔（五面体）
+            if (cardParts.size() >= 8) {
+                int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt();
+                int g3 = cardParts[5].toInt(), g4 = cardParts[6].toInt();
+                int g5 = cardParts[7].toInt();
+                addQuad(g1, g2, g3, g4);  // 底面
+                addTri(g1, g2, g5);
+                addTri(g2, g3, g5);
+                addTri(g3, g4, g5);
+                addTri(g4, g1, g5);
+            }
+        } else {
+            // 记录未支持的卡片类型（仅记一次）
+            unsupportedCards.insert(card);
+        }
+        cardParts.clear();
+    };
 
     QTextStream in(&f);
     while (!in.atEnd()) {
         QString line = in.readLine();
-        if (line.trimmed().isEmpty() || line.trimmed().startsWith('$'))
-            continue;
         QString trimmed = line.trimmed();
+        if (trimmed.isEmpty() || trimmed.startsWith('$'))
+            continue;
         if (trimmed.startsWith("BEGIN", Qt::CaseInsensitive) ||
             trimmed.startsWith("ENDDATA", Qt::CaseInsensitive) ||
             trimmed.startsWith("NASTRAN", Qt::CaseInsensitive))
             continue;
 
-        QStringList parts = trimmed.split(QRegularExpression("[\\s,]+"), Qt::SkipEmptyParts);
-        if (parts.size() < 2) continue;
-        QString card = parts[0].toUpper();
+        // 续行处理：以 '+' 开头或纯数字开头（NAS 小域格式续行特征）
+        bool isContinuation = trimmed.startsWith('+') ||
+            (trimmed.size() > 0 && trimmed[0].isDigit() && inCard && cardParts.size() >= 1);
 
-        if (card == "GRID" || card == "GRID*") {
-            if (parts.size() >= 5) {
-                bool ok; int id = parts[1].toInt(&ok);
-                if (ok) {
-                    nodes[id] = {parts[2].toDouble(), parts[3].toDouble(), parts[4].toDouble()};
-                }
-            }
-        } else if (card == "CTRIA3" || card == "CTRIA3*") {
-            // CTRIA3: EID PID G1 G2 G3
-            if (parts.size() >= 6)
-                tris.append({parts[3].toInt(), parts[4].toInt(), parts[5].toInt()});
-        } else if (card == "CQUAD4" || card == "CQUAD4*") {
-            // CQUAD4: EID PID G1 G2 G3 G4
-            if (parts.size() >= 7) {
-                int g1 = parts[3].toInt(), g2 = parts[4].toInt();
-                int g3 = parts[5].toInt(), g4 = parts[6].toInt();
-                tris.append({g1, g2, g3});
-                tris.append({g1, g3, g4});
-            }
+        QStringList parts = trimmed.split(QRegularExpression("[\\s,]+"), Qt::SkipEmptyParts);
+        if (parts.isEmpty()) continue;
+
+        if (isContinuation) {
+            // 续行：去掉 '+' 标记，剩余数据追加到当前卡片
+            int startIdx = (parts[0] == "+") ? 1 : 0;
+            for (int i = startIdx; i < parts.size(); i++)
+                cardParts.append(parts[i]);
+        } else {
+            // 新卡片 → 完成旧卡片，开始新卡片
+            finishCard();
+            cardParts = parts;
+            inCard = true;
         }
     }
+    finishCard();  // 处理最后一张卡片
     f.close();
 
-    if (nodes.isEmpty()) { r.error="No GRID nodes"; return r; }
-    if (tris.isEmpty())  { r.error="No CTRIA3/CQUAD4 elements"; return r; }
+    // 日志：未知卡片类型
+    if (!unsupportedCards.isEmpty()) {
+        QStringList sorted = unsupportedCards.values();
+        sorted.sort();
+        LOG("3D", "NAS unsupported cards: " + sorted.join(", "));
+    }
+
+    if (nodes.isEmpty()) { r.error = "No GRID nodes"; return r; }
+    if (tris.isEmpty()) {
+        // 有节点但无单元 — 可能文件只有点云
+        r.error = "No surface/solid elements found (CTRIA3/CQUAD4/CTETRA/CHEXA/...)";
+        return r;
+    }
 
     QMap<int,int> idToIdx;
     for (auto it = nodes.begin(); it != nodes.end(); ++it)
@@ -549,7 +676,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
         r.tris.append(idToIdx[tri.g2]);
         r.tris.append(idToIdx[tri.g3]);
     }
-    if (r.tris.size() < 3) { r.error="No valid triangles after remap"; return r; }
+    if (r.tris.size() < 3) { r.error = "No valid triangles after remap"; return r; }
 
     r.normals.resize(r.verts.size());
     for (int i = 0; i < r.tris.size(); i += 3) {
@@ -577,6 +704,14 @@ static StepLoadResult parseNasFile(const QString& filePath)
     r.faceCenters.append(center);
     r.faceBBoxes.append({mx, my, mz, Mx, My, Mz});
     r.faceIds.resize(r.tris.size() / 3, 0);
+
+    QVector3D wireColor(0.35f, 0.35f, 0.38f);
+    for (const auto& e : wireEdges) {
+        int v0 = idToIdx.value(e.first, -1);
+        int v1 = idToIdx.value(e.second, -1);
+        if (v0 >= 0 && v1 >= 0)
+            r.edges.append({v0, v1, wireColor});
+    }
 
     r.ok = true;
     r.elapsedMs = (int)t.elapsed();
@@ -684,7 +819,12 @@ void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop()
 void Model3DViewer::loadFile(const QString& fp){
     cancelLoad();m_gl->clear();
     m_pendingBoxesMap.clear();
-    if (!QFile::exists(fp)) return;
+    if (!QFile::exists(fp)) {
+        LOG("3D", "File not found: " + fp);
+        m_status->setText(QString::fromUtf8("\xe6\x96\x87\xe4\xbb\xb6\xe4\xb8\x8d\xe5\xad\x98\xe5\x9c\xa8: ") + fp);
+        m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");
+        return;
+    }
 
     // .nas 快速解析显示（直接返回，不入 OCCT 线程）
     QString ext = QFileInfo(fp).suffix().toLower();

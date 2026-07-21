@@ -21,7 +21,9 @@ public:
              const QString& workingDir = {},
              const QStringList& dependencies = {},
              const QMap<QString, QString>& envVars = {},
-             int actualTotal = 0);
+             int actualTotal = 0,
+             const QVector<TestCase>& expectedTests = {},
+             bool singleTest = false);
 
     void cancel();
     bool isRunning() const;
@@ -58,11 +60,15 @@ private:
     int m_activeCount = 0;
     static const int MAX_CONCURRENT = 10;
     static const int MAX_FILTER_LEN = 2000;
+    bool m_singleTest = false;
 
     QString         m_binaryPath;
     QString         m_workingDir;
     int             m_totalCount = 0;
     int             m_doneCount  = 0;
+    QVector<TestCase> m_expectedTests;
+    QSet<QString>    m_seen;
+    bool             m_anyCrashed = false;
     QStringList     m_extraArgs;
     QStringList     m_dependencies;
     QMap<QString, QString> m_envVars;

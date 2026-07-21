@@ -191,6 +191,11 @@ void MainWindow::setupUi() {
     m_scenarioCombo->setMinimumWidth(120);
     m_scenarioCombo->setStyleSheet("QComboBox{background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 8px;height:26px;font-size:12px}");
     bl->addWidget(m_scenarioCombo);
+    // 逐个运行模式
+    m_chkSingleTest = new QCheckBox(QString::fromUtf8("\xe9\x80\x90\xe4\xb8\xaa"));
+    m_chkSingleTest->setToolTip(QString::fromUtf8("\xe6\xaf\x8f\xe4\xb8\xaa\xe7\x94\xa8\xe4\xbe\x8b\xe5\x8d\x95\xe7\x8b\xac\xe8\xbf\x90\xe8\xa1\x8c\xef\xbc\x8c\xe5\xae\x9a\xe4\xbd\x8d\xe5\xb4\xa9\xe6\xba\x83\xe7\x94\xa8\xe4\xbe\x8b"));
+    m_chkSingleTest->setStyleSheet("QCheckBox{font-size:12px;color:#64748b;}QCheckBox::indicator{width:18px;height:18px;}");
+    bl->addWidget(m_chkSingleTest);
     QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::activated), this, [this](int idx) {
         if (idx <= 0) return; // 第一项是占位提示
         auto& prof = m_config.currentProfile();
@@ -447,34 +452,28 @@ void MainWindow::onRunSelected() {
     }
 
     int actualRunCount = sel.size();
-    // 优化 filter：全选所有用例 → "*"
+    QVector<TestCase> originalSel = sel;  // 保存优化前的完整用例列表（含 DISABLED）
+    // 按套件优化 filter：全选所有用例或部分选中都走同一路径
+    // 每个套件若全选则用 "Suite.*"，否则逐个添加
     bool allSelected = sel.size() == m_loader.testCases().size();
-    if (allSelected) {
-        sel.clear();
-        TestCase all; all.suiteName = "*"; all.caseName = "*";
-        sel.append(all);
-        LOG("RUN", "All tests selected, filter=*");
-    } else {
-        // 按套件分组，如果某套件下所有用例都选中 → 用 Suite.*
-        auto allCases = m_loader.groupedBySuite();
-        QMap<QString, int> selCount;
-        for (const auto& tc : sel) selCount[tc.suiteName]++;
-        QVector<TestCase> optimized;
-        for (auto it = allCases.begin(); it != allCases.end(); ++it) {
-            if (selCount.value(it.key()) == it.value().size()) {
-                TestCase suiteAll;
-                suiteAll.suiteName = it.key();
-                suiteAll.caseName = "*";
-                optimized.append(suiteAll);
-            } else {
-                // 只加选中的单个用例
-                for (const auto& tc : sel)
-                    if (tc.suiteName == it.key()) optimized.append(tc);
-            }
+    auto allCases = m_loader.groupedBySuite();
+    QMap<QString, int> selCount;
+    for (const auto& tc : sel) selCount[tc.suiteName]++;
+    QVector<TestCase> optimized;
+    for (auto it = allCases.begin(); it != allCases.end(); ++it) {
+        if (selCount.value(it.key()) == it.value().size()) {
+            TestCase suiteAll;
+            suiteAll.suiteName = it.key();
+            suiteAll.caseName = "*";
+            optimized.append(suiteAll);
+        } else {
+            for (const auto& tc : sel)
+                if (tc.suiteName == it.key()) optimized.append(tc);
         }
-        sel = optimized;
-        LOG("RUN", "Optimized filter: " + QString::number(sel.size()) + " entries");
     }
+    sel = optimized;
+    LOG("RUN", QString(allSelected ? "All tests selected" : "Partial selected")
+        + ", optimized filter: " + QString::number(sel.size()) + " entries");
 
     LOG("RUN", "Selected", QString::number(sel.size()) + " tests");
 
@@ -485,17 +484,17 @@ void MainWindow::onRunSelected() {
 
     m_centerResultView->clear();
     m_progress->startRun(actualRunCount);
-    m_runner->run(m_config.testBinary(), sel, m_config.extraArgs(), m_config.workingDir(),
+    bool singleMode = m_chkSingleTest && m_chkSingleTest->isChecked();
+    QVector<TestCase> runCases = singleMode ? originalSel : sel;
+    m_runner->run(m_config.testBinary(), runCases, m_config.extraArgs(), m_config.workingDir(),
                   m_config.currentProfile().dependencies, m_config.currentProfile().envVars,
-                  actualRunCount);
+                  actualRunCount, originalSel, singleMode);
     updateButtonStates();
 }
 
 void MainWindow::onCancelRun() {
-    m_runner->cancel();
-    m_progress->appendLog("\n[CANCELLED]");
-    m_progress->finishRun();
-    updateButtonStates();
+    m_runner->cancel();      // 现在会同步触发 allFinished → onAllFinished（finishRun + updateButtonStates）
+    m_progress->appendLog("\n[CANCELLED]");   // 在 onAllFinished 的 finishRun 之后追加取消标记
 }
 
 void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {

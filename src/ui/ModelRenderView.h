@@ -12,6 +12,7 @@
 #include <QVBoxLayout>
 #include <QMap>
 #include <QSplitter>
+#include <QMenu>
 
 #include "models/TestResult.h"
 
@@ -48,6 +49,7 @@ private slots:
     void onTreeItemClicked(QTreeWidgetItem* item, int column);
     void onExpandAll();
     void onCollapseAll();
+    void onPropTreeContextMenu(const QPoint& pos);
 
 private:
     void buildResultTree(const QVector<TestRunResult>& results);

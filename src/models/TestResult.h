@@ -96,7 +96,8 @@ struct TestReport {
     int total()     const { return results.size(); }
     int passed()    const { int c=0; for(auto& r:results) if(r.passed()) ++c; return c; }
     int skipped()   const { int c=0; for(auto& r:results) if(r.status=="SKIPPED") ++c; return c; }
-    int failed()    const { return total() - passed() - skipped(); }
+    int disabled()  const { int c=0; for(auto& r:results) if(r.status=="DISABLED") ++c; return c; }
+    int failed()    const { return total() - passed() - skipped() - disabled(); }
     double totalDurationMs() const {
         double s=0; for(auto& r:results) s+=r.durationMs; return s;
     }

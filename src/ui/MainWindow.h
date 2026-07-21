@@ -6,6 +6,7 @@
 #include <QMenuBar>
 #include <QAction>
 #include <QLabel>
+#include <QCheckBox>
 #include <QComboBox>
 
 #include "core/ConfigManager.h"
@@ -80,6 +81,7 @@ private:
     QPushButton* m_profileBtn = nullptr;
     QMenu* m_profileMenu = nullptr;
     QComboBox* m_scenarioCombo = nullptr;
+    QCheckBox* m_chkSingleTest = nullptr;
     int m_restoreLW = 0, m_restoreRW = 0, m_restoreVP = 0, m_restoreVP2 = 0;
     QStringList m_suiteNames;
 };
