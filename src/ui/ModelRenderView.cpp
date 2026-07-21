@@ -113,7 +113,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_tree->setWordWrap(true);
     m_tree->setStyleSheet(
         "QTreeWidget { font-size:13px; border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
-        "QTreeWidget::item { padding:6px 10px; min-height:28px; color:#1e293b; border-bottom:1px solid #f1f5f9; }"
+        "QTreeWidget::item { padding:6px 10px; min-height:28px; border-bottom:1px solid #f1f5f9; }"
         "QTreeWidget::item:selected { background:#eef2ff; color:#1e293b; }"
         "QTreeWidget::item:hover { background:#f8f9fb; }"
         "QTreeWidget{outline:none;}");
@@ -307,14 +307,14 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
 
     // 取消上次高亮
     if (m_lastHighlighted && m_lastHighlighted != item) {
-        for (int c = 0; c < 3; c++) {
+        for (int c = 0; c < 2; c++) {
             m_lastHighlighted->setBackground(c, QBrush());
             m_lastHighlighted->setForeground(c, QBrush());
         }
     }
     // 高亮当前项
     m_lastHighlighted = item;
-    for (int c = 0; c < 3; c++) {
+    for (int c = 0; c < 2; c++) {
         item->setBackground(c, QColor(0x63,0x66,0xf1));
         item->setForeground(c, QColor(0xff,0xff,0xff));
     }
