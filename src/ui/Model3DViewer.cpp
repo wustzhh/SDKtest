@@ -487,10 +487,18 @@ static StepLoadResult parseNasFile(const QString& filePath)
         wireEdges.insert(qMakePair(qMin(b,c), qMax(b,c)));
         wireEdges.insert(qMakePair(qMin(c,a), qMax(c,a)));
     };
-    // 辅助：将四边形拆成两个三角形
+    // 添加三角形（不生成边线，用于四边形内部分割）
+    auto addTriNoEdge = [&](int a, int b, int c) {
+        tris.append({a, b, c});
+    };
+    // 辅助：将四边形拆成两个三角形，只添加外部 4 条轮廓边
     auto addQuad = [&](int a, int b, int c, int d) {
-        addTri(a, b, c);
-        addTri(a, c, d);
+        addTriNoEdge(a, b, c);
+        addTriNoEdge(a, c, d);
+        wireEdges.insert(qMakePair(qMin(a,b), qMax(a,b)));
+        wireEdges.insert(qMakePair(qMin(b,c), qMax(b,c)));
+        wireEdges.insert(qMakePair(qMin(c,d), qMax(c,d)));
+        wireEdges.insert(qMakePair(qMin(d,a), qMax(d,a)));
     };
 
     // 续行处理：累积当前卡片的所有字段
