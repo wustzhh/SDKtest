@@ -195,6 +195,15 @@ void MainWindow::setupUi() {
     m_chkSingleTest = new QCheckBox(QString::fromUtf8("\xe9\x80\x90\xe4\xb8\xaa"));
     m_chkSingleTest->setToolTip(QString::fromUtf8("\xe6\xaf\x8f\xe4\xb8\xaa\xe7\x94\xa8\xe4\xbe\x8b\xe5\x8d\x95\xe7\x8b\xac\xe8\xbf\x90\xe8\xa1\x8c\xef\xbc\x8c\xe5\xae\x9a\xe4\xbd\x8d\xe5\xb4\xa9\xe6\xba\x83\xe7\x94\xa8\xe4\xbe\x8b"));
     m_chkSingleTest->setStyleSheet("QCheckBox{font-size:12px;color:#64748b;}QCheckBox::indicator{width:18px;height:18px;}");
+    // 切换时即时保存到当前方案
+    QObject::connect(m_chkSingleTest, &QCheckBox::toggled, this, [this](bool checked) {
+        int idx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
+        auto& scs = m_config.currentProfile().scenarios;
+        if (idx >= 0 && idx < scs.size()) {
+            scs[idx].singleTest = checked;
+            m_config.save();
+        }
+    });
     bl->addWidget(m_chkSingleTest);
     QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::activated), this, [this](int idx) {
         if (idx <= 0) return; // 第一项是占位提示
