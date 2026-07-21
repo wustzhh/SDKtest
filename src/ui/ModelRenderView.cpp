@@ -266,6 +266,7 @@ void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& n
         case NodeType::Scalar:
         default:
             item->setText(1, child.value.isEmpty() ? child.name : child.name + ": " + child.value);
+            item->setForeground(1, COLOR_NORMAL);
             if (child.name == "stdout" && child.rawData.isValid())
                 item->setToolTip(1, child.rawData.toString());
             break;
