@@ -278,6 +278,7 @@ QVector<int> GLViewer::findFacesByCenter(double x, double y, double z, double ep
     return result;
 }
 void GLViewer::setShowFaceIds(bool show){m_showFaceIds=show;update();}
+void GLViewer::setNoDepthEdges(bool on){m_noDepthEdges=on;update();}
 void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();m_faceCenterIds.clear();m_faceBBoxes.clear();m_hlFaces.clear();update();}
 void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.18f,.18f,.22f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
     GLfloat a0[]={.4f,.4f,.45f,1};glLightfv(GL_LIGHT0,GL_AMBIENT,a0);GLfloat d0[]={.6f,.6f,.7f,1};glLightfv(GL_LIGHT0,GL_DIFFUSE,d0);GLfloat s0[]={.2f,.2f,.2f,1};glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
@@ -340,13 +341,13 @@ void GLViewer::paintGL(){
     }
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
-        glDisable(GL_DEPTH_TEST);
+        if(m_noDepthEdges) glDisable(GL_DEPTH_TEST);
         glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
         for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
         glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(2);
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
-        glEnable(GL_DEPTH_TEST);
+        if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
     }
 }
 
@@ -819,9 +820,9 @@ Model3DViewer::Model3DViewer(QWidget* p):QWidget(p){
     m_btnReset->setFixedSize(28,28);m_btnReset->setToolTip(QString::fromUtf8("\xE5\xA4\x8D\xE4\xBD\x8D\xE8\xA7\x86\xE8\xA7\x92"));
     m_btnReset->setStyleSheet("QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}");
     connect(m_btnReset,&QPushButton::clicked,m_gl,&GLViewer::resetView);
-    m_btnShowFaceIds=new QPushButton(QString::fromUtf8("\xE2\x96\xA3"),this);
+    m_btnShowFaceIds=new QPushButton(QString::fromUtf8("\xE2\x97\x8F"),this);
     m_btnShowFaceIds->setFixedSize(28,28);m_btnShowFaceIds->setCheckable(true);
-    m_btnShowFaceIds->setToolTip(QString::fromUtf8("\xE6\x98\xBE\xE7\xA4\xBA\xE9\x9D\xA2 ID"));
+    m_btnShowFaceIds->setToolTip(QString::fromUtf8("\xe7\xba\xbf\xe6\xa1\x86\xe7\xa9\xbf\xe9\x80\x8f\xe6\xa8\xa1\xe5\xbc\x8f"));
     m_btnShowFaceIds->setStyleSheet("QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}QPushButton:checked{background:#eef2ff;border-color:#6366f1;color:#6366f1;}");
     connect(m_btnShowFaceIds,&QPushButton::toggled,this,&Model3DViewer::toggleFaceIds);
     br->addWidget(m_btnReset);br->addWidget(m_btnShowFaceIds);br->addStretch();l->addLayout(br);
@@ -975,5 +976,5 @@ void Model3DViewer::applyPendingBoxes() {
     for (auto it = m_pendingBoxesMap.begin(); it != m_pendingBoxesMap.end(); ++it)
         highlightFacesInBoxes(it.key(), it.value(), true);
 }
-void Model3DViewer::toggleFaceIds(){m_showFaceIdsFlag=m_btnShowFaceIds->isChecked();m_gl->setShowFaceIds(m_showFaceIdsFlag);}
+void Model3DViewer::toggleFaceIds(){bool on=m_btnShowFaceIds->isChecked();m_gl->setNoDepthEdges(on);}
 #include "Model3DViewer.moc"

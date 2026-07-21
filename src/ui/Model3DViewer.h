@@ -67,6 +67,7 @@ public:
     QVector<int> findFacesByCenter(double x, double y, double z,
                                     double eps = 0.01) const;
     void setShowFaceIds(bool show);
+    void setNoDepthEdges(bool on);
     int faceBBoxCount() const { return m_faceBBoxes.size(); }
     void clear();
     // 截图当前 OpenGL 视图
@@ -89,6 +90,7 @@ private:
     QVector<FaceBBox> m_faceBBoxes;
     QVector<int> m_hlFaces;
     bool m_showFaceIds=false;
+    bool m_noDepthEdges=false;
     QQuaternion m_rot;
     float m_zoom=1,m_modelSize=1;
     float m_panX=0,m_panY=0;
