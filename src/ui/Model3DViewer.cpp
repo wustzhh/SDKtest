@@ -51,7 +51,7 @@ void StepWorker::doWork() {
     reader.TransferRoots(); TopoDS_Shape shape = reader.OneShape();
     if (shape.IsNull()) { r.error="Shape is null"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
-    BRepMesh_IncrementalMesh(shape, 1.0).Perform();
+    BRepMesh_IncrementalMesh(shape, 0.1).Perform();
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int voff=0, faceIdx=0;
     TopExp_Explorer fExp(shape, TopAbs_FACE);
@@ -343,7 +343,7 @@ void GLViewer::paintGL(){
         glDisable(GL_DEPTH_TEST);
         glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
         for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
-        glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(1);
+        glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(2);
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
         glEnable(GL_DEPTH_TEST);
@@ -712,7 +712,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
     r.faceBBoxes.append({mx, my, mz, Mx, My, Mz});
     r.faceIds.resize(r.tris.size() / 3, 0);
 
-    QVector3D wireColor(0.35f, 0.35f, 0.38f);
+    QVector3D wireColor(0.2f, 0.85f, 0.25f);
     for (const auto& e : wireEdges) {
         int v0 = idToIdx.value(e.first, -1);
         int v1 = idToIdx.value(e.second, -1);
