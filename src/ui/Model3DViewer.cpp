@@ -98,7 +98,7 @@ void StepWorker::doWork() {
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size(); if (nf==0) continue;
         QVector3D col=(nf==1)?QVector3D(1,0.15f,0.15f):((nf==2)?QVector3D(0.15f,0.85f,0.15f):QVector3D(1,0.85f,0.1f));
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        int ns=qMax(3,qMin(20,(int)((l-f)/0.5))); double st=(l-f)/ns; int prev=-1;
+        int ns=qMax(3,qMin(36,(int)((l-f)/0.5))); double st=(l-f)/ns; int prev=-1;
         for (int s=0;s<=ns;s++) {
             double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u); int idx=-1;
             for (int i=0;i<r.verts.size();i++) { if (qAbs(r.verts[i].x()-pt.X())<1e-6&&qAbs(r.verts[i].y()-pt.Y())<1e-6&&qAbs(r.verts[i].z()-pt.Z())<1e-6) { idx=i; break; } }
@@ -563,9 +563,9 @@ static StepLoadResult parseNasFile(const QString& filePath)
                 int g3 = cardParts[5].toInt(), g4 = cardParts[6].toInt();
                 addQuad(g1, g2, g3, g4);
             }
-        } else if (card == "CTETRA") {
+        } else if (card == "CTETRA" || card == "CTETRA*") {
             // CTETRA: EID PID G1 G2 G3 G4 — 四面体，提取4个三角面
-            if (cardParts.size() >= 8) {
+            if (cardParts.size() >= 7) {
                 int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt();
                 int g3 = cardParts[5].toInt(), g4 = cardParts[6].toInt();
                 addTri(g1, g2, g3);
@@ -573,7 +573,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
                 addTri(g2, g3, g4);
                 addTri(g1, g3, g4);
             }
-        } else if (card == "CPENTA") {
+        } else if (card == "CPENTA" || card == "CPENTA*") {
             // CPENTA: EID PID G1 G2 G3 G4 G5 G6 — 五面体（楔形），提取外表面
             if (cardParts.size() >= 9) {
                 int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt(), g3 = cardParts[5].toInt();
@@ -586,7 +586,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
                 addQuad(g2, g3, g6, g5);
                 addQuad(g3, g1, g4, g6);
             }
-        } else if (card == "CHEXA") {
+        } else if (card == "CHEXA" || card == "CHEXA*") {
             // CHEXA: EID PID G1 G2 G3 G4 G5 G6 G7 G8 — 六面体，提取6个外表面
             if (cardParts.size() >= 11) {
                 int g1 = cardParts[3].toInt(),  g2 = cardParts[4].toInt();
@@ -601,7 +601,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
                 addQuad(g3, g4, g8, g7);  // 后面
                 addQuad(g4, g1, g5, g8);  // 左面
             }
-        } else if (card == "CPYRAM") {
+        } else if (card == "CPYRAM" || card == "CPYRAM*") {
             // CPYRAM: EID PID G1 G2 G3 G4 G5 — 金字塔（五面体）
             if (cardParts.size() >= 8) {
                 int g1 = cardParts[3].toInt(), g2 = cardParts[4].toInt();
