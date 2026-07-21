@@ -321,7 +321,7 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     m_lastHighlighted = item;
     for (int c = 0; c < 2; c++) {
         item->setBackground(c, QColor(0x63,0x66,0xf1));
-        item->setForeground(c, QColor(0xff,0xff,0xff));
+        item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
     QFont bf = item->font(1); bf.setBold(true); item->setFont(1, bf);
     m_btnLocate->setEnabled(true);

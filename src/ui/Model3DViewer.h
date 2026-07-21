@@ -70,6 +70,7 @@ public:
     void setNoDepthEdges(bool on);
     int faceBBoxCount() const { return m_faceBBoxes.size(); }
     void clear();
+    GLViewer* glViewer() { return this; }
     // 截图当前 OpenGL 视图
     QImage grabScreenshot() const;
 protected:
@@ -124,6 +125,7 @@ public:
     QVector<int> resolveBoxes(const QVector<QVector<double>>& boxes) const;
     void toggleFaceIds();
     void clear();
+    GLViewer* glViewer() { return m_gl; }
 
 private:
     void applyPendingBoxes();

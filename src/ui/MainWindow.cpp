@@ -537,8 +537,19 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
         prog.setLabelText(QString::fromUtf8("\u6b63\u5728\u622a\u56fe: %1").arg(baseName));
         QApplication::processEvents();
         
-        // 软件截图：直接读取 STEP + CPU 光栅化（自带 30 秒超时）
-        QImage img = Model3DViewer::renderModelScreenshot(path, 640, 480, 30000);
+        // GL 截图：加载到现有渲染器，grap 真实渲染效果
+        QImage img;
+        m_model3D->loadFile(path);
+        // 等待异步加载完成（最多30秒）
+        QEventLoop loop;
+        QTimer::singleShot(30000, &loop, &QEventLoop::quit);
+        bool loaded = false;
+        QMetaObject::Connection conn = connect(m_model3D, &Model3DViewer::modelLoaded, [&]() { loaded = true; loop.quit(); });
+        loop.exec();
+        QObject::disconnect(conn);
+        if (loaded) {
+            img = m_model3D->glViewer()->grab().toImage().scaled(640, 480, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
         if (img.isNull()) continue;
         
         // 保存
