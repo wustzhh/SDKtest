@@ -518,6 +518,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
 
     // 续行处理：累积当前卡片的所有字段
     QStringList cardParts;
+    QString cardLine;  // 保存原始行用于固定宽度解析
     bool inCard = false;
     QSet<QString> unsupportedCards;
 
@@ -528,12 +529,24 @@ static StepLoadResult parseNasFile(const QString& filePath)
         QString card = cardParts[0].toUpper();
 
         if (card == "GRID" || card == "GRID*") {
-            // GRID: ID CP X Y Z
+            // GRID: ID CP X Y Z — 支持固定宽度格式（坐标字段之间无空格）
+            bool ok; int id = cardParts[1].toInt(&ok);
+            if (!ok) { cardParts.clear(); return; }
+            double x, y, z;
             if (cardParts.size() >= 5) {
-                bool ok; int id = cardParts[1].toInt(&ok);
-                if (ok) {
-                    nodes[id] = {cardParts[2].toDouble(), cardParts[3].toDouble(), cardParts[4].toDouble()};
-                }
+                x = cardParts[2].toDouble();
+                y = cardParts[3].toDouble();
+                z = cardParts[4].toDouble();
+            } else {
+                // 固定宽度格式：从原始行第25-48列提取X/Y/Z（每列8字符）
+                QString fld = cardLine.mid(24, 24);  // columns 25-48
+                fld = fld + QString(24, ' ');
+                x = fld.mid(0, 8).trimmed().toDouble();
+                y = fld.mid(8, 8).trimmed().toDouble();
+                z = fld.mid(16, 8).trimmed().toDouble();
+            }
+            if (ok) {
+                nodes[id] = {x, y, z};
             }
         } else if (card == "CTRIA3" || card == "CTRIA3*" || card == "CTRIAR") {
             // CTRIA3: EID PID G1 G2 G3
@@ -618,6 +631,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
             unsupportedCards.insert(card);
         }
         cardParts.clear();
+        cardLine.clear();
     };
 
     QTextStream in(&f);
@@ -647,6 +661,7 @@ static StepLoadResult parseNasFile(const QString& filePath)
             // 新卡片 → 完成旧卡片，开始新卡片
             finishCard();
             cardParts = parts;
+            cardLine = line;
             inCard = true;
         }
     }
