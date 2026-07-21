@@ -485,6 +485,8 @@ void MainWindow::onRunSelected() {
     m_centerResultView->clear();
     m_progress->startRun(actualRunCount);
     bool singleMode = m_chkSingleTest && m_chkSingleTest->isChecked();
+    m_config.currentProfile().singleTest = singleMode;
+    m_config.save();
     QVector<TestCase> runCases = singleMode ? originalSel : sel;
     m_runner->run(m_config.testBinary(), runCases, m_config.extraArgs(), m_config.workingDir(),
                   m_config.currentProfile().dependencies, m_config.currentProfile().envVars,
@@ -1223,6 +1225,9 @@ void MainWindow::refreshProfileCombo() {
             m_report = {};
         });
     }
+    // 恢复逐个运行复选框状态
+    if (m_chkSingleTest)
+        m_chkSingleTest->setChecked(m_config.currentProfile().singleTest);
 }
 
 

@@ -35,6 +35,7 @@ struct ExeProfile {
     QMap<QString, QString> envVars;  // 自定义环境变量
     QVector<TestCategory> categories;
     QVector<TestScenario> scenarios;
+    bool        singleTest = false; // 逐个运行模式
 
     bool isValid() const { return !testBinary.isEmpty(); }
 };

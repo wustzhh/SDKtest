@@ -197,6 +197,7 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
     for (auto it = envObj.begin(); it != envObj.end(); ++it)
         p.envVars[it.key()] = it.value().toString();
 
+    p.singleTest = obj["single_test"].toBool(false);
     return p;
 }
 
@@ -230,6 +231,7 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         envObj[it.key()] = it.value();
     obj["env_vars"] = envObj;
 
+    obj["single_test"] = p.singleTest;
     return obj;
 }
 
