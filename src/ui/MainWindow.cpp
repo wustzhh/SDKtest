@@ -199,8 +199,11 @@ void MainWindow::setupUi() {
     QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::activated), this, [this](int idx) {
         if (idx <= 0) return; // 第一项是占位提示
         auto& prof = m_config.currentProfile();
-        if (idx-1 < prof.scenarios.size())
-            m_testList->setSelectedTestNames(prof.scenarios[idx-1].selectedTests);
+        if (idx-1 < prof.scenarios.size()) {
+            const auto& sc = prof.scenarios[idx-1];
+            m_testList->setSelectedTestNames(sc.selectedTests);
+            if (m_chkSingleTest) m_chkSingleTest->setChecked(sc.singleTest);
+        }
     });
 
     bl->addWidget(bLd);
@@ -485,8 +488,12 @@ void MainWindow::onRunSelected() {
     m_centerResultView->clear();
     m_progress->startRun(actualRunCount);
     bool singleMode = m_chkSingleTest && m_chkSingleTest->isChecked();
-    m_config.currentProfile().singleTest = singleMode;
-    m_config.save();
+    // 保存到当前选中的方案
+    int scIdx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
+    if (scIdx >= 0 && scIdx < m_config.currentProfile().scenarios.size()) {
+        m_config.currentProfile().scenarios[scIdx].singleTest = singleMode;
+        m_config.save();
+    }
     QVector<TestCase> runCases = singleMode ? originalSel : sel;
     m_runner->run(m_config.testBinary(), runCases, m_config.extraArgs(), m_config.workingDir(),
                   m_config.currentProfile().dependencies, m_config.currentProfile().envVars,
@@ -1225,9 +1232,13 @@ void MainWindow::refreshProfileCombo() {
             m_report = {};
         });
     }
-    // 恢复逐个运行复选框状态
-    if (m_chkSingleTest)
-        m_chkSingleTest->setChecked(m_config.currentProfile().singleTest);
+    // 恢复逐个运行复选框状态（从当前方案）
+    if (m_chkSingleTest && m_scenarioCombo) {
+        int idx = m_scenarioCombo->currentIndex() - 1;
+        auto& scs = m_config.currentProfile().scenarios;
+        bool val = (idx >= 0 && idx < scs.size()) ? scs[idx].singleTest : false;
+        m_chkSingleTest->setChecked(val);
+    }
 }
 
 

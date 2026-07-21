@@ -191,13 +191,13 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
         TestScenario s; s.name = so["name"].toString();
         for (const auto& t : so["selectedTests"].toArray())
             s.selectedTests << t.toString();
+        s.singleTest = so["single_test"].toBool(false);
         p.scenarios.push_back(s);
     }
     auto envObj = obj["env_vars"].toObject();
     for (auto it = envObj.begin(); it != envObj.end(); ++it)
         p.envVars[it.key()] = it.value().toString();
 
-    p.singleTest = obj["single_test"].toBool(false);
     return p;
 }
 
@@ -223,7 +223,9 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
     for (const auto& s : p.scenarios) {
         QJsonObject so; so["name"] = s.name;
         QJsonArray st; for (const auto& t : s.selectedTests) st.append(t);
-        so["selectedTests"] = st; scs.append(so);
+        so["selectedTests"] = st;
+        so["single_test"] = s.singleTest;
+        scs.append(so);
     }
     obj["scenarios"] = scs;
     QJsonObject envObj;
@@ -231,7 +233,6 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         envObj[it.key()] = it.value();
     obj["env_vars"] = envObj;
 
-    obj["single_test"] = p.singleTest;
     return obj;
 }
 
