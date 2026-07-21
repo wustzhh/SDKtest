@@ -11,6 +11,7 @@
 #include <QDir>
 #include <QApplication>
 #include <QClipboard>
+#include <QProcess>
 
 
 // ── 颜色 ──
@@ -517,7 +518,9 @@ void ModelRenderView::onPropTreeContextMenu(const QPoint& pos) {
     if (chosen->text().contains(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6"))) {
         QApplication::clipboard()->setText(path);
     } else if (chosen->text().contains(QString::fromUtf8("\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9"))) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::toNativeSeparators(fi.absolutePath())));
+        // 打开文件夹并选中文件
+        QString nativePath = QDir::toNativeSeparators(fi.absoluteFilePath());
+        QProcess::startDetached("explorer", {"/select,", nativePath});
     } else if (chosen->text().contains(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6"))) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
     }
