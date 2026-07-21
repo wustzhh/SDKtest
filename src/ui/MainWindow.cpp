@@ -1213,6 +1213,11 @@ void MainWindow::refreshScenarioCombo() {
     for (const auto& s : m_config.currentProfile().scenarios)
         m_scenarioCombo->addItem(s.name);
     m_scenarioCombo->blockSignals(false);
+    // 恢复逐个运行复选框状态（从第1个方案）
+    if (m_chkSingleTest) {
+        auto& scs = m_config.currentProfile().scenarios;
+        m_chkSingleTest->setChecked(!scs.isEmpty() && scs[0].singleTest);
+    }
 }
 
 void MainWindow::refreshProfileCombo() {
@@ -1228,16 +1233,10 @@ void MainWindow::refreshProfileCombo() {
         connect(act, &QAction::triggered, this, [this, i]() {
             m_config.setActiveProfile(i);
             refreshProfileCombo();
+            refreshScenarioCombo();
             m_centerResultView->clear();
             m_report = {};
         });
-    }
-    // 恢复逐个运行复选框状态（从当前方案）
-    if (m_chkSingleTest && m_scenarioCombo) {
-        int idx = m_scenarioCombo->currentIndex() - 1;
-        auto& scs = m_config.currentProfile().scenarios;
-        bool val = (idx >= 0 && idx < scs.size()) ? scs[idx].singleTest : false;
-        m_chkSingleTest->setChecked(val);
     }
 }
 
