@@ -86,8 +86,8 @@ TestListPanel::TestListPanel(QWidget* parent)
         toggleItem(item);
         // 高亮当前项
         m_lastHighlighted = item;
-        item->setBackground(0, QColor(0xee,0xf2,0xff));
-        item->setForeground(0, QColor(0x63,0x66,0xf1));
+        item->setBackground(0, QColor(0x63,0x66,0xf1));   // 紫色背景
+        item->setForeground(0, QColor(0xff,0xff,0xff));    // 白字
         updatePathLabel(item);
     });
     layout->addWidget(m_tree, 1);

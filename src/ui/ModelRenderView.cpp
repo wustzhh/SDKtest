@@ -9,6 +9,8 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QDir>
+#include <QApplication>
+#include <QClipboard>
 
 
 // ── 颜色 ──
@@ -130,12 +132,13 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     // Property tree
     m_propTree = new QTreeWidget(m_bottomSplit);
     m_propTree->setHeaderLabels({"Key", "Value", ""});
-    m_propTree->setColumnWidth(0, 180);
-    m_propTree->setColumnWidth(1, 400);
-    m_propTree->setColumnWidth(2, 64);
+    m_propTree->setColumnWidth(0, 110);
+    m_propTree->setColumnWidth(2, 56);
     m_propTree->header()->setStretchLastSection(false);
-    m_propTree->header()->setSectionResizeMode(QHeaderView::Fixed);
-    m_propTree->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_propTree->header()->setSectionResizeMode(0, QHeaderView::Fixed);
+    m_propTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_propTree->header()->setSectionResizeMode(2, QHeaderView::Fixed);
+    m_propTree->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_propTree->setWordWrap(true);
     m_propTree->setMinimumHeight(40);
     m_propTree->setRootIsDecorated(false);
@@ -357,6 +360,7 @@ void ModelRenderView::updateDetailPanel(const TestRunResult* result) {
                 }
             } else {
                 item->setText(1, v);
+                item->setToolTip(1, v);
             }
         }
     }
@@ -499,20 +503,22 @@ void ModelRenderView::onPropTreeContextMenu(const QPoint& pos) {
     if (path.startsWith("\xe2\x9c\x93 ") || path.startsWith("\xe2\x9c\x97 "))
         path = path.mid(2);
 
-    QFileInfo fi(path);
-    if (!fi.exists()) return;
-
     QMenu menu(this);
-    // "打开文件夹" 动作
-    QAction* actOpenFolder = menu.addAction(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9"));
-    // "打开文件" 动作
-    QAction* actOpenFile = menu.addAction(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6"));
+    QFileInfo fi(path);
+    if (fi.exists()) {
+        QAction* actOpenFolder = menu.addAction(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9"));
+        QAction* actOpenFile = menu.addAction(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6"));
+        menu.addSeparator();
+    }
+    QAction* actCopy = menu.addAction(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6"));
 
     QAction* chosen = menu.exec(m_propTree->viewport()->mapToGlobal(pos));
-    if (chosen == actOpenFolder) {
-        QString dirPath = QDir::toNativeSeparators(fi.absolutePath());
-        QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
-    } else if (chosen == actOpenFile) {
+    if (!chosen) return;
+    if (chosen->text().contains(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6"))) {
+        QApplication::clipboard()->setText(path);
+    } else if (chosen->text().contains(QString::fromUtf8("\xe6\x96\x87\xe4\xbb\xb6\xe5\xa4\xb9"))) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::toNativeSeparators(fi.absolutePath())));
+    } else if (chosen->text().contains(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6"))) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
     }
 }

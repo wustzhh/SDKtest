@@ -342,11 +342,13 @@ void GLViewer::paintGL(){
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
         if(m_noDepthEdges) glDisable(GL_DEPTH_TEST);
+        glEnable(GL_POLYGON_OFFSET_LINE);glPolygonOffset(-1,-1);
         glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
         for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
         glVertexPointer(3,GL_FLOAT,0,ea);glLineWidth(2);
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
+        glDisable(GL_POLYGON_OFFSET_LINE);
         if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
     }
 }
