@@ -537,18 +537,20 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
         prog.setLabelText(QString::fromUtf8("\u6b63\u5728\u622a\u56fe: %1").arg(baseName));
         QApplication::processEvents();
         
-        // GL 截图：加载到现有渲染器，grap 真实渲染效果
+        // GL 截图：加载到现有渲染器，grab 真实渲染效果
         QImage img;
-        m_model3D->loadFile(path);
-        // 等待异步加载完成（最多30秒）
         QEventLoop loop;
         QTimer::singleShot(30000, &loop, &QEventLoop::quit);
         bool loaded = false;
-        QMetaObject::Connection conn = connect(m_model3D, &Model3DViewer::modelLoaded, [&]() { loaded = true; loop.quit(); });
-        loop.exec();
+        QMetaObject::Connection conn = connect(m_model3D, &Model3DViewer::modelLoaded,
+            [&]() { loaded = true; loop.quit(); });
+        m_model3D->loadFile(path);
+        if (!loaded) loop.exec();  // NAS 文件会同步发射，跳过等待
         QObject::disconnect(conn);
         if (loaded) {
-            img = m_model3D->glViewer()->grab().toImage().scaled(640, 480, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QImage raw = m_model3D->glViewer()->grab().toImage();
+            if (!raw.isNull())  // 加载失败时GL为空，跳过
+                img = raw.scaled(640, 480, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
         if (img.isNull()) continue;
         
