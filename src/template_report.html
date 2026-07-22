@@ -132,7 +132,9 @@ var seen={};DATA=DATA.filter(function(d){if(seen[d.id])return false;seen[d.id]=t
 DATA.sort(function(a,b){return a.time<b.time?1:a.time>b.time?-1:0;});
 // 加载筛选
 DATA.forEach(function(d){
-  d._sf=lsf(d.id);
+  var sf=lsf(d.id);
+  if(sf.length>0) d._sf=sf;
+  else d._sf=d.savedFilters||[];
   try{var n=getStore('tr_name_'+d.id);if(n)d.name=n;}catch(e){}
 });
 
@@ -327,6 +329,7 @@ function match(v,op,p){
     case'eq':return x===y;case'ne':return x!==y;
     case'lt':return parseFloat(x)<parseFloat(y);case'gt':return parseFloat(x)>parseFloat(y);
     case'le':return parseFloat(x)<=parseFloat(y);case'ge':return parseFloat(x)>=parseFloat(y);
+    case'notin':return x.indexOf(y)<0;
     default:return x.indexOf(y)>=0;
   }
 }
