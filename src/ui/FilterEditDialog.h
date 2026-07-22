@@ -53,4 +53,5 @@ private:
 
     QStringList m_propertyKeys;
     QMap<QString, QStringList> m_propertyValues;
+    bool m_sortAsc = true;
 };

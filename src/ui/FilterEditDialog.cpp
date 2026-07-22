@@ -43,6 +43,16 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
                       " QPushButton:hover{background:#f1f5f9}";
     m_btnNew->setStyleSheet(gbStyle); m_btnDelete->setStyleSheet(gbStyle); m_btnRename->setStyleSheet(gbStyle);
     glBtns->addWidget(m_btnNew); glBtns->addWidget(m_btnDelete); glBtns->addWidget(m_btnRename);
+    auto* m_btnSort = new QPushButton(QString::fromUtf8("\xe2\x86\x91"));
+    m_btnSort->setFixedSize(28, 28);
+    m_btnSort->setToolTip(QString::fromUtf8("\xe6\x8e\x92\xe5\xba\x8f\xe5\x88\x87\xe6\x8d\xa2"));
+    m_btnSort->setStyleSheet(gbStyle);
+    connect(m_btnSort, &QPushButton::clicked, this, [this, m_btnSort]() {
+        m_sortAsc = !m_sortAsc;
+        m_btnSort->setText(m_sortAsc ? QString::fromUtf8("\xe2\x86\x91") : QString::fromUtf8("\xe2\x86\x93"));
+        refreshGroupList();
+    });
+    glBtns->addWidget(m_btnSort);
     glBtns->addStretch();
     leftLay->addLayout(glBtns);
 
@@ -126,9 +136,20 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
 }
 
 void FilterEditDialog::refreshGroupList() {
+    QString prevSel = m_groupList->currentItem() ? m_groupList->currentItem()->text() : "";
     m_groupList->clear();
+    // 收集名称，排序
+    QStringList names;
     for (const auto& fs : m_filterSets)
-        m_groupList->addItem(fs.name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : fs.name);
+        names.append(fs.name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : fs.name);
+    if (m_sortAsc) names.sort(Qt::CaseInsensitive);
+    else std::sort(names.begin(), names.end(), [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) > 0; });
+    m_groupList->addItems(names);
+    // 恢复选中
+    if (!prevSel.isEmpty()) {
+        auto found = m_groupList->findItems(prevSel, Qt::MatchExactly);
+        if (!found.isEmpty()) m_groupList->setCurrentItem(found[0]);
+    }
 }
 
 void FilterEditDialog::refreshConditionTable() {
@@ -289,7 +310,7 @@ void FilterEditDialog::flushCurrentGroup() {
 bool FilterEditDialog::eventFilter(QObject* obj, QEvent* ev) {
     if (ev->type() == QEvent::Wheel) {
         auto* combo = qobject_cast<QComboBox*>(obj);
-        if (combo && !combo->hasFocus()) return true;
+        if (combo) return true;
     }
     return QDialog::eventFilter(obj, ev);
 }
