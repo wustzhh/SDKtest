@@ -114,8 +114,6 @@ void FilterEditDialog::refreshGroupList() {
 }
 
 void FilterEditDialog::refreshConditionTable() {
-    // 先回写当前组正在编辑的条件
-    flushCurrentGroup();
     m_condTable->setRowCount(0);
     if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
 
