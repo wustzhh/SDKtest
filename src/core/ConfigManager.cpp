@@ -133,8 +133,8 @@ void ConfigManager::fromJson(const QJsonObject& obj) {
     uiState.splitterRightPct = ui["splitter_right_pct"].toInt(30);
     uiState.splitterVPct = ui["splitter_v_pct"].toInt(25);
     uiState.splitterV2Pct = ui["splitter_v2_pct"].toInt(60);
-    uiState.cfgDialogW = ui["cfg_dialog_w"].toInt(580);
-    uiState.cfgDialogH = ui["cfg_dialog_h"].toInt(500);
+    uiState.cfgDialogW = ui["cfg_dialog_w"].toInt(850);
+    uiState.cfgDialogH = ui["cfg_dialog_h"].toInt(650);
     uiState.modelInfoCollapsed = ui["model_info_collapsed"].toBool(false);
     uiState.leftPanelVisible = ui["left_panel"].toBool(true);
     uiState.rightPanelVisible = ui["right_panel"].toBool(true);

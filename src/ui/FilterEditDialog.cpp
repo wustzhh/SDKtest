@@ -156,6 +156,8 @@ void FilterEditDialog::refreshConditionTable() {
 }
 
 void FilterEditDialog::onGroupSelected(int row) {
+    // 先保存当前组的编辑状态
+    flushCurrentGroup();
     if (row < 0 || row >= m_filterSets.size()) return;
     m_currentGroup = row;
     refreshConditionTable();
