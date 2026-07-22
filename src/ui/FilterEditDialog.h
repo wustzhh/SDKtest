@@ -33,6 +33,7 @@ private slots:
 private:
     void refreshGroupList();
     void refreshConditionTable();
+    void flushCurrentGroup();
 
     QVector<FilterSet> m_filterSets;
     int m_currentGroup = -1;

@@ -29,7 +29,7 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
 
     m_groupList = new QListWidget(leftWidget);
     m_groupList->setStyleSheet("QListWidget::item{padding:6px 10px;font-size:13px}"
-                               "QListWidget::item:selected{background:#eef2ff;color:#1e293b}");
+                               " QListWidget::item:selected{background:#eef2ff;color:#1e293b}");
     leftLay->addWidget(m_groupList, 1);
 
     auto* glBtns = new QHBoxLayout;
@@ -37,7 +37,7 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_btnDelete = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
     m_btnRename = new QPushButton(QString::fromUtf8("\xe9\x87\x8d\xe5\x91\xbd\xe5\x90\x8d"));
     QString gbStyle = "QPushButton{font-size:12px;padding:3px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:4px}"
-                      "QPushButton:hover{background:#f1f5f9}";
+                      " QPushButton:hover{background:#f1f5f9}";
     m_btnNew->setStyleSheet(gbStyle); m_btnDelete->setStyleSheet(gbStyle); m_btnRename->setStyleSheet(gbStyle);
     glBtns->addWidget(m_btnNew); glBtns->addWidget(m_btnDelete); glBtns->addWidget(m_btnRename);
     glBtns->addStretch();
@@ -114,6 +114,8 @@ void FilterEditDialog::refreshGroupList() {
 }
 
 void FilterEditDialog::refreshConditionTable() {
+    // 先回写当前组正在编辑的条件
+    flushCurrentGroup();
     m_condTable->setRowCount(0);
     if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
 
@@ -121,7 +123,7 @@ void FilterEditDialog::refreshConditionTable() {
     m_condTable->setRowCount(conds.size());
     QStringList ops = {QString::fromUtf8("\xe7\xad\x89\xe4\xba\x8e"), QString::fromUtf8("\xe4\xb8\x8d\xe7\xad\x89\xe4\xba\x8e"),
                        QString::fromUtf8("\xe5\x8c\x85\xe5\x90\xab"), QString::fromUtf8("\xe4\xb8\x8d\xe5\x8c\x85\xe5\x90\xab")};
-    QStringList opVals = {"eq", "ne", "in", "notin"};
+    static const QStringList opVals = {"eq", "ne", "in", "notin"};
 
     for (int i = 0; i < conds.size(); i++) {
         // 属性名
@@ -220,25 +222,27 @@ void FilterEditDialog::onRemoveCondition(int row) {
 }
 
 void FilterEditDialog::onAccept() {
-    // 从 UI 控件回写当前组的条件
-    if (m_currentGroup >= 0 && m_currentGroup < m_filterSets.size()) {
-        auto& conds = m_filterSets[m_currentGroup].conditions;
-        conds.clear();
-        for (int i = 0; i < m_condTable->rowCount(); i++) {
-            auto* keyW = qobject_cast<QLineEdit*>(m_condTable->cellWidget(i, 0));
-            auto* opW  = qobject_cast<QComboBox*>(m_condTable->cellWidget(i, 1));
-            auto* valW = qobject_cast<QLineEdit*>(m_condTable->cellWidget(i, 2));
-            if (!keyW || !opW || !valW) continue;
-            QString key = keyW->text().trimmed();
-            if (key.isEmpty()) continue;
-            FilterCondition c;
-            c.key = key;
-            c.value = valW->text().trimmed();
-            QStringList opVals = {"eq", "ne", "in", "notin"};
-            int opIdx = opW->currentIndex();
-            c.op = (opIdx >= 0 && opIdx < opVals.size()) ? opVals[opIdx] : "in";
-            conds.append(c);
-        }
-    }
+    flushCurrentGroup();
     accept();
+}
+
+void FilterEditDialog::flushCurrentGroup() {
+    if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
+    auto& conds = m_filterSets[m_currentGroup].conditions;
+    conds.clear();
+    static const QStringList opVals = {"eq", "ne", "in", "notin"};
+    for (int i = 0; i < m_condTable->rowCount(); i++) {
+        auto* keyW = qobject_cast<QLineEdit*>(m_condTable->cellWidget(i, 0));
+        auto* opW  = qobject_cast<QComboBox*>(m_condTable->cellWidget(i, 1));
+        auto* valW = qobject_cast<QLineEdit*>(m_condTable->cellWidget(i, 2));
+        if (!keyW || !opW || !valW) continue;
+        QString key = keyW->text().trimmed();
+        if (key.isEmpty()) continue;
+        FilterCondition c;
+        c.key = key;
+        c.value = valW->text().trimmed();
+        int opIdx = opW->currentIndex();
+        c.op = (opIdx >= 0 && opIdx < opVals.size()) ? opVals[opIdx] : "in";
+        conds.append(c);
+    }
 }
