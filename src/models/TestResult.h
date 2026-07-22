@@ -8,6 +8,20 @@
 #include <QDateTime>
 
 // ────────────────────────────────────────────────────────────
+//  筛选条件 / 筛选组
+// ────────────────────────────────────────────────────────────
+struct FilterCondition {
+    QString key;   // 属性名  e.g. "interface"
+    QString op;    // 匹配方式 e.g. "eq" "ne" "in" "notin"
+    QString value;
+};
+
+struct FilterSet {
+    QString name;
+    QVector<FilterCondition> conditions;
+};
+
+// ────────────────────────────────────────────────────────────
 //  测试用例的基本描述
 // ────────────────────────────────────────────────────────────
 struct TestCase {

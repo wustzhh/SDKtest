@@ -937,7 +937,8 @@ void MainWindow::onEditConfig() {
     auto* sceneTab = new QWidget;
     auto* sceneLay = new QVBoxLayout(sceneTab);
     sceneTree = new QTreeWidget(sceneTab);
-    sceneTree->setHeaderLabels({QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88\xe5\x90\x8d"), QString::fromUtf8("\xe6\x95\xb0\xe9\x87\x8f")});
+    sceneTree->setHeaderLabels({QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88\xe5\x90\x8d"), QString::fromUtf8("\xe6\x95\xb0\xe9\x87\x8f"), QString::fromUtf8("\xe7\xad\x9b\xe9\x80\x89\xe6\x9d\xa1\xe4\xbb\xb6")});
+    sceneTree->setColumnWidth(0, 160); sceneTree->setColumnWidth(1, 60);
     sceneTree->setRootIsDecorated(false);
     sceneTree->setStyleSheet("QTreeWidget::item{padding:6px 10px;min-height:32px;font-size:13px}");
     sceneLay->addWidget(sceneTree, 1);

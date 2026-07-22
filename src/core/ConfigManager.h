@@ -7,6 +7,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+#include "models/TestResult.h"
+
 // ────────────────────────────────────────────────────────────
 //  测试分类定义（用于用例树分组）
 // ────────────────────────────────────────────────────────────
@@ -25,6 +27,7 @@ struct TestScenario {
     QString     name;
     QStringList selectedTests;  // "Suite.Case" 列表
     bool        singleTest = false;  // 逐个运行
+    QVector<FilterSet> filterSets;   // 筛选条件组
 };
 
 struct ExeProfile {

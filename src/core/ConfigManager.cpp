@@ -192,6 +192,19 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
         for (const auto& t : so["selectedTests"].toArray())
             s.selectedTests << t.toString();
         s.singleTest = so["single_test"].toBool(false);
+        for (const auto& fv : so["filterSets"].toArray()) {
+            QJsonObject fo = fv.toObject();
+            FilterSet fs; fs.name = fo["name"].toString();
+            for (const auto& cv : fo["conditions"].toArray()) {
+                QJsonObject co = cv.toObject();
+                FilterCondition c;
+                c.key = co["key"].toString();
+                c.op  = co["op"].toString();
+                c.value = co["value"].toString();
+                fs.conditions.append(c);
+            }
+            s.filterSets.append(fs);
+        }
         p.scenarios.push_back(s);
     }
     auto envObj = obj["env_vars"].toObject();
@@ -225,6 +238,18 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         QJsonArray st; for (const auto& t : s.selectedTests) st.append(t);
         so["selectedTests"] = st;
         so["single_test"] = s.singleTest;
+        QJsonArray fss;
+        for (const auto& fs : s.filterSets) {
+            QJsonObject fo; fo["name"] = fs.name;
+            QJsonArray conds;
+            for (const auto& c : fs.conditions) {
+                QJsonObject co; co["key"] = c.key; co["op"] = c.op; co["value"] = c.value;
+                conds.append(co);
+            }
+            fo["conditions"] = conds;
+            fss.append(fo);
+        }
+        so["filterSets"] = fss;
         scs.append(so);
     }
     obj["scenarios"] = scs;
