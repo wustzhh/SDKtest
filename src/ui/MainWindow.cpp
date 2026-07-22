@@ -680,7 +680,8 @@ void MainWindow::onEditConfig() {
     QDialog dlg(this);
     dlg.setWindowTitle(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe9\x85\x8d\xe7\xbd\xae"));
     dlg.resize(m_config.uiState.cfgDialogW, m_config.uiState.cfgDialogH);
-    dlg.setMinimumWidth(580);
+    dlg.setMinimumWidth(700);
+    dlg.setMinimumHeight(550);
     dlg.setStyleSheet("QDialog{background:#ffffff;border-radius:12px}");
     auto* lay = new QVBoxLayout(&dlg);
     lay->setContentsMargins(16, 12, 16, 12);
