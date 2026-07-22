@@ -36,6 +36,7 @@ private:
     void refreshGroupList();
     void refreshConditionTable();
     void flushCurrentGroup();
+    bool eventFilter(QObject* obj, QEvent* ev) override;
 
     QVector<FilterSet> m_filterSets;
     int m_currentGroup = -1;

@@ -7,6 +7,7 @@
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QWheelEvent>
 
 FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
                                      const QStringList& propertyKeys,
@@ -63,23 +64,21 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     rightLay->addLayout(modeRow);
 
     m_condTable = new QTableWidget(rightWidget);
-    m_condTable->setColumnCount(4);
+    m_condTable->setColumnCount(3);
     m_condTable->setHorizontalHeaderLabels({QString::fromUtf8("\xe5\xb1\x9e\xe6\x80\xa7"),
-        QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d"), QString::fromUtf8("\xe5\x80\xbc"), ""});
+        QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d"), QString::fromUtf8("\xe5\x80\xbc")});
     m_condTable->horizontalHeader()->setStretchLastSection(false);
     m_condTable->setColumnWidth(0, 180);
     m_condTable->setColumnWidth(1, 120);
-    m_condTable->setColumnWidth(2, 280);
-    m_condTable->setColumnWidth(3, 36);
     m_condTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-    m_condTable->horizontalHeader()->setDefaultSectionSize(40);
-    m_condTable->horizontalHeader()->setStyleSheet("QHeaderView::section{font-size:14px;padding:6px 8px;min-height:32px}");
+    m_condTable->horizontalHeader()->setDefaultSectionSize(32);
+    m_condTable->horizontalHeader()->setStyleSheet("QHeaderView::section{font-size:13px;padding:4px 8px;min-height:28px}");
     m_condTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_condTable->setStyleSheet("QTableWidget::item{padding:8px 10px;font-size:14px;min-height:40px}"
-                               " QComboBox{font-size:14px;min-height:34px}"
-                               " QLineEdit{font-size:14px;min-height:30px}");
-    m_condTable->verticalHeader()->setDefaultSectionSize(56);
-    // 根据 ComboBox 行高自适应
+    m_condTable->setFocusPolicy(Qt::NoFocus);
+    m_condTable->setStyleSheet("QTableWidget::item{padding:3px 8px;font-size:13px}"
+                               " QComboBox{font-size:13px;min-height:22px;padding:1px 4px}"
+                               " QLineEdit{font-size:13px;min-height:20px}");
+    m_condTable->verticalHeader()->setDefaultSectionSize(34);
     m_condTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     rightLay->addWidget(m_condTable, 1);
 
@@ -177,14 +176,13 @@ void FilterEditDialog::refreshConditionTable() {
             valCombo->setCurrentText(conds[i].value);
         m_condTable->setCellWidget(i, 2, valCombo);
 
-        // 删除按钮
-        auto* delBtn = new QPushButton(QString::fromUtf8("\xe2\x9c\x95"));
-        delBtn->setFixedSize(24, 24);
-        delBtn->setStyleSheet("QPushButton{color:#ef4444;border:none;font-size:12px;}"
-                              "QPushButton:hover{background:#fef2f2;border-radius:4px}");
-        int row = i;
-        connect(delBtn, &QPushButton::clicked, this, [this, row]() { onRemoveCondition(row); });
-        m_condTable->setCellWidget(i, 3, delBtn);
+        // 禁用 ComboBox 滚轮
+        keyCombo->setFocusPolicy(Qt::StrongFocus);
+        keyCombo->installEventFilter(this);
+        opCombo->setFocusPolicy(Qt::StrongFocus);
+        opCombo->installEventFilter(this);
+        valCombo->setFocusPolicy(Qt::StrongFocus);
+        valCombo->installEventFilter(this);
     }
     m_condTable->resizeRowsToContents();
 }
@@ -286,4 +284,12 @@ void FilterEditDialog::flushCurrentGroup() {
         c.op = (opIdx >= 0 && opIdx < opVals.size()) ? opVals[opIdx] : "in";
         conds.append(c);
     }
+}
+
+bool FilterEditDialog::eventFilter(QObject* obj, QEvent* ev) {
+    if (ev->type() == QEvent::Wheel) {
+        auto* combo = qobject_cast<QComboBox*>(obj);
+        if (combo && !combo->hasFocus()) return true;
+    }
+    return QDialog::eventFilter(obj, ev);
 }
