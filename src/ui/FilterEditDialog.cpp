@@ -58,6 +58,7 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     modeRow->addWidget(new QLabel(QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d\xe6\xa8\xa1\xe5\xbc\x8f:")));
     m_modeCombo = new QComboBox;
     m_modeCombo->addItems({QString::fromUtf8("AND (\xe6\x89\x80\xe6\x9c\x89\xe6\x9d\xa1\xe4\xbb\xb6)"), QString::fromUtf8("OR  (\xe4\xbb\xbb\xe6\x84\x8f\xe6\x9d\xa1\xe4\xbb\xb6)")});
+    modeRow->addWidget(m_modeCombo);
     modeRow->addStretch();
     rightLay->addLayout(modeRow);
 
@@ -76,7 +77,7 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_condTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_condTable->setStyleSheet("QTableWidget::item{padding:8px 10px;font-size:14px;min-height:36px}"
                                " QComboBox{font-size:14px;min-height:30px}");
-    m_condTable->verticalHeader()->setDefaultSectionSize(42);
+    m_condTable->verticalHeader()->setDefaultSectionSize(48);
     rightLay->addWidget(m_condTable, 1);
 
     auto* crBtns = new QHBoxLayout;
