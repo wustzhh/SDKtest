@@ -32,6 +32,7 @@
 #include <QRegularExpression>
 #include <QProgressDialog>
 
+#include "ui/FilterEditDialog.h"
 #include "core/Logger.h"
 
 MainWindow::MainWindow(QWidget* parent)
@@ -1037,9 +1038,11 @@ void MainWindow::onEditConfig() {
         if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
         auto& s = m_config.currentProfile().scenarios[idx];
-        // TODO: 弹出 FilterEditDialog
-        // 更新显示
-        sel[0]->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(s.filterSets.size()));
+        FilterEditDialog fdlg(s.filterSets, &dlg);
+        if (fdlg.exec() == QDialog::Accepted) {
+            s.filterSets = fdlg.result();
+            sel[0]->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(s.filterSets.size()));
+        }
     });
 
     tabs->addTab(sceneTab, QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88"));
