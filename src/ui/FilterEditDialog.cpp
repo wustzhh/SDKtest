@@ -75,9 +75,10 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_condTable->horizontalHeader()->setDefaultSectionSize(40);
     m_condTable->horizontalHeader()->setStyleSheet("QHeaderView::section{font-size:14px;padding:6px 8px;min-height:32px}");
     m_condTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_condTable->setStyleSheet("QTableWidget::item{padding:8px 10px;font-size:14px;min-height:36px}"
-                               " QComboBox{font-size:14px;min-height:30px}");
-    m_condTable->verticalHeader()->setDefaultSectionSize(48);
+    m_condTable->setStyleSheet("QTableWidget::item{padding:8px 10px;font-size:14px;min-height:40px}"
+                               " QComboBox{font-size:14px;min-height:34px}"
+                               " QLineEdit{font-size:14px;min-height:30px}");
+    m_condTable->verticalHeader()->setDefaultSectionSize(52);
     rightLay->addWidget(m_condTable, 1);
 
     auto* crBtns = new QHBoxLayout;
