@@ -136,21 +136,23 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
 }
 
 void FilterEditDialog::refreshGroupList() {
-    int prevRow = m_groupList->currentRow();
+    int prevIdx = m_groupList->currentItem() ? m_groupList->currentItem()->data(Qt::UserRole).toInt() : -1;
     m_groupList->clear();
-    // 排序 m_filterSets 本身
-    if (!m_filterSets.isEmpty()) {
-        std::sort(m_filterSets.begin(), m_filterSets.end(),
-            [this](const FilterSet& a, const FilterSet& b) {
-                int cmp = a.name.compare(b.name, Qt::CaseInsensitive);
-                return m_sortAsc ? cmp < 0 : cmp > 0;
-            });
+    // 构建 (name, index) 列表，排序
+    QVector<QPair<QString, int>> items;
+    for (int i = 0; i < m_filterSets.size(); i++)
+        items.append({m_filterSets[i].name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : m_filterSets[i].name, i});
+    std::sort(items.begin(), items.end(), [this](const QPair<QString,int>& a, const QPair<QString,int>& b) {
+        int cmp = a.first.compare(b.first, Qt::CaseInsensitive);
+        return m_sortAsc ? cmp < 0 : cmp > 0;
+    });
+    int prevRow = -1;
+    for (int i = 0; i < items.size(); i++) {
+        auto* lwItem = new QListWidgetItem(items[i].first, m_groupList);
+        lwItem->setData(Qt::UserRole, items[i].second);
+        if (items[i].second == prevIdx) prevRow = i;
     }
-    for (const auto& fs : m_filterSets)
-        m_groupList->addItem(fs.name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : fs.name);
-    // 恢复选中
-    if (prevRow >= 0 && prevRow < m_groupList->count())
-        m_groupList->setCurrentRow(prevRow);
+    if (prevRow >= 0) m_groupList->setCurrentRow(prevRow);
 }
 
 void FilterEditDialog::refreshConditionTable() {
@@ -212,11 +214,14 @@ void FilterEditDialog::refreshConditionTable() {
 void FilterEditDialog::onGroupSelected(int row) {
     // 先保存当前组的编辑状态
     flushCurrentGroup();
-    if (row < 0 || row >= m_filterSets.size()) return;
-    m_currentGroup = row;
+    if (row < 0) return;
+    QListWidgetItem* item = m_groupList->item(row);
+    if (!item) return;
+    int idx = item->data(Qt::UserRole).toInt();
+    if (idx < 0 || idx >= m_filterSets.size()) return;
+    m_currentGroup = idx;
     refreshConditionTable();
-    // 恢复 AND/OR 模式
-    if (m_modeCombo) m_modeCombo->setCurrentIndex(m_filterSets[row].mode == "or" ? 1 : 0);
+    if (m_modeCombo) m_modeCombo->setCurrentIndex(m_filterSets[idx].mode == "or" ? 1 : 0);
 }
 
 void FilterEditDialog::onNewGroup() {
@@ -234,10 +239,14 @@ void FilterEditDialog::onNewGroup() {
 void FilterEditDialog::onDeleteGroup() {
     int row = m_groupList->currentRow();
     if (row < 0) return;
+    QListWidgetItem* item = m_groupList->item(row);
+    if (!item) return;
+    int idx = item->data(Qt::UserRole).toInt();
+    if (idx < 0 || idx >= m_filterSets.size()) return;
     if (QMessageBox::question(this, QString::fromUtf8("\xe7\xa1\xae\xe8\xae\xa4"),
-        QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4\xe7\xad\x9b\xe9\x80\x89\xe7\xbb\x84 \"%1\"?").arg(m_filterSets[row].name)) != QMessageBox::Yes)
+        QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4\xe7\xad\x9b\xe9\x80\x89\xe7\xbb\x84 \"%1\"?").arg(m_filterSets[idx].name)) != QMessageBox::Yes)
         return;
-    m_filterSets.remove(row);
+    m_filterSets.remove(idx);
     refreshGroupList();
     if (m_groupList->count() > 0)
         m_groupList->setCurrentRow(0);
@@ -248,13 +257,16 @@ void FilterEditDialog::onDeleteGroup() {
 void FilterEditDialog::onRenameGroup() {
     int row = m_groupList->currentRow();
     if (row < 0) return;
+    QListWidgetItem* item = m_groupList->item(row);
+    if (!item) return;
+    int idx = item->data(Qt::UserRole).toInt();
+    if (idx < 0 || idx >= m_filterSets.size()) return;
     bool ok;
     QString name = QInputDialog::getText(this, QString::fromUtf8("\xe9\x87\x8d\xe5\x91\xbd\xe5\x90\x8d"),
-        QString::fromUtf8("\xe5\x90\x8d\xe7\xa7\xb0:"), QLineEdit::Normal, m_filterSets[row].name, &ok);
+        QString::fromUtf8("\xe5\x90\x8d\xe7\xa7\xb0:"), QLineEdit::Normal, m_filterSets[idx].name, &ok);
     if (!ok || name.isEmpty()) return;
-    m_filterSets[row].name = name;
+    m_filterSets[idx].name = name;
     refreshGroupList();
-    m_groupList->setCurrentRow(row);
 }
 
 void FilterEditDialog::onAddCondition() {
