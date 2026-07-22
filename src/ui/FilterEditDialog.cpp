@@ -58,11 +58,13 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_condTable->setHorizontalHeaderLabels({QString::fromUtf8("\xe5\xb1\x9e\xe6\x80\xa7"),
         QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d"), QString::fromUtf8("\xe5\x80\xbc"), ""});
     m_condTable->horizontalHeader()->setStretchLastSection(false);
-    m_condTable->setColumnWidth(0, 150);
-    m_condTable->setColumnWidth(2, 200);
-    m_condTable->setColumnWidth(3, 30);
+    m_condTable->setColumnWidth(0, 180);
+    m_condTable->setColumnWidth(1, 120);
+    m_condTable->setColumnWidth(2, 280);
+    m_condTable->setColumnWidth(3, 36);
     m_condTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-    m_condTable->horizontalHeader()->setDefaultSectionSize(36);
+    m_condTable->horizontalHeader()->setDefaultSectionSize(40);
+    m_condTable->horizontalHeader()->setStyleSheet("QHeaderView::section{font-size:14px;padding:6px 8px;min-height:32px}");
     m_condTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_condTable->setStyleSheet("QTableWidget::item{padding:8px 10px;font-size:14px;min-height:36px}"
                                " QComboBox{font-size:14px;min-height:30px}");
