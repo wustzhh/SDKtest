@@ -18,6 +18,7 @@ struct FilterCondition {
 
 struct FilterSet {
     QString name;
+    QString mode = "and";  // "and" or "or"
     QVector<FilterCondition> conditions;
 };
 

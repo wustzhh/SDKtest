@@ -46,6 +46,7 @@ private:
     QPushButton*    m_btnRename;
 
     QTableWidget*   m_condTable;
+    QComboBox*      m_modeCombo;
     QPushButton*    m_btnAddCond;
     QPushButton*    m_btnRemoveCond;
 

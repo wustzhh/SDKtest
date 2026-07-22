@@ -53,6 +53,14 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     rightLay->setContentsMargins(0, 0, 0, 0);
     rightLay->addWidget(new QLabel(QString::fromUtf8("\xe6\x9d\xa1\xe4\xbb\xb6")));
 
+    // AND/OR 模式切换
+    auto* modeRow = new QHBoxLayout;
+    modeRow->addWidget(new QLabel(QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d\xe6\xa8\xa1\xe5\xbc\x8f:")));
+    m_modeCombo = new QComboBox;
+    m_modeCombo->addItems({QString::fromUtf8("AND (\xe6\x89\x80\xe6\x9c\x89\xe6\x9d\xa1\xe4\xbb\xb6)"), QString::fromUtf8("OR  (\xe4\xbb\xbb\xe6\x84\x8f\xe6\x9d\xa1\xe4\xbb\xb6)")});
+    modeRow->addStretch();
+    rightLay->addLayout(modeRow);
+
     m_condTable = new QTableWidget(rightWidget);
     m_condTable->setColumnCount(4);
     m_condTable->setHorizontalHeaderLabels({QString::fromUtf8("\xe5\xb1\x9e\xe6\x80\xa7"),
@@ -68,6 +76,7 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_condTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_condTable->setStyleSheet("QTableWidget::item{padding:8px 10px;font-size:14px;min-height:36px}"
                                " QComboBox{font-size:14px;min-height:30px}");
+    m_condTable->verticalHeader()->setDefaultSectionSize(42);
     rightLay->addWidget(m_condTable, 1);
 
     auto* crBtns = new QHBoxLayout;
@@ -181,6 +190,8 @@ void FilterEditDialog::onGroupSelected(int row) {
     if (row < 0 || row >= m_filterSets.size()) return;
     m_currentGroup = row;
     refreshConditionTable();
+    // 恢复 AND/OR 模式
+    if (m_modeCombo) m_modeCombo->setCurrentIndex(m_filterSets[row].mode == "or" ? 1 : 0);
 }
 
 void FilterEditDialog::onNewGroup() {
@@ -251,7 +262,9 @@ void FilterEditDialog::onAccept() {
 
 void FilterEditDialog::flushCurrentGroup() {
     if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
-    auto& conds = m_filterSets[m_currentGroup].conditions;
+    auto& fs = m_filterSets[m_currentGroup];
+    fs.mode = m_modeCombo && m_modeCombo->currentIndex() == 1 ? "or" : "and";
+    auto& conds = fs.conditions;
     conds.clear();
     static const QStringList opVals = {"eq", "ne", "in", "notin"};
     for (int i = 0; i < m_condTable->rowCount(); i++) {

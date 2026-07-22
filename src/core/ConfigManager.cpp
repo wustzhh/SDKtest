@@ -196,7 +196,7 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
         s.singleTest = so["single_test"].toBool(false);
         for (const auto& fv : so["filterSets"].toArray()) {
             QJsonObject fo = fv.toObject();
-            FilterSet fs; fs.name = fo["name"].toString();
+            FilterSet fs; fs.name = fo["name"].toString(); fs.mode = fo["mode"].toString("and");
             for (const auto& cv : fo["conditions"].toArray()) {
                 QJsonObject co = cv.toObject();
                 FilterCondition c;
@@ -242,7 +242,7 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         so["single_test"] = s.singleTest;
         QJsonArray fss;
         for (const auto& fs : s.filterSets) {
-            QJsonObject fo; fo["name"] = fs.name;
+            QJsonObject fo; fo["name"] = fs.name; fo["mode"] = fs.mode;
             QJsonArray conds;
             for (const auto& c : fs.conditions) {
                 QJsonObject co; co["key"] = c.key; co["op"] = c.op; co["value"] = c.value;
