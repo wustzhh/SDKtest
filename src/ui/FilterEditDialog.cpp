@@ -183,6 +183,7 @@ void FilterEditDialog::refreshConditionTable() {
         connect(delBtn, &QPushButton::clicked, this, [this, row]() { onRemoveCondition(row); });
         m_condTable->setCellWidget(i, 3, delBtn);
     }
+    m_condTable->resizeRowsToContents();
 }
 
 void FilterEditDialog::onGroupSelected(int row) {
