@@ -17,6 +17,8 @@ class FilterEditDialog : public QDialog {
     Q_OBJECT
 public:
     explicit FilterEditDialog(const QVector<FilterSet>& filterSets,
+                               const QStringList& propertyKeys = {},
+                               const QMap<QString, QStringList>& propertyValues = {},
                                QWidget* parent = nullptr);
 
     QVector<FilterSet> result() const { return m_filterSets; }
@@ -46,4 +48,7 @@ private:
     QTableWidget*   m_condTable;
     QPushButton*    m_btnAddCond;
     QPushButton*    m_btnRemoveCond;
+
+    QStringList m_propertyKeys;
+    QMap<QString, QStringList> m_propertyValues;
 };

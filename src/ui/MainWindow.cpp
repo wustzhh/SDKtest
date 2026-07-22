@@ -995,7 +995,18 @@ void MainWindow::onEditConfig() {
         if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
         auto& s = m_config.currentProfile().scenarios[idx];
-        FilterEditDialog fdlg(s.filterSets, &dlg);
+        // 收集当前结果的属性键值
+        QStringList propKeys;
+        QMap<QString, QStringList> propVals;
+        for (const auto& r : m_report.results) {
+            for (auto it = r.properties.begin(); it != r.properties.end(); ++it) {
+                if (!propKeys.contains(it.key())) propKeys << it.key();
+                if (!propVals[it.key()].contains(it.value()))
+                    propVals[it.key()].append(it.value());
+            }
+        }
+        propKeys.sort(); for (auto& v : propVals) v.sort();
+        FilterEditDialog fdlg(s.filterSets, propKeys, propVals, &dlg);
         if (fdlg.exec() == QDialog::Accepted) {
             s.filterSets = fdlg.result();
             sel[0]->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(s.filterSets.size()));

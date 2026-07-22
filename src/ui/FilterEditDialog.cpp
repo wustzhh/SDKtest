@@ -9,12 +9,14 @@
 #include <QMessageBox>
 
 FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
+                                     const QStringList& propertyKeys,
+                                     const QMap<QString, QStringList>& propertyValues,
                                      QWidget* parent)
-    : QDialog(parent), m_filterSets(filterSets)
+    : QDialog(parent), m_filterSets(filterSets), m_propertyKeys(propertyKeys), m_propertyValues(propertyValues)
 {
     setWindowTitle(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe7\xad\x9b\xe9\x80\x89\xe6\x9d\xa1\xe4\xbb\xb6"));
-    resize(700, 400);
-    setMinimumSize(500, 300);
+    resize(900, 600);
+    setMinimumSize(700, 400);
 
     auto* mainLayout = new QVBoxLayout(this);
 
@@ -124,23 +126,39 @@ void FilterEditDialog::refreshConditionTable() {
     static const QStringList opVals = {"eq", "ne", "in", "notin"};
 
     for (int i = 0; i < conds.size(); i++) {
-        // 属性名
-        auto* keyEdit = new QLineEdit(conds[i].key);
-        keyEdit->setPlaceholderText(QString::fromUtf8("\xe5\xb1\x9e\xe6\x80\xa7\xe5\x90\x8d"));
-        m_condTable->setCellWidget(i, 0, keyEdit);
+        // 属性名：可编辑下拉框
+        auto* keyCombo = new QComboBox;
+        keyCombo->setEditable(true);
+        keyCombo->addItems(m_propertyKeys);
+        if (!conds[i].key.isEmpty()) {
+            int idx = keyCombo->findText(conds[i].key);
+            if (idx >= 0) keyCombo->setCurrentIndex(idx);
+            else keyCombo->setCurrentText(conds[i].key);
+        }
+        m_condTable->setCellWidget(i, 0, keyCombo);
 
         // 匹配方式
         auto* opCombo = new QComboBox;
         opCombo->addItems(ops);
         int opIdx = opVals.indexOf(conds[i].op);
-        if (opIdx < 0) opIdx = 2; // 默认包含
+        if (opIdx < 0) opIdx = 2;
         opCombo->setCurrentIndex(opIdx);
         m_condTable->setCellWidget(i, 1, opCombo);
 
-        // 值
-        auto* valEdit = new QLineEdit(conds[i].value);
-        valEdit->setPlaceholderText(QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d\xe5\x80\xbc"));
-        m_condTable->setCellWidget(i, 2, valEdit);
+        // 值：可编辑下拉框，选项取决于属性名
+        auto* valCombo = new QComboBox;
+        valCombo->setEditable(true);
+        auto updateValues = [this, keyCombo, valCombo]() {
+            QString key = keyCombo->currentText();
+            valCombo->clear();
+            if (m_propertyValues.contains(key))
+                valCombo->addItems(m_propertyValues[key]);
+        };
+        updateValues();
+        connect(keyCombo, &QComboBox::currentTextChanged, this, updateValues);
+        if (!conds[i].value.isEmpty())
+            valCombo->setCurrentText(conds[i].value);
+        m_condTable->setCellWidget(i, 2, valCombo);
 
         // 删除按钮
         auto* delBtn = new QPushButton(QString::fromUtf8("\xe2\x9c\x95"));
@@ -233,15 +251,15 @@ void FilterEditDialog::flushCurrentGroup() {
     conds.clear();
     static const QStringList opVals = {"eq", "ne", "in", "notin"};
     for (int i = 0; i < m_condTable->rowCount(); i++) {
-        auto* keyW = qobject_cast<QLineEdit*>(m_condTable->cellWidget(i, 0));
+        auto* keyW = qobject_cast<QComboBox*>(m_condTable->cellWidget(i, 0));
         auto* opW  = qobject_cast<QComboBox*>(m_condTable->cellWidget(i, 1));
-        auto* valW = qobject_cast<QLineEdit*>(m_condTable->cellWidget(i, 2));
+        auto* valW = qobject_cast<QComboBox*>(m_condTable->cellWidget(i, 2));
         if (!keyW || !opW || !valW) continue;
-        QString key = keyW->text().trimmed();
+        QString key = keyW->currentText().trimmed();
         if (key.isEmpty()) continue;
         FilterCondition c;
         c.key = key;
-        c.value = valW->text().trimmed();
+        c.value = valW->currentText().trimmed();
         int opIdx = opW->currentIndex();
         c.op = (opIdx >= 0 && opIdx < opVals.size()) ? opVals[opIdx] : "in";
         conds.append(c);
