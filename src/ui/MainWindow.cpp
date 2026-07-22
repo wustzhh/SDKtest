@@ -630,73 +630,22 @@ void MainWindow::onExportReport() {
         ReportExporter::saveJson(m_report, dir, runName, &err);
     }
 
-    // 收集所有数据条目（来自 JSON 文件 + 当前运行）
-    QVector<QPair<TestReport, QString>> entries;
-
-    // 1. 读取所有历史 JSON 数据文件
-    QStringList jsonFiles = QDir(dir + "/data").entryList({"report_*.json"}, QDir::Files, QDir::Name);
-    QSet<QString> seenIds;  // 去重
-    for (const auto& fn : jsonFiles) {
-        QFile f(dir + "/data/" + fn);
-        if (!f.open(QIODevice::ReadOnly)) continue;
-        QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-        f.close();
-        QJsonObject obj = doc.object();
-        QString id = obj["id"].toString();
-        if (seenIds.contains(id)) continue;  // 跳过重复
-        seenIds.insert(id);
-
-        TestReport r;
-        r.startTime = QDateTime::fromString(id, "yyyyMMdd_HHmmss_zzz");
-        r.testBinary = obj["binary"].toString();
-        for (const auto& jr : obj["results"].toArray()) {
-            QJsonObject jo = jr.toObject();
-            TestRunResult tr;
-            tr.testCase.suiteName = jo["s"].toString();
-            tr.testCase.caseName = jo["c"].toString();
-            tr.status = jo["st"].toString() == "PASSED" ? "PASSED" : "FAILED";
-            tr.durationMs = jo["d"].toDouble();
-            QJsonObject jp = jo["p"].toObject();
-            for (auto it = jp.begin(); it != jp.end(); ++it)
-                tr.properties[it.key()] = it.value().toString();
-            // 读取截图路径
-            if (jo.contains("si"))
-                tr.properties["_screenshot_import"] = jo["si"].toString();
-            if (jo.contains("se"))
-                tr.properties["_screenshot_export"] = jo["se"].toString();
-            r.results.append(tr);
-        }
-        QString runName = obj["name"].toString();
-        if (runName.isEmpty()) runName = obj["time"].toString();
-        entries.append({r, runName});
-    }
-
-    // 2. 如果当前 m_report 不在 JSON 文件中，也加入（若已在，替换为带截图的更新数据）
-    if (!m_report.results.isEmpty()) {
-        QString curId = m_report.startTime.toString("yyyyMMdd_HHmmss_zzz");
-        QString runName = m_config.profiles().value(m_config.activeProfile()).name;
-        if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
-        if (!seenIds.contains(curId)) {
-            entries.prepend({m_report, runName});
-        } else {
-            // 替换 JSON 文件中的旧条目（旧条目没有截图路径）
-            for (int i = 0; i < entries.size(); i++) {
-                QString eid = entries[i].first.startTime.toString("yyyyMMdd_HHmmss_zzz");
-                if (eid == curId) {
-                    entries[i] = {m_report, runName};
-                    break;
-                }
-            }
-        }
-    }
-
-    if (entries.isEmpty()) {
+    if (m_report.results.isEmpty()) {
         QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"),
             QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8f\xaf\xe7\x94\x9f\xe6\x88\x90\xe6\x8a\xa5\xe5\x91\x8a\xe7\x9a\x84\xe6\x95\xb0\xe6\x8d\xae"));
         return;
     }
 
-    // 3. 一次性重建 HTML（先删除旧的）
+    // 只导出最后一份运行结果
+    QVector<QPair<TestReport, QString>> entries;
+    QString runName = m_config.profiles().value(m_config.activeProfile()).name;
+    if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
+    // 附带当前方案的筛选条件
+    m_report.savedFilters = m_config.currentProfile().scenarios.value(
+        m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : 0).filterSets;
+    entries.append({m_report, runName});
+
+    // 一次性重建 HTML
     QFile::remove(htmlPath);
     QString err;
     if (!ReportExporter::rebuildHtml(entries, dir, &err)) {

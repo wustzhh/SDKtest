@@ -106,6 +106,7 @@ struct TestReport {
     QString             filterPattern;
 
     QVector<TestRunResult> results;
+    QVector<FilterSet>   savedFilters;
 
     int total()     const { return results.size(); }
     int passed()    const { int c=0; for(auto& r:results) if(r.passed()) ++c; return c; }

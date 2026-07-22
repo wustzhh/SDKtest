@@ -43,6 +43,16 @@ static QJsonObject runToJson(const TestReport& report, const QString& runName) {
     entry["disabled"] = report.disabled();
     entry["durationMs"] = (int)report.totalDurationMs();
     entry["savedFilters"] = QJsonArray();
+    for (const auto& fs : report.savedFilters) {
+        QJsonObject fo; fo["name"] = fs.name;
+        QJsonArray conds;
+        for (const auto& c : fs.conditions) {
+            QJsonObject co; co["key"] = c.key; co["op"] = c.op; co["value"] = c.value;
+            conds.append(co);
+        }
+        fo["conditions"] = conds;
+        entry["savedFilters"].toArray().append(fo);
+    }
     QJsonArray results;
     for (const auto& r : report.results)
         results.append(resultToJson(r));
