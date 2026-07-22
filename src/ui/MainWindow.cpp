@@ -898,10 +898,12 @@ void MainWindow::onEditConfig() {
     auto* btnSceneSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98\xe5\xbd\x93\xe5\x89\x8d\xe9\x80\x89\xe6\x8b\xa9"));
     auto* btnSceneRename = new QPushButton(QString::fromUtf8("\xe9\x87\x8d\xe5\x91\xbd\xe5\x90\x8d"));
     auto* btnSceneDel = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
+    btnSceneSave->setMinimumWidth(120); btnSceneRename->setMinimumWidth(64); btnSceneDel->setMinimumWidth(54);
     sceneBtns->addWidget(btnSceneSave);
     sceneBtns->addWidget(btnSceneRename);
     sceneBtns->addWidget(btnSceneDel);
     auto* btnSceneFilter = new QPushButton(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe7\xad\x9b\xe9\x80\x89\xe6\x9d\xa1\xe4\xbb\xb6"));
+    btnSceneFilter->setMinimumWidth(120);
     sceneBtns->addWidget(btnSceneFilter);
     sceneBtns->addStretch();
     sceneLay->addLayout(sceneBtns);
@@ -918,6 +920,7 @@ void MainWindow::onEditConfig() {
     });
     // 另存为：新建方案
     auto* btnSceneSaveAs = new QPushButton(QString::fromUtf8("\xe5\x8f\xa6\xe5\xad\x98\xe4\xb8\xba\xe6\x96\xb0\xe6\x96\xb9\xe6\xa1\x88"));
+    btnSceneSaveAs->setMinimumWidth(130);
     sceneBtns->insertWidget(1, btnSceneSaveAs);
     connect(btnSceneSaveAs, &QPushButton::clicked, &dlg, [&]() {
         QStringList sel = m_testList->selectedTestNames();

@@ -95,7 +95,7 @@ public:
         int  splitterRightPct = 30;  // 右面板宽度百分比
         int  splitterVPct = 25;      // 中栏垂直分割百分比(进度面板占比)
         int  splitterV2Pct = 60;     // 中栏下半部分内部百分比(结果树占比)
-        int  cfgDialogW = 580, cfgDialogH = 500; // 配置对话框尺寸
+        int  cfgDialogW = 750, cfgDialogH = 600; // 配置对话框尺寸
         bool modelInfoCollapsed = false;
         bool leftPanelVisible = true;
         bool rightPanelVisible = true;

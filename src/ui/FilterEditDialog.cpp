@@ -206,9 +206,10 @@ void FilterEditDialog::onAddCondition() {
         m_filterSets.append(fs);
         refreshGroupList();
         m_groupList->setCurrentRow(m_groupList->count() - 1);
-        return;
+        // setCurrentRow 后 m_currentGroup 已更新
     }
-    FilterCondition c; c.op = "in"; // 默认包含
+    if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
+    FilterCondition c; c.op = "in";
     m_filterSets[m_currentGroup].conditions.append(c);
     refreshConditionTable();
 }
