@@ -980,6 +980,7 @@ void MainWindow::onEditConfig() {
         m_config.addScenario(s);
         auto* item = new QTreeWidgetItem(sceneTree);
         item->setText(0, name); item->setText(1, QString::number(sel.size()));
+        item->setText(2, QString::fromUtf8("0 \xe7\xbb\x84"));
     });
     // 从上次运行结果更新默认方案
     auto* btnSceneUpdate = new QPushButton(QString::fromUtf8("\xe6\x9b\xb4\xe6\x96\xb0"));
@@ -1005,6 +1006,7 @@ void MainWindow::onEditConfig() {
             auto* item = new QTreeWidgetItem(sceneTree);
             item->setText(0, sc.name);
             item->setText(1, QString::number(sc.selectedTests.size()));
+            item->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(sc.filterSets.size()));
             if (!sc.selectedTests.isEmpty()) {
                 QStringList preview = sc.selectedTests.mid(0, 5);
                 if (sc.selectedTests.size() > 5) preview.append("...");
