@@ -136,20 +136,21 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
 }
 
 void FilterEditDialog::refreshGroupList() {
-    QString prevSel = m_groupList->currentItem() ? m_groupList->currentItem()->text() : "";
+    int prevRow = m_groupList->currentRow();
     m_groupList->clear();
-    // 收集名称，排序
-    QStringList names;
-    for (const auto& fs : m_filterSets)
-        names.append(fs.name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : fs.name);
-    if (m_sortAsc) names.sort(Qt::CaseInsensitive);
-    else std::sort(names.begin(), names.end(), [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) > 0; });
-    m_groupList->addItems(names);
-    // 恢复选中
-    if (!prevSel.isEmpty()) {
-        auto found = m_groupList->findItems(prevSel, Qt::MatchExactly);
-        if (!found.isEmpty()) m_groupList->setCurrentItem(found[0]);
+    // 排序 m_filterSets 本身
+    if (!m_filterSets.isEmpty()) {
+        std::sort(m_filterSets.begin(), m_filterSets.end(),
+            [this](const FilterSet& a, const FilterSet& b) {
+                int cmp = a.name.compare(b.name, Qt::CaseInsensitive);
+                return m_sortAsc ? cmp < 0 : cmp > 0;
+            });
     }
+    for (const auto& fs : m_filterSets)
+        m_groupList->addItem(fs.name.isEmpty() ? QString::fromUtf8("\xe6\x9c\xaa\xe5\x91\xbd\xe5\x90\x8d") : fs.name);
+    // 恢复选中
+    if (prevRow >= 0 && prevRow < m_groupList->count())
+        m_groupList->setCurrentRow(prevRow);
 }
 
 void FilterEditDialog::refreshConditionTable() {
