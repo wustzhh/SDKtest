@@ -822,11 +822,11 @@ Model3DViewer::Model3DViewer(QWidget* p):QWidget(p){
     m_gl=new GLViewer(this);l->addWidget(m_gl,1);
     auto*br=new QHBoxLayout();br->setSpacing(4);br->setContentsMargins(4,2,4,2);
     m_btnReset=new QPushButton(QString::fromUtf8("\xE2\x86\xBB"),this);
-    m_btnReset->setFixedSize(28,28);m_btnReset->setToolTip(QString::fromUtf8("\xE5\xA4\x8D\xE4\xBD\x8D\xE8\xA7\x86\xE8\xA7\x92"));
+    m_btnReset->setFixedSize(32,32);m_btnReset->setToolTip(QString::fromUtf8("\xE5\xA4\x8D\xE4\xBD\x8D\xE8\xA7\x86\xE8\xA7\x92"));
     m_btnReset->setStyleSheet("QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}");
     connect(m_btnReset,&QPushButton::clicked,m_gl,&GLViewer::resetView);
     m_btnShowFaceIds=new QPushButton(QString::fromUtf8("\xE2\x97\x8F"),this);
-    m_btnShowFaceIds->setFixedSize(28,28);m_btnShowFaceIds->setCheckable(true);
+    m_btnShowFaceIds->setFixedSize(32,32);m_btnShowFaceIds->setCheckable(true);
     m_btnShowFaceIds->setToolTip(QString::fromUtf8("\xe7\xba\xbf\xe6\xa1\x86\xe7\xa9\xbf\xe9\x80\x8f\xe6\xa8\xa1\xe5\xbc\x8f"));
     m_btnShowFaceIds->setStyleSheet("QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}QPushButton:checked{background:#eef2ff;border-color:#6366f1;color:#6366f1;}");
     connect(m_btnShowFaceIds,&QPushButton::toggled,this,&Model3DViewer::toggleFaceIds);
