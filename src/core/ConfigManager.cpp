@@ -138,6 +138,7 @@ void ConfigManager::fromJson(const QJsonObject& obj) {
     uiState.modelInfoCollapsed = ui["model_info_collapsed"].toBool(false);
     uiState.leftPanelVisible = ui["left_panel"].toBool(true);
     uiState.rightPanelVisible = ui["right_panel"].toBool(true);
+    uiState.edgeWidthPct = (float)ui["edge_width_pct"].toDouble(0.1);
 }
 
 QJsonObject ConfigManager::toJson() const {
@@ -164,6 +165,7 @@ QJsonObject ConfigManager::toJson() const {
     ui["model_info_collapsed"] = uiState.modelInfoCollapsed;
     ui["left_panel"] = uiState.leftPanelVisible;
     ui["right_panel"] = uiState.rightPanelVisible;
+    ui["edge_width_pct"] = (double)uiState.edgeWidthPct;
     obj["ui"] = ui;
 
     return obj;

@@ -99,6 +99,7 @@ public:
         bool modelInfoCollapsed = false;
         bool leftPanelVisible = true;
         bool rightPanelVisible = true;
+        float edgeWidthPct = 0.1f;  // 线宽屏幕百分比
     };
     UIState uiState;
 
