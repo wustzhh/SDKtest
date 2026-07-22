@@ -87,7 +87,8 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_condTable->setFocusPolicy(Qt::NoFocus);
     m_condTable->setStyleSheet("QTableWidget::item{padding:3px 8px;font-size:13px}"
                                " QComboBox{font-size:13px;min-height:22px;padding:1px 4px}"
-                               " QLineEdit{font-size:13px;min-height:20px}");
+                               " QLineEdit{font-size:13px;min-height:20px}"
+                               " QTableWidget::item:selected{background:#eef2ff;color:#1e293b}");
     m_condTable->verticalHeader()->setDefaultSectionSize(34);
     m_condTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     rightLay->addWidget(m_condTable, 1);
@@ -108,7 +109,12 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     // ── 底部按钮 ──
     auto* bottom = new QHBoxLayout;
     bottom->addStretch();
-    auto* btnOk = new QPushButton(QString::fromUtf8("\xe7\xa1\xae\xe5\xae\x9a"));
+    auto* btnSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98"));
+    btnSave->setStyleSheet("QPushButton{background:#22c55e;color:#fff;border:none;border-radius:6px;padding:6px 20px;font-size:13px}"
+                           "QPushButton:hover{background:#16a34a}");
+    connect(btnSave, &QPushButton::clicked, this, [this]() { flushCurrentGroup(); });
+    bottom->addWidget(btnSave);
+    auto* btnOk = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98\xe5\xb9\xb6\xe5\x85\xb3\xe9\x97\xad"));
     auto* btnCancel = new QPushButton(QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88"));
     btnOk->setStyleSheet("QPushButton{background:#6366f1;color:#fff;border:none;border-radius:6px;padding:6px 20px;font-size:13px}"
                          "QPushButton:hover{background:#4f46e5}");
@@ -279,6 +285,7 @@ void FilterEditDialog::onAddCondition() {
         // setCurrentRow 后 m_currentGroup 已更新
     }
     if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
+    flushCurrentGroup();  // 先保存当前编辑内容
     FilterCondition c; c.op = "in";
     m_filterSets[m_currentGroup].conditions.append(c);
     refreshConditionTable();
