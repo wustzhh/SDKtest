@@ -112,6 +112,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_tree->setSelectionMode(QAbstractItemView::NoSelection);
     m_tree->setAlternatingRowColors(true);
     m_tree->setWordWrap(true);
+    m_tree->setTextElideMode(Qt::ElideNone);
     m_tree->setStyleSheet(
         "QTreeWidget { font-size:13px; border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
         "QTreeWidget::item { padding:6px 10px; min-height:28px; border-bottom:1px solid #f1f5f9; }"
