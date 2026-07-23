@@ -5,6 +5,18 @@
 #include <QFile>
 #include "Logger.h"
 
+// XML/HTML 实体反转义
+static QString unescapeXml(const QString& s) {
+    QString r = s;
+    r.replace("&amp;", "&");
+    r.replace("&lt;", "<");
+    r.replace("&gt;", ">");
+    r.replace("&quot;", "\"");
+    r.replace("&apos;", "'");
+    r.replace("&#39;", "'");
+    return r;
+}
+
 TestRunner::TestRunner(QObject* parent)
     : QObject(parent)
 {
@@ -216,7 +228,7 @@ void TestRunner::onBatchFinished(BatchState* batch) {
                     auto pIt = propRe.globalMatch(m.captured(3));
                     while (pIt.hasNext()) {
                         auto pm = pIt.next();
-                        allProps[full][pm.captured(1)] = pm.captured(2);
+                        allProps[full][pm.captured(1)] = unescapeXml(pm.captured(2));
                     }
                 }
             };
