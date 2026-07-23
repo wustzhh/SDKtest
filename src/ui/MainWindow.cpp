@@ -421,6 +421,9 @@ void MainWindow::setupConnections() {
     connect(m_centerResultView, &ModelRenderView::openModelFile, this, [this](const QString& path) {
         m_model3D->loadFile(path);
     });
+    connect(m_centerResultView, &ModelRenderView::collapseRequested, this, [this]() {
+        if (m_rightPanel) m_rightPanel->setVisible(!m_rightPanel->isVisible());
+    });
     connect(m_centerResultView, &ModelRenderView::toggleHighlight, this, [this](const QVector<int>& ids, bool on) {
         m_model3D->highlightFaces(on ? ids : QVector<int>{});
     });
