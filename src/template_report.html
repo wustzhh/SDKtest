@@ -130,11 +130,17 @@ DATA=DATA.filter(function(d){return di.indexOf(d.id)<0;});
 // 去重：同 id 保留最后一条
 var seen={};DATA=DATA.filter(function(d){if(seen[d.id])return false;seen[d.id]=true;return true;});
 DATA.sort(function(a,b){return a.time<b.time?1:a.time>b.time?-1:0;});
-// 加载筛选
+// 加载筛选（JSON中的savedFilters优先，localStorage作为补充）
 DATA.forEach(function(d){
   var sf=lsf(d.id);
-  if(sf.length>0) d._sf=sf;
-  else d._sf=d.savedFilters||[];
+  var jsonSf=d.savedFilters||[];
+  if(sf.length>0){
+    // 合并：JSON覆盖同名，localStorage独有的追加
+    var names={};
+    jsonSf.forEach(function(f){names[f.name]=1;});
+    sf.forEach(function(f){if(!names[f.name]){jsonSf.push(f);names[f.name]=1;}});
+  }
+  d._sf=jsonSf;
   try{var n=getStore('tr_name_'+d.id);if(n)d.name=n;}catch(e){}
 });
 
@@ -250,7 +256,7 @@ function renderRows(){
       var rs=[];
       conds.forEach(function(c){
         if(!c.v)return;
-        var v=H[c.c]==='#'?'':H[c.c]==='状态'?(r.st==='PASSED'?'✅ 通过':(r.st==='SKIPPED'?'⏭ 跳过':(r.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):H[c.c]==='套件'?r.s:H[c.c]==='用例'?r.c:H[c.c]==='耗时(ms)'?r.d.toFixed(1):(r.p[H[c.c]]||'');
+        var v=colVal(r,c.c);
         rs.push(match(v,c.o,c.v));
       });
       if(!rs.length)return true;
@@ -261,8 +267,8 @@ function renderRows(){
   if(sCol>=0){
     var sc=sCol,sa=sAsc;
     rows.sort(function(a,b){
-      var va=H[sc]==='状态'?(a.st==='PASSED'?'✅ 通过':(a.st==='SKIPPED'?'⏭ 跳过':(a.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):H[sc]==='套件'?a.s:H[sc]==='用例'?a.c:H[sc]==='耗时(ms)'?a.d.toFixed(1):(a.p[H[sc]]||'');
-      var vb=H[sc]==='状态'?(b.st==='PASSED'?'✅ 通过':(b.st==='SKIPPED'?'⏭ 跳过':(b.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):H[sc]==='套件'?b.s:H[sc]==='用例'?b.c:H[sc]==='耗时(ms)'?b.d.toFixed(1):(b.p[H[sc]]||'');
+      var va=colVal(a,sc);
+      var vb=colVal(b,sc);
       var na=parseFloat(va),nb=parseFloat(vb);
       if(!isNaN(na)&&!isNaN(nb))return sa?na-nb:nb-na;
       return sa?va.localeCompare(vb):vb.localeCompare(va);
@@ -453,10 +459,13 @@ function renderFltRows(){
   if(!conds.length){e.innerHTML='<div style=color:#909399;font-size:12px>暂无条件</div>';return;}
   var h='';
   conds.forEach(function(c,i){
-    var isNum=H[c.c]==='耗时(ms)'||H[c.c]==='#';
+    var cn=colH(c.c);
+    var isNum=cn==='耗时(ms)'||cn==='#';
     h+='<div class=flt-row>';
-    h+='<select onchange="updC('+i+',&apos;c&apos;,parseInt(this.value));renderRows();renderFltRows()">';
+    h+='<select onchange="updC('+i+',&apos;c&apos;,this.value===\'_str_\'?this.getAttribute(\'data-str\'):parseInt(this.value));renderRows();renderFltRows()">';
     H.forEach(function(hd,zi){h+='<option value="'+zi+'"'+(c.c===zi?' selected':'')+'>'+hd+'</option>';});
+    if(typeof c.c==='string'&&H.indexOf(c.c)<0)
+      h+='<option value="_str_" data-str="'+esc(c.c)+'" selected>'+esc(c.c)+'</option>';
     h+='</select>';
     h+='<select onchange="updC('+i+',&apos;o&apos;,this.value);renderRows()">';
     h+='<option value=in'+(c.o==='in'?' selected':'')+'>包含</option>';
@@ -480,7 +489,7 @@ function getColVals(ci){
   var d=DATA[cur];if(!d||!d.results)return[];
   var set={};
   d.results.forEach(function(r){
-    var v=ci===1?(r.st==='PASSED'?'✅ 通过':(r.st==='SKIPPED'?'⏭ 跳过':(r.st==='DISABLED'?'🔒 禁用':'❌ 失败'))):ci===2?r.s:ci===3?r.c:ci===4?r.d.toFixed(1):(r.p[H[ci]]||'');
+    var v=colVal(r,ci);
     if(v)set[v]=1;
   });
   _cvCache[ci]=Object.keys(set).sort();
@@ -533,7 +542,7 @@ function ldF(i,fi){
   if(!sf)return;
   loadedFilter=fi;
   buildSidebar();
-  conds=sf.conds.map(function(c){var ci=c.c;if(typeof ci==='string'){var idx=H.indexOf(ci);ci=idx>=0?idx:0;}return{c:ci,o:c.o||'in',v:c.v};});
+  conds=sf.conds.map(function(c){var ci=c.c;if(typeof ci==='string'){var idx=H.indexOf(ci);ci=idx>=0?idx:ci;}return{c:ci,o:c.o||'in',v:c.v};});
   logic=sf.mode||'and';
   renderFltRows();updateFltBtn();renderRows();
   document.querySelectorAll('.mode-group .md').forEach(function(e){e.classList.toggle('act',e.dataset.m===logic);});
@@ -549,7 +558,18 @@ function delSF(i,fi){
   if(cur>=0)sel(cur);
 }
 
-// 导出到全局（给内联 onclick 使用）
+// 辅助：取列名（ci可以是索引或属性名）
+function colH(ci){return typeof ci==='number'&&ci>=0&&ci<H.length?H[ci]:ci;}
+// 辅助：取某行某列的值
+function colVal(r,ci){
+  if(typeof ci==='string') return r.p[ci]||'';
+  if(ci===0) return '';
+  if(ci===1) return r.st==='PASSED'?'✅ 通过':(r.st==='SKIPPED'?'⏭ 跳过':(r.st==='DISABLED'?'🔒 禁用':'❌ 失败'));
+  if(ci===2) return r.s;
+  if(ci===3) return r.c;
+  if(ci===4) return r.d.toFixed(1);
+  return r.p[H[ci]]||'';
+}
 window.sel=sel;window.delRun=delRun;window.ldF=ldF;window.delSF=delSF;
 window.toggleGroup=toggleGroup;window.toggleFlt=toggleFlt;window.saveFlt=saveFlt;window.newFlt=newFlt;
 window.setMode=setMode;window.addFlt=addFlt;window.rmFlt=rmFlt;
