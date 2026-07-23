@@ -1,1 +1,65 @@
-@echo off\r\ntitle test_runner_ui Build\r\ncall "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 >nul 2>&1\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERROR] vcvarsall.bat failed �?check VS path & pause & exit /b 1 )\r\n\r\nset "SCRIPT_DIR=%~dp0"\r\nset "PATH=C:\Program Files\CMake\bin;C:\Qt\Tools\Ninja;%PATH%"\r\n\r\necho ============================================\r\necho   test_runner_ui Build\r\necho ============================================\r\necho.\r\n\r\necho [1/4] Configure...\r\ncmake -B "%SCRIPT_DIR%build" -G Ninja ^\r\n    -DCMAKE_BUILD_TYPE=Release ^\r\n    -DCMAKE_TOOLCHAIN_FILE="D:/vcpkg/scripts/buildsystems/vcpkg.cmake" ^\r\n    -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" ^\r\n    -DQt6_DIR="C:/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6" ^\r\n    -S "%SCRIPT_DIR%"\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERROR] Config failed & pause & exit /b 1 )\r\necho [OK]\r\n\r\necho [2/4] Build...\r\ncmake --build "%SCRIPT_DIR%build"\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERROR] Build failed & pause & exit /b 1 )\r\necho [OK]\r\n\r\necho [3/4] Deploy to dist...\r\ntaskkill /f /im test_runner_ui.exe >nul 2>&1\r\nif not exist "%SCRIPT_DIR%dist" mkdir "%SCRIPT_DIR%dist"\r\n\r\n:: 复制主程序和vcpkg/OCCT依赖DLL\r\ncopy /Y "%SCRIPT_DIR%build\test_runner_ui.exe" "%SCRIPT_DIR%dist\" >nul 2>&1\r\nif %ERRORLEVEL% NEQ 0 ( echo [ERROR] exe not found �?build may have failed & pause & exit /b 1 )\r\ncopy "%SCRIPT_DIR%build\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1\r\ncopy /Y "%SCRIPT_DIR%src\template_report.html" "%SCRIPT_DIR%dist\" >nul 2>&1\r\n\r\n:: 复制config（优先build/下cmake拷贝的，fallback到源码目录）\r\nif exist "%SCRIPT_DIR%build\config\test_config.json" (\r\n    xcopy /E /I /Y "%SCRIPT_DIR%build\config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1\r\n) else if exist "%SCRIPT_DIR%config\test_config.json" (\r\n    xcopy /E /I /Y "%SCRIPT_DIR%config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1\r\n)\r\n\r\n:: windeployqt 自动部署全部Qt依赖（DLL+插件�?echo   Running windeployqt...\r\nC:\Qt\6.11.1\msvc2022_64\bin\windeployqt.exe "%SCRIPT_DIR%dist\test_runner_ui.exe" --no-translations --no-system-d3d-compiler --no-opengl-sw >nul 2>&1\r\nif %ERRORLEVEL% NEQ 0 ( echo   [WARN] windeployqt failed )\r\n\r\n:: 复制VC运行�?if exist "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" (\r\n    copy "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1\r\n)\r\necho [OK]\r\n\r\necho.\r\necho [4/4] Pack to test_runner_ui.zip...\r\nif exist "%SCRIPT_DIR%test_runner_ui.zip" del "%SCRIPT_DIR%test_runner_ui.zip"\r\npowershell -NoProfile -Command "Compress-Archive -Path '%SCRIPT_DIR%dist\*' -DestinationPath '%SCRIPT_DIR%test_runner_ui.zip' -Force"\r\nif %ERRORLEVEL% EQU 0 ( echo [OK] Zipped ) else ( echo [WARN] Zip failed )\r\necho.\r\n\r\necho ============================================\r\necho   Done!\r\necho   exe: dist\test_runner_ui.exe\r\necho   zip: test_runner_ui.zip\r\necho ============================================\r\n
+@echo off
+title test_runner_ui Build
+call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 >nul 2>&1
+if %ERRORLEVEL% NEQ 0 ( echo [ERROR] vcvarsall.bat failed & pause & exit /b 1 )
+
+set "SCRIPT_DIR=%~dp0"
+set "PATH=C:\Program Files\CMake\bin;C:\Qt\Tools\Ninja;%PATH%"
+
+echo ============================================
+echo   test_runner_ui Build
+echo ============================================
+echo.
+
+echo [1/4] Configure...
+cmake -B "%SCRIPT_DIR%build" -G Ninja ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_TOOLCHAIN_FILE="D:/vcpkg/scripts/buildsystems/vcpkg.cmake" ^
+    -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" ^
+    -DQt6_DIR="C:/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6" ^
+    -S "%SCRIPT_DIR%"
+if %ERRORLEVEL% NEQ 0 ( echo [ERROR] Config failed & pause & exit /b 1 )
+echo [OK]
+
+echo [2/4] Build...
+cmake --build "%SCRIPT_DIR%build"
+if %ERRORLEVEL% NEQ 0 ( echo [ERROR] Build failed & pause & exit /b 1 )
+echo [OK]
+
+echo [3/4] Deploy to dist...
+taskkill /f /im test_runner_ui.exe >nul 2>&1
+if not exist "%SCRIPT_DIR%dist" mkdir "%SCRIPT_DIR%dist"
+
+copy /Y "%SCRIPT_DIR%build\test_runner_ui.exe" "%SCRIPT_DIR%dist\" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 ( echo [ERROR] exe not found & pause & exit /b 1 )
+copy "%SCRIPT_DIR%build\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+copy /Y "%SCRIPT_DIR%src\template_report.html" "%SCRIPT_DIR%dist\" >nul 2>&1
+
+if exist "%SCRIPT_DIR%build\config\test_config.json" (
+    xcopy /E /I /Y "%SCRIPT_DIR%build\config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1
+) else if exist "%SCRIPT_DIR%config\test_config.json" (
+    xcopy /E /I /Y "%SCRIPT_DIR%config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1
+)
+
+echo   Running windeployqt...
+C:\Qt\6.11.1\msvc2022_64\bin\windeployqt.exe "%SCRIPT_DIR%dist\test_runner_ui.exe" --no-translations --no-system-d3d-compiler --no-opengl-sw >nul 2>&1
+if %ERRORLEVEL% NEQ 0 ( echo   [WARN] windeployqt failed )
+
+if exist "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" (
+    copy "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+)
+echo [OK]
+
+echo.
+echo [4/4] Pack to test_runner_ui.zip...
+if exist "%SCRIPT_DIR%test_runner_ui.zip" del "%SCRIPT_DIR%test_runner_ui.zip"
+powershell -NoProfile -Command "Compress-Archive -Path '%SCRIPT_DIR%dist\*' -DestinationPath '%SCRIPT_DIR%test_runner_ui.zip' -Force"
+if %ERRORLEVEL% EQU 0 ( echo [OK] Zipped ) else ( echo [WARN] Zip failed )
+echo.
+
+echo ============================================
+echo   Done!
+echo   exe: dist\test_runner_ui.exe
+echo   zip: test_runner_ui.zip
+echo ============================================
+pause
