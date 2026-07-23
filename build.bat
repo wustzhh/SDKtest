@@ -1,9 +1,10 @@
 @echo off
 title test_runner_ui Build
 call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 >nul 2>&1
+if %ERRORLEVEL% NEQ 0 ( echo [ERROR] vcvarsall.bat failed — check VS path & pause & exit /b 1 )
 
-set SCRIPT_DIR=%~dp0
-set PATH=C:\Program Files\CMake\bin;C:\Qt\Tools\Ninja;%PATH%
+set "SCRIPT_DIR=%~dp0"
+set "PATH=C:\Program Files\CMake\bin;C:\Qt\Tools\Ninja;%PATH%"
 
 echo ============================================
 echo   test_runner_ui Build
@@ -30,22 +31,26 @@ taskkill /f /im test_runner_ui.exe >nul 2>&1
 if not exist "%SCRIPT_DIR%dist" mkdir "%SCRIPT_DIR%dist"
 
 :: 复制主程序和vcpkg/OCCT依赖DLL
-copy /Y "%SCRIPT_DIR%build\test_runner_ui.exe" "%SCRIPT_DIR%dist\" >nul
+copy /Y "%SCRIPT_DIR%build\test_runner_ui.exe" "%SCRIPT_DIR%dist\" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 ( echo [ERROR] exe not found — build may have failed & pause & exit /b 1 )
 copy "%SCRIPT_DIR%build\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
-copy /Y "%SCRIPT_DIR%src\template_report.html" "%SCRIPT_DIR%dist\" >nul
+copy /Y "%SCRIPT_DIR%src\template_report.html" "%SCRIPT_DIR%dist\" >nul 2>&1
 
-:: 复制config目录
-if exist "%SCRIPT_DIR%build\config" xcopy /E /I /Y "%SCRIPT_DIR%build\config" "%SCRIPT_DIR%dist\config" >nul
-if exist "%SCRIPT_DIR%config" xcopy /E /I /Y "%SCRIPT_DIR%config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1
+:: 复制config（优先build/下cmake拷贝的，fallback到源码目录）
+if exist "%SCRIPT_DIR%build\config\test_config.json" (
+    xcopy /E /I /Y "%SCRIPT_DIR%build\config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1
+) else if exist "%SCRIPT_DIR%config\test_config.json" (
+    xcopy /E /I /Y "%SCRIPT_DIR%config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1
+)
 
 :: windeployqt 自动部署全部Qt依赖（DLL+插件）
 echo   Running windeployqt...
 C:\Qt\6.11.1\msvc2022_64\bin\windeployqt.exe "%SCRIPT_DIR%dist\test_runner_ui.exe" --no-translations --no-system-d3d-compiler --no-opengl-sw >nul 2>&1
-if %ERRORLEVEL% NEQ 0 ( echo   [WARN] windeployqt failed, trying fallback... )
+if %ERRORLEVEL% NEQ 0 ( echo   [WARN] windeployqt failed )
 
-:: 复制VC运行时（fallback）
-if exist "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.50.35710\x64\Microsoft.VC145.CRT\*.dll" (
-    copy "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.50.35710\x64\Microsoft.VC145.CRT\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+:: 复制VC运行时
+if exist "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" (
+    copy "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
 )
 echo [OK]
 
