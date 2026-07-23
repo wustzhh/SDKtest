@@ -421,17 +421,6 @@ void MainWindow::setupConnections() {
     connect(m_centerResultView, &ModelRenderView::openModelFile, this, [this](const QString& path) {
         m_model3D->loadFile(path);
     });
-    connect(m_centerResultView, &ModelRenderView::collapseRequested, this, [this]() {
-        // 折叠/展开中间面板下半部分的属性树
-        if (m_centerResultView) {
-            int pos = m_centerResultView->saveBottomSplitPos();
-            // 如果属性面板可见（splitter下半部分高度>50），则折叠；否则恢复
-            static int savedPos = 0;
-            int total = m_centerResultView->height();
-            if (pos < total - 80) { savedPos = pos; m_centerResultView->restoreBottomSplitPos(total - 4); }
-            else { m_centerResultView->restoreBottomSplitPos(savedPos > 0 ? savedPos : total * 60 / 100); }
-        }
-    });
     connect(m_centerResultView, &ModelRenderView::toggleHighlight, this, [this](const QVector<int>& ids, bool on) {
         m_model3D->highlightFaces(on ? ids : QVector<int>{});
     });

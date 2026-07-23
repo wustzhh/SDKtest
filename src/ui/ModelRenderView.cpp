@@ -55,15 +55,6 @@ ModelRenderView::ModelRenderView(QWidget* parent)
 
     // Toolbar
     auto* toolbar = new QHBoxLayout();
-    m_btnCollapsePanel = new QPushButton("\u25BC", m_content);  // ▼
-    m_btnCollapsePanel->setFixedSize(20, 22);
-    m_btnCollapsePanel->setToolTip("隐藏右侧面板");
-    m_btnCollapsePanel->setStyleSheet(
-        "QPushButton { background:#f1f5f9; border:none; border-radius:6px; font-weight:bold; color:#64748b; }"
-        "QPushButton:hover { background:#e2e8f0; color:#1e293b; }");
-    connect(m_btnCollapsePanel, &QPushButton::clicked,
-            this, &ModelRenderView::collapseRequested);
-
     m_searchEdit = new QLineEdit(m_content);
     m_searchEdit->setPlaceholderText("搜索模型数据...");
     m_searchEdit->setStyleSheet("padding:2px 4px; font-size:12px;");
@@ -88,7 +79,6 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     });
     m_lblStats = new QLabel("", m_content);
     m_lblStats->setStyleSheet("color:#8892a6; font-size:11px;");
-    toolbar->addWidget(m_btnCollapsePanel);
     toolbar->addWidget(m_searchEdit, 2);
     toolbar->addWidget(m_btnExpand);
     toolbar->addWidget(m_btnCollapse);
@@ -103,7 +93,6 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_tree->setColumnWidth(0, 24);
     m_tree->header()->setStretchLastSection(false);
     m_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_tree->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_tree->setRootIsDecorated(true);
     m_tree->setAnimated(true);
     m_tree->setSelectionMode(QAbstractItemView::NoSelection);

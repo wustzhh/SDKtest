@@ -42,7 +42,6 @@ signals:
     void openModelFile(const QString& path);
     void toggleHighlight(const QVector<int>& ids, bool on);
     void toggleHighlightBoxes(const QString& propKey, const QVector<QVector<double>>& boxes, bool on);
-    void collapseRequested();
 
 private slots:
     void onSearchChanged(const QString& text);
@@ -63,7 +62,6 @@ private:
 
     // page 1 content
     QWidget*        m_content;
-    QPushButton*    m_btnCollapsePanel;
     QLineEdit*      m_searchEdit;
     QPushButton*    m_btnExpand;
     QPushButton*    m_btnCollapse;
