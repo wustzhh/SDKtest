@@ -131,7 +131,7 @@ void TestRunner::startNextBatch() {
         emit rawOutput(text);
         // 实时进度：遍历所有运行中批次的 stdout 统计已完成数
         // 只统计单独的用例结果行 (Suite.Test)，排除 "N tests." 等汇总行
-        static QRegularExpression doneRe(R"(\[       OK \] [A-Za-z_]|\[  FAILED  \] [A-Za-z_]|\[  SKIPPED \] [A-Za-z_])");
+        static QRegularExpression doneRe(R"(\[       OK \] .+? \(\d+ ms\)|\[  FAILED  \] .+? \(\d+ ms\)|\[  SKIPPED \] .+)");
         int total = 0;
         for (const auto& b : m_batches) {
             auto it = doneRe.globalMatch(b.accumulatedStdout);
