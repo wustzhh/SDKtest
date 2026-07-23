@@ -22,4 +22,8 @@ public:
                          const QString& htmlDir,
                          const QString& runName,
                          QString* errorMsg = nullptr);
+
+    // 加载 data 目录下所有 JSON，按 binary 去重（保留最新），返回 entries
+    static QVector<QPair<TestReport, QString>> loadAllData(const QString& dataDir,
+                                                            QString* errorMsg = nullptr);
 };

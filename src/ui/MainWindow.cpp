@@ -620,15 +620,8 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
 }
 
 void MainWindow::onExportReport() {
-    // 按项目（profile）分报告目录
-    QString profileName = m_config.currentProfile().name;
-    if (profileName.isEmpty()) profileName = "default";
-    // 清理非法文件名字符
-    QString safeName = profileName;
-    safeName.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
-    QString baseDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
-    QString dir = baseDir + "/" + safeName;
-    QString htmlPath = dir + "/report.html";
+    QString dir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
+    QString htmlPath = dir + "/test_report.html";
 
     // 生成报告前先截取模型图片
     captureAllModelScreenshots(dir + "/screenshots");
@@ -647,8 +640,10 @@ void MainWindow::onExportReport() {
         return;
     }
 
-    // 只导出最后一份运行结果
-    QVector<QPair<TestReport, QString>> entries;
+    // 加载已有数据（自动按binary去重，每个配置只保留最新）
+    QString err;
+    QVector<QPair<TestReport, QString>> entries = ReportExporter::loadAllData(dir, &err);
+
     QString runName = m_config.profiles().value(m_config.activeProfile()).name;
     if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
     // 附带当前方案的筛选条件
@@ -656,11 +651,14 @@ void MainWindow::onExportReport() {
     auto& scenarios = m_config.currentProfile().scenarios;
     if (sceneIdx >= 0 && sceneIdx < scenarios.size())
         m_report.savedFilters = scenarios[sceneIdx].filterSets;
+    // 移除同binary的旧条目，用当前结果替换
+    entries.erase(std::remove_if(entries.begin(), entries.end(),
+        [&](const QPair<TestReport, QString>& e) { return e.first.testBinary == m_report.testBinary; }),
+        entries.end());
     entries.append({m_report, runName});
 
     // 一次性重建 HTML
     QFile::remove(htmlPath);
-    QString err;
     if (!ReportExporter::rebuildHtml(entries, dir, &err)) {
         QMessageBox::warning(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba\xe5\xa4\xb1\xe8\xb4\xa5"), err);
         return;
@@ -1239,9 +1237,7 @@ void MainWindow::onAllFinished() {
     int sceneIdx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
     if (sceneIdx >= 0 && sceneIdx < prof.scenarios.size())
         m_report.savedFilters = prof.scenarios[sceneIdx].filterSets;
-    QString safeProf = profileName.isEmpty() ? "default" : profileName;
-    safeProf.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
-    QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports/" + safeProf;
+    QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
     if (!m_report.results.isEmpty()) {
         QString autoName = m_config.profiles().value(m_config.activeProfile()).name;
         if (autoName.isEmpty()) autoName = QDateTime::currentDateTime().toString("HH:mm:ss");

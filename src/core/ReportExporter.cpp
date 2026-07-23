@@ -86,6 +86,107 @@ bool ReportExporter::saveJson(const TestReport& report,
 }
 
 // ═══════════════════════════════════════════════════════════
+//  加载 data 目录下所有 JSON，按 binary 去重
+// ═══════════════════════════════════════════════════════════
+static TestReport jsonToReport(const QJsonObject& entry, QString& runName) {
+    TestReport r;
+    r.startTime = QDateTime::fromString(entry["id"].toString(), "yyyyMMdd_HHmmss_zzz");
+    r.endTime = r.startTime;
+    runName = entry["name"].toString();
+    r.testBinary = entry["binary"].toString();
+    r.filterPattern = entry["filter"].toString();
+    // 解析 savedFilters
+    for (const auto& fv : entry["savedFilters"].toArray()) {
+        QJsonObject fo = fv.toObject();
+        FilterSet fs; fs.name = fo["name"].toString(); fs.mode = fo["mode"].toString("and");
+        for (const auto& cv : fo["conds"].toArray()) {
+            QJsonObject co = cv.toObject();
+            FilterCondition c;
+            QJsonValue cc = co["c"];
+            if (cc.isString()) c.key = cc.toString();
+            else c.key = QString::number(cc.toInt());
+            c.op  = co["o"].toString();
+            c.value = co["v"].toString();
+            fs.conditions.append(c);
+        }
+        r.savedFilters.append(fs);
+    }
+    // 解析 results
+    for (const auto& rv : entry["results"].toArray()) {
+        QJsonObject ro = rv.toObject();
+        TestRunResult tr;
+        tr.testCase.suiteName = ro["s"].toString();
+        tr.testCase.caseName  = ro["c"].toString();
+        tr.status   = ro["st"].toString();
+        tr.durationMs = ro["d"].toDouble();
+        tr.rawStderr = ro["err"].toString();
+        auto jp = ro["p"].toObject();
+        for (auto it = jp.begin(); it != jp.end(); ++it)
+            tr.properties[it.key()] = it.value().toString();
+        if (!ro["si"].toString().isEmpty())
+            tr.properties["_screenshot_import"] = ro["si"].toString();
+        if (!ro["se"].toString().isEmpty())
+            tr.properties["_screenshot_export"] = ro["se"].toString();
+        r.results.append(tr);
+    }
+    return r;
+}
+
+QVector<QPair<TestReport, QString>> ReportExporter::loadAllData(const QString& dataDir,
+                                                                   QString* errorMsg)
+{
+    QVector<QPair<TestReport, QString>> entries;
+    QDir dir(dataDir + "/data");
+    if (!dir.exists()) return entries;
+
+    struct FileInfo { QString path; QString binary; QDateTime time; };
+    QVector<FileInfo> files;
+    for (const auto& fi : dir.entryInfoList({"report_*.json"}, QDir::Files, QDir::Name)) {
+        QFile f(fi.absoluteFilePath());
+        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
+        QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+        f.close();
+        if (!doc.isObject()) continue;
+        auto obj = doc.object();
+        FileInfo info;
+        info.path = fi.absoluteFilePath();
+        info.binary = obj["binary"].toString();
+        info.time = QDateTime::fromString(obj["id"].toString(), "yyyyMMdd_HHmmss_zzz");
+        if (!info.time.isValid()) info.time = fi.lastModified();
+        files.append(info);
+    }
+
+    std::sort(files.begin(), files.end(), [](const FileInfo& a, const FileInfo& b) {
+        return a.time > b.time;
+    });
+
+    QSet<QString> seenBinaries;
+    QVector<QString> keepPaths;
+    for (const auto& fi : files) {
+        QString key = fi.binary.isEmpty() ? "_unknown_" : fi.binary;
+        if (seenBinaries.contains(key)) {
+            QFile::remove(fi.path);
+        } else {
+            seenBinaries.insert(key);
+            keepPaths.append(fi.path);
+        }
+    }
+
+    for (const auto& path : keepPaths) {
+        QFile f(path);
+        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
+        QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+        f.close();
+        if (!doc.isObject()) continue;
+        QString runName;
+        TestReport report = jsonToReport(doc.object(), runName);
+        entries.append({report, runName});
+    }
+
+    return entries;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  从多条数据记录重建完整 HTML
 // ═══════════════════════════════════════════════════════════
 bool ReportExporter::rebuildHtml(const QVector<QPair<TestReport, QString>>& entries,
