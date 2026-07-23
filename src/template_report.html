@@ -38,9 +38,9 @@ body{font-family:'Microsoft YaHei','PingFang SC',-apple-system,sans-serif;backgr
 /* ── 内容 ── */
 .content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:16px 20px}
 .empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
-.card{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center}
-.card .n{font-size:24px;font-weight:700;line-height:1.3}.card .l{font-size:12px;color:var(--text3);margin-top:2px}
+.stats{display:flex;gap:8px;margin-bottom:8px;align-items:stretch}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:6px 10px;text-align:center;flex:1;min-width:0}
+.card .n{font-size:18px;font-weight:700;line-height:1.2}.card .l{font-size:11px;color:var(--text3);margin-top:1px}
 .card.pri .n{color:var(--primary)}.card.suc .n{color:var(--success)}.card.dan .n{color:var(--danger)}.card.war .n{color:var(--warn)}.card.inf .n{color:var(--info)}
 .info{font-size:12px;color:var(--text3);text-align:right;margin-bottom:8px}
 .flt-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
@@ -159,7 +159,7 @@ function buildSidebar(){
       h+='<span class="tag '+a+'">'+d.passed+'/'+d.total+'</span>';
       h+='<span class=nm ondblclick="var n=prompt(\'重命名：\',this.textContent);if(n){var idx=parseInt(this.parentElement.dataset.idx);DATA[idx].name=n;try{setStore(\'tr_name_\'+DATA[idx].id,n);}catch(e){}buildSidebar();}">'+esc(rn(d))+'</span><span class=tm>'+d.time.slice(11,16)+'</span>';
       h+='<span class=del onclick="event.stopPropagation();delRun('+i+')">✕</span>';
-      if(d._sf.length>0){h+='<div class=sf>';d._sf.forEach(function(f,fi){h+='<div class="sf-item'+(cur===i&&loadedFilter===fi?' sf-act':'')+'" onclick="event.stopPropagation();ldF('+i+','+fi+')">'+(cur===i&&loadedFilter===fi?'▶ ':'🔖 ')+esc(f.name)+' <span class=rm onclick="event.stopPropagation();delSF('+i+','+fi+')">✕</span></div>';});h+='</div>';}
+      if(d._sf.length>0){h+='<div class=sf-tgl onclick="event.stopPropagation();var s=this.nextSibling;s.style.display=s.style.display==\'none\'?\'block\':\'none\';this.textContent=(s.style.display==\'none\'?\'\u25b6 \':\'\u25bc \')+\''+d._sf.length+'\u7ec4\u7b5b\u9009\u6761\u4ef6\';" style="font-size:11px;color:#909399;padding:2px 0;cursor:pointer">\u25b6 '+d._sf.length+'\u7ec4\u7b5b\u9009\u6761\u4ef6</div>';h+='<div class=sf style=display:none>';d._sf.forEach(function(f,fi){h+='<div class="sf-item'+(cur===i&&loadedFilter===fi?' sf-act':'')+'" onclick="event.stopPropagation();ldF('+i+','+fi+')">'+(cur===i&&loadedFilter===fi?'▶ ':'🔖 ')+esc(f.name)+' <span class=rm onclick="event.stopPropagation();delSF('+i+','+fi+')">✕</span></div>';});h+='</div>';}
       h+='</div>';
     });
     h+='</div></div>';
@@ -191,11 +191,13 @@ function sel(i){
 function render(d){
   if(!d||!d.results){document.getElementById('contentWrap').innerHTML='<div class=empty>无数据</div>';return;}
   var ps={};d.results.forEach(function(r){Object.keys(r.p).forEach(function(k){if(['filename','interface','model'].indexOf(k)>=0)ps[k]=1;});});
+  var hasModel=!!ps['model']; delete ps['model'];  // model放到截图之后
   var hasSI=d.results.some(function(r){return r.si;});
   var hasSE=d.results.some(function(r){return r.se;});
   var baseH=['#','状态','套件','用例','耗时(ms)'].concat(Object.keys(ps).sort());
   if(hasSI) baseH.push('导入模型');
   if(hasSE) baseH.push('导出模型');
+  if(hasModel) baseH.push('model');
   H=baseH.slice();
   // 按保存的列名顺序重排
   try{
