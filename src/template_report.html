@@ -147,7 +147,15 @@ DATA.forEach(function(d){
 var cur=null,H=[],conds=[],logic='and',sCol=-1,sAsc=true,loadedFilter=-1,_cvCache=null,_rszTimer=null,_rszFlag=0;
 
 // ═══════════ 侧栏 ═══════════
+var _sfExpanded={}; // 记录侧栏筛选条件折叠状态
 function buildSidebar(){
+  // 保存当前展开状态
+  document.querySelectorAll('.sf-tgl').forEach(function(el){
+    var item=el.parentElement; if(!item)return;
+    var idx=item.dataset.idx; if(idx===undefined)return;
+    var sfDiv=el.nextSibling;
+    _sfExpanded[idx]=sfDiv&&sfDiv.style&&sfDiv.style.display==='block';
+  });
   var g={};
   DATA.forEach(function(d,i){var k=gk(d);if(!g[k])g[k]=[];g[k].push(i);});
   var h='';
@@ -159,7 +167,8 @@ function buildSidebar(){
       h+='<span class="tag '+a+'">'+d.passed+'/'+d.total+'</span>';
       h+='<span class=nm ondblclick="var n=prompt(\'重命名：\',this.textContent);if(n){var idx=parseInt(this.parentElement.dataset.idx);DATA[idx].name=n;try{setStore(\'tr_name_\'+DATA[idx].id,n);}catch(e){}buildSidebar();}">'+esc(rn(d))+'</span><span class=tm>'+d.time.slice(11,16)+'</span>';
       h+='<span class=del onclick="event.stopPropagation();delRun('+i+')">✕</span>';
-      if(d._sf.length>0){h+='<div class=sf-tgl onclick="event.stopPropagation();var s=this.nextSibling;s.style.display=s.style.display==\'none\'?\'block\':\'none\';this.textContent=(s.style.display==\'none\'?\'\u25b6 \':\'\u25bc \')+\''+d._sf.length+'\u7ec4\u7b5b\u9009\u6761\u4ef6\';" style="font-size:11px;color:#909399;padding:2px 0;cursor:pointer">\u25b6 '+d._sf.length+'\u7ec4\u7b5b\u9009\u6761\u4ef6</div>';h+='<div class=sf style=display:none>';d._sf.forEach(function(f,fi){h+='<div class="sf-item'+(cur===i&&loadedFilter===fi?' sf-act':'')+'" onclick="event.stopPropagation();ldF('+i+','+fi+')">'+(cur===i&&loadedFilter===fi?'▶ ':'🔖 ')+esc(f.name)+' <span class=rm onclick="event.stopPropagation();delSF('+i+','+fi+')">✕</span></div>';});h+='</div>';}
+      var exp=_sfExpanded[i]===true;
+      if(d._sf.length>0){h+='<div class=sf-tgl onclick="event.stopPropagation();var s=this.nextSibling;var show=s.style.display==\'none\';s.style.display=show?\'block\':\'none\';this.innerHTML=(show?\'\u25bc \':\'\u25b6 \')+\''+d._sf.length+'\u7ec4\u7b5b\u9009\u6761\u4ef6\';" style="font-size:11px;color:#909399;padding:2px 0;cursor:pointer">'+(exp?'\u25bc ':'\u25b6 ')+d._sf.length+'\u7ec4\u7b5b\u9009\u6761\u4ef6</div>';h+='<div class=sf style=display:'+(exp?'block':'none')+'>';d._sf.forEach(function(f,fi){h+='<div class="sf-item'+(cur===i&&loadedFilter===fi?' sf-act':'')+'" onclick="event.stopPropagation();ldF('+i+','+fi+')">'+(cur===i&&loadedFilter===fi?'▶ ':'🔖 ')+esc(f.name)+' <span class=rm onclick="event.stopPropagation();delSF('+i+','+fi+')">✕</span></div>';});h+='</div>';}
       h+='</div>';
     });
     h+='</div></div>';
@@ -519,9 +528,6 @@ function saveFlt(){
   buildSidebar();sel(cur);
   conds=savedConds;logic=savedMode;loadedFilter=savedLoaded;
   renderFltRows();updateFltBtn();renderRows();
-  // 展开筛选面板
-  var p=document.getElementById('fltPanel');
-  if(p)p.classList.add('show');
 }
 function newFlt(){
   var nm=prompt('命名筛选：','筛选条件 '+(DATA[cur]._sf.length+1));
@@ -543,13 +549,19 @@ function ldF(i,fi){
   var sf=DATA[i]._sf[fi];
   if(!sf)return;
   loadedFilter=fi;
-  buildSidebar();
+  // 更新侧栏激活状态（轻量，不重建）
+  document.querySelectorAll('.item').forEach(function(e){e.classList.remove('act');});
+  document.querySelectorAll('.sf-item').forEach(function(e){e.classList.remove('sf-act');});
+  var item=document.querySelector('.item[data-idx=\"'+i+'\"]');
+  if(item){
+    item.classList.add('act');
+    var sfItems=item.querySelectorAll('.sf-item');
+    if(sfItems[fi]) sfItems[fi].classList.add('sf-act');
+  }
   conds=sf.conds.map(function(c){var ci=c.c;if(typeof ci==='string'){var idx=H.indexOf(ci);ci=idx>=0?idx:ci;}return{c:ci,o:c.o||'in',v:c.v};});
   logic=sf.mode||'and';
   renderFltRows();updateFltBtn();renderRows();
   document.querySelectorAll('.mode-group .md').forEach(function(e){e.classList.toggle('act',e.dataset.m===logic);});
-  var p=document.getElementById('fltPanel');
-  if(p)p.classList.add('show');
 }
 
 function delSF(i,fi){
