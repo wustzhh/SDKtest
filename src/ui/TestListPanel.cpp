@@ -452,6 +452,7 @@ void TestListPanel::onFilterChanged(const QString& text) {
     };
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         if (!m_tree->topLevelItem(i)->isHidden()) deselHidden(m_tree->topLevelItem(i));
+    m_tree->viewport()->update();
     updateStats();
 }
 bool TestListPanel::applyFilter(QTreeWidgetItem* item, const QString& text) {

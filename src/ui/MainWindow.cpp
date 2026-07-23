@@ -1219,11 +1219,14 @@ void MainWindow::onAllFinished() {
     m_progress->finishRun();
     m_centerResultView->showResults(m_report.results);
 
-    int p = m_report.passed(), f = m_report.failed();
-    LOG("RUN", "Done: passed=" + QString::number(p) + " failed=" + QString::number(f));
-    statusBar()->showMessage(
-        QString("Done! Passed=%1 Failed=%2 Total=%3 ms")
-            .arg(p).arg(f).arg(m_report.totalDurationMs(), 0, 'f', 0), 10000);
+    int p = m_report.passed(), f = m_report.failed(), s = m_report.skipped(), d = m_report.disabled();
+    LOG("RUN", QString("Done: passed=%1 failed=%2 skipped=%3 disabled=%4 total=%5")
+        .arg(p).arg(f).arg(s).arg(d).arg(m_report.total()));
+    QString msg = QString("Done! Passed=%1 Failed=%2").arg(p).arg(f);
+    if (s > 0) msg += QString(" Skipped=%1").arg(s);
+    if (d > 0) msg += QString(" Disabled=%1").arg(d);
+    msg += QString(" Total=%1 ms").arg(m_report.totalDurationMs(), 0, 'f', 0);
+    statusBar()->showMessage(msg, 10000);
     updateButtonStates();
     // 仅首次自动生成默认方案（如果还不存在）
     auto& prof = m_config.currentProfile();
