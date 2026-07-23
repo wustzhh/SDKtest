@@ -1,0 +1,2221 @@
+{
+    "binary": "D:/workspaces/hwSdk/build/x86_64-win-msvc_vc143-relwithdebinfo/ybaf-mesher/bin/RelWithDebInfo/zmaingt.exe",
+    "disabled": 0,
+    "durationMs": 1202624,
+    "failed": 2,
+    "filter": "custom",
+    "id": "20260723_151733_591",
+    "name": "网格mesher",
+    "passed": 124,
+    "results": [
+        {
+            "c": "test_progress_solidMeshRaw_basedOnSurfaceMesh/0",
+            "d": 2855,
+            "p": {
+                "_screenshot_import": "screenshots/subtractCube_nest_1784791395902.png",
+                "interface": "SolidMeshRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/subtractCube_nest.nas"
+            },
+            "s": "SolidMeshRawTests/YbSolidMeshRaw",
+            "si": "screenshots/subtractCube_nest_1784791395902.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElemArr_checkRefineElements",
+            "d": 3081,
+            "p": {
+                "_screenshot_import": "screenshots/test_refine_hd_1784791391974.png",
+                "interface": "FaceMesh2DRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/test_refine_hd.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "si": "screenshots/test_refine_hd_1784791391974.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeModelId_checkRefineElements",
+            "d": 3284,
+            "p": {
+                "_screenshot_import": "screenshots/test_refine_hd_1784791391974.png",
+                "interface": "FaceMesh2DRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/test_refine_hd.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "si": "screenshots/test_refine_hd_1784791391974.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2DRefineElements_C",
+            "d": 3324,
+            "p": {
+                "_screenshot_export": "screenshots/FaceMesh2DRefineElem_C_1784791406140.png",
+                "_screenshot_import": "screenshots/refineElem_C_1784791415056.png",
+                "interface": "FaceMesh2DRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/refineElem_C.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/FaceMesh2DRefineElem_C.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "se": "screenshots/FaceMesh2DRefineElem_C_1784791406140.png",
+            "si": "screenshots/refineElem_C_1784791415056.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeElemId_checkRefineElements",
+            "d": 3473,
+            "p": {
+                "_screenshot_import": "screenshots/test_refine_hd_1784791391974.png",
+                "interface": "FaceMesh2DRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/test_refine_hd.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "si": "screenshots/test_refine_hd_1784791391974.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "check_refine_hexMesh",
+            "d": 3508,
+            "p": {
+                "_screenshot_export": "screenshots/result_1784791396031.png",
+                "_screenshot_import": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+                "interface": "HexMeshRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/thin_solid_HexSweepMesh.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/result.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "se": "screenshots/result_1784791396031.png",
+            "si": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "normal2DRefineElements",
+            "d": 1862,
+            "p": {
+                "_screenshot_export": "screenshots/refineElem_C_1784791406777.png",
+                "_screenshot_import": "screenshots/refineElem_C_1784791415056.png",
+                "interface": "FaceMesh2DRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/refineElem_C.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/refineElem_C.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "se": "screenshots/refineElem_C_1784791406777.png",
+            "si": "screenshots/refineElem_C_1784791415056.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeModelId_hexMeshRefine_C",
+            "d": 1927,
+            "p": {
+                "_screenshot_import": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+                "interface": "HexMeshRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/thin_solid_HexSweepMesh.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/thin_solid_HexSweepMesh_1.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "si": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeElemType_hexMeshRefine_C",
+            "d": 1843,
+            "p": {
+                "_screenshot_import": "screenshots/sphere_surfaceMesh_1784791412575.png",
+                "interface": "HexMeshRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/sphere_surfaceMesh.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/sphere_surfaceMesh_1.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "si": "screenshots/sphere_surfaceMesh_1784791412575.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeElemId_hexMeshRefine_C",
+            "d": 2120,
+            "p": {
+                "_screenshot_export": "screenshots/negElemId_hexMeshRefine_C_1784791396675.png",
+                "_screenshot_import": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+                "interface": "HexMeshRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/thin_solid_HexSweepMesh.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/negElemId_hexMeshRefine_C.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "se": "screenshots/negElemId_hexMeshRefine_C_1784791396675.png",
+            "si": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElemArr_hexMeshRefine_C",
+            "d": 2211,
+            "p": {
+                "_screenshot_import": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+                "interface": "HexMeshRefineElements_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/thin_solid_HexSweepMesh.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/thin_solid_HexSweepMesh_1.nas"
+            },
+            "s": "YbCheckMeshTest",
+            "si": "screenshots/thin_solid_HexSweepMesh_1784791390298.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_GetEntityIdList_SharedTopo",
+            "d": 2288,
+            "p": {
+                "_screenshot_export": "screenshots/twoCubic_1_1784791406172.png",
+                "_screenshot_import": "screenshots/twoCubic_1784791394748.png",
+                "interface": "CreateSharedTopo",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/CreateSharedTopo/twoCubic.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/twoCubic_1.nas"
+            },
+            "s": "YbCreateSharedTopoTest",
+            "se": "screenshots/twoCubic_1_1784791406172.png",
+            "si": "screenshots/twoCubic_1784791394748.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_progress_solidMeshRaw_basedOnSurfaceMesh/2",
+            "d": 6189,
+            "p": {
+                "_screenshot_import": "screenshots/subtractCube_nest_1784791395902.png",
+                "interface": "SolidMeshRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/subtractCube_nest.nas"
+            },
+            "s": "SolidMeshRawTests/YbSolidMeshRaw",
+            "si": "screenshots/subtractCube_nest_1784791395902.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_progress_solidMeshRaw_basedOnSurfaceMesh/4",
+            "d": 6320,
+            "p": {
+                "_screenshot_import": "screenshots/subtractCube_nest_1784791395902.png",
+                "interface": "SolidMeshRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/subtractCube_nest.nas"
+            },
+            "s": "SolidMeshRawTests/YbSolidMeshRaw",
+            "si": "screenshots/subtractCube_nest_1784791395902.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_progress_solidMeshRaw_basedOnSurfaceMesh/1",
+            "d": 6437,
+            "p": {
+                "_screenshot_import": "screenshots/subtractCube_nest_1784791395902.png",
+                "interface": "SolidMeshRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/subtractCube_nest.nas"
+            },
+            "s": "SolidMeshRawTests/YbSolidMeshRaw",
+            "si": "screenshots/subtractCube_nest_1784791395902.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_progress_solidMeshRaw_basedOnSurfaceMesh/3",
+            "d": 6688,
+            "p": {
+                "_screenshot_import": "screenshots/subtractCube_nest_1784791395902.png",
+                "interface": "SolidMeshRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/subtractCube_nest.nas"
+            },
+            "s": "SolidMeshRawTests/YbSolidMeshRaw",
+            "si": "screenshots/subtractCube_nest_1784791395902.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2D",
+            "d": 2333,
+            "p": {
+                "_screenshot_export": "screenshots/square_faceMesh2D_1784791399296.png",
+                "_screenshot_import": "screenshots/square_hole_1784791395713.png",
+                "interface": "FaceMesh2D",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/FaceMesh2D/square_hole.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_faceMesh2D.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/square_faceMesh2D_1784791399296.png",
+            "si": "screenshots/square_hole_1784791395713.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2DRaw",
+            "d": 2309,
+            "p": {
+                "_screenshot_export": "screenshots/square_faceMesh2DRaw_1784791410289.png",
+                "interface": "FaceMesh2D",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_faceMesh2DRaw.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/square_faceMesh2DRaw_1784791410289.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2D_C",
+            "d": 2496,
+            "p": {
+                "_screenshot_export": "screenshots/square_faceMesh2D_C_1784791394912.png",
+                "_screenshot_import": "screenshots/square_hole_1784791395713.png",
+                "interface": "FaceMesh2D_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/FaceMesh2D/square_hole.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_faceMesh2D_C.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/square_faceMesh2D_C_1784791394912.png",
+            "si": "screenshots/square_hole_1784791395713.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2D_CRaw",
+            "d": 2318,
+            "p": {
+                "_screenshot_export": "screenshots/quad_faceMesh2D_CRaw_1784791396140.png",
+                "interface": "FaceMesh2D_C",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/quad_faceMesh2D_CRaw.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/quad_faceMesh2D_CRaw_1784791396140.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "sharp_angle04",
+            "d": 4630,
+            "p": {
+                "_screenshot_export": "screenshots/sharp_angle04_1784791406456.png",
+                "_screenshot_import": "screenshots/sharp_angle04_1784791396289.png",
+                "interface": "SolidMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/DefeatureMesh/sharp_angle04.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/sharp_angle04.nas"
+            },
+            "s": "YbDefeatureMeshTest",
+            "se": "screenshots/sharp_angle04_1784791406456.png",
+            "si": "screenshots/sharp_angle04_1784791396289.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2DRaw_withCmtPoint",
+            "d": 1874,
+            "p": {
+                "_screenshot_export": "screenshots/square_faceMesh2DRaw_1784791410289.png",
+                "interface": "FaceMesh2D",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_faceMesh2DRaw.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/square_faceMesh2DRaw_1784791410289.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2D_withCmtPoint",
+            "d": 2154,
+            "p": {
+                "_screenshot_export": "screenshots/square_faceMesh2D_1784791399296.png",
+                "_screenshot_import": "screenshots/square_hole_1784791395713.png",
+                "interface": "FaceMesh2D",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/FaceMesh2D/square_hole.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_faceMesh2D.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/square_faceMesh2D_1784791399296.png",
+            "si": "screenshots/square_hole_1784791395713.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2D_CRaw_withCmtPoint",
+            "d": 1881,
+            "p": {
+                "_screenshot_export": "screenshots/quad_faceMesh2D_CRaw_1784791396140.png",
+                "interface": "FaceMesh2D_C",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/quad_faceMesh2D_CRaw.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/quad_faceMesh2D_CRaw_1784791396140.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_faceMesh2D_C_withCmtPoint",
+            "d": 2006,
+            "p": {
+                "_screenshot_export": "screenshots/square_faceMesh2D_C_1784791394912.png",
+                "_screenshot_import": "screenshots/square_hole_1784791395713.png",
+                "interface": "FaceMesh2D_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/FaceMesh2D/square_hole.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_faceMesh2D_C.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "se": "screenshots/square_faceMesh2D_C_1784791394912.png",
+            "si": "screenshots/square_hole_1784791395713.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeModelId_faceMesh2D",
+            "d": 1962,
+            "p": {
+                "_screenshot_import": "screenshots/square_hole_1784791395713.png",
+                "interface": "FaceMesh2D",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/FaceMesh2D/square_hole.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_hole_1.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "si": "screenshots/square_hole_1784791395713.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_shellMeshImprint",
+            "d": 2364,
+            "p": {
+                "_screenshot_export": "screenshots/tri_ellipse_imprint_1784791394555.png",
+                "_screenshot_import": "screenshots/circle_1784791392706.png",
+                "interface": "ShellMeshImprint",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/circle.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/tri_ellipse_imprint.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "se": "screenshots/tri_ellipse_imprint_1784791394555.png",
+            "si": "screenshots/circle_1784791392706.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeModelId_faceMesh2D_C",
+            "d": 2534,
+            "p": {
+                "_screenshot_import": "screenshots/square_hole_1784791395713.png",
+                "interface": "FaceMesh2D_C",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/FaceMesh2D/square_hole.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_hole_2.nas"
+            },
+            "s": "YbFaceMesh2DTest",
+            "si": "screenshots/square_hole_1784791395713.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_shellMeshImprintElem",
+            "d": 2854,
+            "p": {
+                "_screenshot_export": "screenshots/imprint_tri_1784791410141.png",
+                "_screenshot_import": "screenshots/triangle_1784791412828.png",
+                "interface": "ShellMeshImprintElem",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/triangle.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/imprint_tri.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "se": "screenshots/imprint_tri_1784791410141.png",
+            "si": "screenshots/triangle_1784791412828.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_shellMeshImprintElem3",
+            "d": 2870,
+            "p": {
+                "_screenshot_export": "screenshots/test_shellMeshImprintElem3_1784791412659.png",
+                "_screenshot_import": "screenshots/test_imprintElem_1784791395104.png",
+                "interface": "ShellMeshImprintElem",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/test_imprintElem.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_shellMeshImprintElem3.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "se": "screenshots/test_shellMeshImprintElem3_1784791412659.png",
+            "si": "screenshots/test_imprintElem_1784791395104.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "sharp_angle01",
+            "d": 10698,
+            "p": {
+                "_screenshot_export": "screenshots/sharp_angle01_1784791395633.png",
+                "_screenshot_import": "screenshots/sharp_angle01_1784791414391.png",
+                "interface": "SolidMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/DefeatureMesh/sharp_angle01.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/sharp_angle01.nas"
+            },
+            "s": "YbDefeatureMeshTest",
+            "se": "screenshots/sharp_angle01_1784791395633.png",
+            "si": "screenshots/sharp_angle01_1784791414391.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "sharp_angle03",
+            "d": 10915,
+            "p": {
+                "_screenshot_export": "screenshots/sharp_angle03_1784791409974.png",
+                "_screenshot_import": "screenshots/sharp_angle03_1784791393461.png",
+                "interface": "SolidMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/DefeatureMesh/sharp_angle03.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/sharp_angle03.nas"
+            },
+            "s": "YbDefeatureMeshTest",
+            "se": "screenshots/sharp_angle03_1784791409974.png",
+            "si": "screenshots/sharp_angle03_1784791393461.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "mesh2mesh",
+            "d": 2248,
+            "p": {
+                "_screenshot_export": "screenshots/imprint_1784791396739.png",
+                "_screenshot_import": "screenshots/triangle_1784791412828.png",
+                "interface": "ShellMeshImprintElem",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/triangle.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/imprint.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "se": "screenshots/imprint_1784791396739.png",
+            "si": "screenshots/triangle_1784791412828.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeFaceIdByFace",
+            "d": 1757,
+            "p": {
+                "_screenshot_import": "screenshots/triangle_1784791407005.png",
+                "interface": "ShellMeshImprint",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/triangle.stp"
+            },
+            "s": "YbMeshImprintTest",
+            "si": "screenshots/triangle_1784791407005.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "mesh2face",
+            "d": 1939,
+            "p": {
+                "_screenshot_export": "screenshots/imprint2_1784791392742.png",
+                "_screenshot_import": "screenshots/imprintModelHw_1784791396571.png",
+                "interface": "ShellMeshImprint",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/imprintModelHw.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/imprint2.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "se": "screenshots/imprint2_1784791392742.png",
+            "si": "screenshots/imprintModelHw_1784791396571.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "noValueInNodeIdByFace",
+            "d": 2016,
+            "p": {
+                "_screenshot_import": "screenshots/circle_1784791392706.png",
+                "interface": "ShellMeshImprint",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/circle.stp"
+            },
+            "s": "YbMeshImprintTest",
+            "si": "screenshots/circle_1784791392706.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "noValueInNodeXByFace",
+            "d": 1937,
+            "p": {
+                "_screenshot_import": "screenshots/circle_1784791392706.png",
+                "interface": "ShellMeshImprint",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/circle.stp"
+            },
+            "s": "YbMeshImprintTest",
+            "si": "screenshots/circle_1784791392706.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "neagtiveModelIdByMesh",
+            "d": 1917,
+            "p": {
+                "_screenshot_import": "screenshots/triangle_1784791412828.png",
+                "interface": "ShellMeshImprintElem",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/triangle.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "si": "screenshots/triangle_1784791412828.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "noValueInNodeIdByOrigMesh",
+            "d": 2094,
+            "p": {
+                "_screenshot_import": "screenshots/triangle_1784791412828.png",
+                "interface": "ShellMeshImprintElem",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/triangle.nas"
+            },
+            "s": "YbMeshImprintTest",
+            "si": "screenshots/triangle_1784791412828.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_getMeshMass_double",
+            "d": 2269,
+            "p": {
+                "_screenshot_import": "screenshots/quad_surfaceMesh_1784791396776.png",
+                "interface": "GetMeshMass",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/quad_surfaceMesh.nas"
+            },
+            "s": "YbMeshMassTest",
+            "si": "screenshots/quad_surfaceMesh_1784791396776.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_getMeshMass_vector",
+            "d": 2332,
+            "p": {
+                "_screenshot_import": "screenshots/quad_surfaceMesh_1784791396776.png",
+                "interface": "GetMeshMass",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/quad_surfaceMesh.nas"
+            },
+            "s": "YbMeshMassTest",
+            "si": "screenshots/quad_surfaceMesh_1784791396776.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_getMeshMassRaw_vector",
+            "d": 3433,
+            "p": {
+                "_screenshot_import": "screenshots/cube_tetraMesh_1784791414491.png",
+                "interface": "GetMeshMassRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/cube_tetraMesh.nas"
+            },
+            "s": "YbMeshMassTest",
+            "si": "screenshots/cube_tetraMesh_1784791414491.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_getMeshMassRaw_double",
+            "d": 3589,
+            "p": {
+                "_screenshot_import": "screenshots/cube_tetraMesh_1784791414491.png",
+                "interface": "GetMeshMassRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/cube_tetraMesh.nas"
+            },
+            "s": "YbMeshMassTest",
+            "si": "screenshots/cube_tetraMesh_1784791414491.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test1",
+            "d": 3985,
+            "p": {
+                "_screenshot_import": "screenshots/box_1coin_1784791397014.png",
+                "interface": "GetMeshMass",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/box_1coin.bdf"
+            },
+            "s": "YbMeshMassTest",
+            "si": "screenshots/box_1coin_1784791397014.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test2",
+            "d": 4212,
+            "p": {
+                "interface": "GetMeshMassRaw"
+            },
+            "s": "YbMeshMassTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeNodeIdListWithStatus",
+            "d": 3028,
+            "p": {
+                "interface": "GetMeshMass"
+            },
+            "s": "YbMeshMassTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElemIdListWithStatus",
+            "d": 2983,
+            "p": {
+                "interface": "GetMeshMass"
+            },
+            "s": "YbMeshMassTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "defaultWithNodeId",
+            "d": 3176,
+            "p": {
+                "interface": "GetMeshMassRaw"
+            },
+            "s": "YbMeshMassTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "normalMeshMass",
+            "d": 1955,
+            "p": {
+                "_screenshot_export": "screenshots/quad2_surfaceMesh1_1784791392445.png",
+                "_screenshot_import": "screenshots/quad2_surfaceMesh_1784791392778.png",
+                "interface": "GetMeshMassRaw",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/Check/quad2_surfaceMesh.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/quad2_surfaceMesh1.nas"
+            },
+            "s": "YbMeshMassTest",
+            "se": "screenshots/quad2_surfaceMesh1_1784791392445.png",
+            "si": "screenshots/quad2_surfaceMesh_1784791392778.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "initialTest",
+            "d": 1998,
+            "p": {
+                "interface": "MeshSurfaceOffset",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/initialTest.nas"
+            },
+            "s": "YbOffsetMesherTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_meshSurfaceOffset",
+            "d": 2149,
+            "p": {
+                "_screenshot_export": "screenshots/FilletCube_output_1784791392300.png",
+                "_screenshot_import": "screenshots/cube_1784791393875.png",
+                "interface": "MeshSurfaceOffset",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/OffsetMesh/cube.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/FilletCube_output.nas"
+            },
+            "s": "YbOffsetMesherTest",
+            "se": "screenshots/FilletCube_output_1784791392300.png",
+            "si": "screenshots/cube_1784791393875.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test2ndOrder",
+            "d": 2144,
+            "p": {
+                "interface": "MeshSurfaceOffset",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test1.nas"
+            },
+            "s": "YbOffsetMesherTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "normalOffsetWithFillet",
+            "d": 1971,
+            "p": {
+                "_screenshot_export": "screenshots/FilletCube_output_1784791392300.png",
+                "_screenshot_import": "screenshots/cube_1784791393875.png",
+                "interface": "MeshSurfaceOffset",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/OffsetMesh/cube.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/FilletCube_output.nas"
+            },
+            "s": "YbOffsetMesherTest",
+            "se": "screenshots/FilletCube_output_1784791392300.png",
+            "si": "screenshots/cube_1784791393875.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_partMeshElemQualityReport",
+            "d": 1933,
+            "p": {
+                "_screenshot_import": "screenshots/volume_aspectRatio_1784791388814.png",
+                "interface": "PartMeshElemQualityReport",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/volume_aspectRatio.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/volume_aspectRatio_1784791388814.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "normalOffsetWithRightAngle",
+            "d": 2171,
+            "p": {
+                "_screenshot_export": "screenshots/rightAngleCube_output_1784791410231.png",
+                "_screenshot_import": "screenshots/cube_1784791393875.png",
+                "interface": "MeshSurfaceOffset",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/OffsetMesh/cube.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/rightAngleCube_output.nas"
+            },
+            "s": "YbOffsetMesherTest",
+            "se": "screenshots/rightAngleCube_output_1784791410231.png",
+            "si": "screenshots/cube_1784791393875.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_partMeshElemQualityPro_meshData",
+            "d": 2049,
+            "p": {
+                "_screenshot_import": "screenshots/plate_meshQuality_1784791394412.png",
+                "interface": "PartMeshElemQualityPro",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate_meshQuality.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/plate_meshQuality_1784791394412.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElems_Report",
+            "d": 2089,
+            "p": {
+                "_screenshot_import": "screenshots/testQuality_jacobian_1784791399919.png",
+                "interface": "PartMeshElemQualityReport",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/testQuality_jacobian.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/testQuality_jacobian_1784791399919.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_partMeshElemQuality",
+            "d": 2896,
+            "p": {
+                "_screenshot_export": "screenshots/slot_hole_surMeshWithQuality_1784791393834.png",
+                "_screenshot_import": "screenshots/slot_hole_1784791392506.png",
+                "interface": "PartMeshElemQuality",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/slot_hole.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/slot_hole_surMeshWithQuality.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "se": "screenshots/slot_hole_surMeshWithQuality_1784791393834.png",
+            "si": "screenshots/slot_hole_1784791392506.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "criterionLessThanZero_Report",
+            "d": 2020,
+            "p": {
+                "_screenshot_import": "screenshots/testQuality_jacobian_1784791399919.png",
+                "interface": "PartMeshElemQualityReport",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/testQuality_jacobian.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/testQuality_jacobian_1784791399919.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "checkSkewQuality_Report",
+            "d": 1877,
+            "p": {
+                "_screenshot_import": "screenshots/testQuality_taper_1784791400064.png",
+                "interface": "PartMeshElemQualityReport",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/testQuality_taper.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/testQuality_taper_1784791400064.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_partMeshElemQualityPro_partInfo",
+            "d": 3644,
+            "p": {
+                "_screenshot_export": "screenshots/P2_surMeshWithQuality_1784791406890.png",
+                "_screenshot_import": "screenshots/P2_1784791412772.png",
+                "interface": "PartMeshElemQualityPro",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/P2.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/P2_surMeshWithQuality.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "se": "screenshots/P2_surMeshWithQuality_1784791406890.png",
+            "si": "screenshots/P2_1784791412772.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "criterionOutOfRange_Report",
+            "d": 2297,
+            "p": {
+                "_screenshot_import": "screenshots/testQuality_jacobian_1784791399919.png",
+                "interface": "PartMeshElemQualityReport",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/testQuality_jacobian.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/testQuality_jacobian_1784791399919.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElem_meshData",
+            "d": 1834,
+            "p": {
+                "_screenshot_import": "screenshots/plate_meshQuality_1784791394412.png",
+                "interface": "PartMeshElemQualityPro",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate_meshQuality.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/plate_meshQuality_1784791394412.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElem_Quality",
+            "d": 3239,
+            "p": {
+                "_screenshot_import": "screenshots/slot_hole_1784791392506.png",
+                "interface": "PartMeshElemQuality",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/slot_hole.step"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/slot_hole_1784791392506.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "worstSetNullptr_Quality",
+            "d": 3231,
+            "p": {
+                "_screenshot_import": "screenshots/slot_hole_1784791392506.png",
+                "interface": "PartMeshElemQuality",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/slot_hole.step"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/slot_hole_1784791392506.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "criterionLessThanZero_Quality",
+            "d": 3204,
+            "p": {
+                "_screenshot_import": "screenshots/slot_hole_1784791392506.png",
+                "interface": "PartMeshElemQuality",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/slot_hole.step"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/slot_hole_1784791392506.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "criterionOutOfRange_meshData",
+            "d": 1875,
+            "p": {
+                "_screenshot_import": "screenshots/plate_meshQuality_1784791394412.png",
+                "interface": "PartMeshElemQualityPro",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate_meshQuality.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/plate_meshQuality_1784791394412.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "criterionLessThanZero_meshData",
+            "d": 2079,
+            "p": {
+                "_screenshot_import": "screenshots/plate_meshQuality_1784791394412.png",
+                "interface": "PartMeshElemQualityPro",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate_meshQuality.nas"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/plate_meshQuality_1784791394412.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "criterionOutOfRange_Quality",
+            "d": 3444,
+            "p": {
+                "_screenshot_import": "screenshots/slot_hole_1784791392506.png",
+                "interface": "PartMeshElemQuality",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/slot_hole.step"
+            },
+            "s": "YbPartMeshElemQualityTest",
+            "si": "screenshots/slot_hole_1784791392506.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_tetOptimizationByTarget",
+            "d": 2016,
+            "p": {
+                "_screenshot_export": "screenshots/volume_aspect_1784791410374.png",
+                "_screenshot_import": "screenshots/volume_aspectRatio_1784791388814.png",
+                "interface": "VolMeshOptimizationByTarget",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/volume_aspectRatio.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/volume_aspect.nas"
+            },
+            "s": "YbSolidMeshTest",
+            "se": "screenshots/volume_aspect_1784791410374.png",
+            "si": "screenshots/volume_aspectRatio_1784791388814.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeNodeIdList_TetOptimi",
+            "d": 2170,
+            "p": {
+                "_screenshot_import": "screenshots/cylinder_1784791399601.png",
+                "interface": "VolMeshOptimizationByTarget",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/cylinder.nas"
+            },
+            "s": "YbSolidMeshTest",
+            "si": "screenshots/cylinder_1784791399601.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_solidMeshAndMapping",
+            "d": 2438,
+            "p": {
+                "_screenshot_export": "screenshots/cylinde_solidMesh_1784791415010.png",
+                "_screenshot_import": "screenshots/SQUARE_1784791392605.png",
+                "interface": "HexMappingMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/SQUARE.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/cylinde_solidMesh.nas"
+            },
+            "s": "YbSolidMeshTest",
+            "se": "screenshots/cylinde_solidMesh_1784791415010.png",
+            "si": "screenshots/SQUARE_1784791392605.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "tetCollapseEqualZero_TetOptimi",
+            "d": 2052,
+            "p": {
+                "_screenshot_import": "screenshots/cylinder_1784791399601.png",
+                "interface": "VolMeshOptimizationByTarget",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/cylinder.nas"
+            },
+            "s": "YbSolidMeshTest",
+            "si": "screenshots/cylinder_1784791399601.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "tetCollapseOutOfRange_TetOptimi",
+            "d": 2117,
+            "p": {
+                "_screenshot_import": "screenshots/cylinder_1784791399601.png",
+                "interface": "VolMeshOptimizationByTarget",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/cylinder.nas"
+            },
+            "s": "YbSolidMeshTest",
+            "si": "screenshots/cylinder_1784791399601.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_SurfMeshWithEdgeSuppress",
+            "d": 2023,
+            "p": {
+                "_screenshot_export": "screenshots/test_SurfMeshWithEdgeSuppress_1784791388714.png",
+                "_screenshot_import": "screenshots/edge_suppress_1784791394972.png",
+                "interface": "SurfMeshWithEdgeSuppress",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/edge_suppress.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_SurfMeshWithEdgeSuppress.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/test_SurfMeshWithEdgeSuppress_1784791388714.png",
+            "si": "screenshots/edge_suppress_1784791394972.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_SurfMeshWithEdgeSuppressBySelect",
+            "d": 2193,
+            "p": {
+                "_screenshot_export": "screenshots/test_SurfMeshWithEdgeSuppressBySelect_1784791388665.png",
+                "_screenshot_import": "screenshots/test_suppress_1784791415438.png",
+                "interface": "SurfMeshWithEdgeSuppressBySelect",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/test_suppress.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_SurfMeshWithEdgeSuppressBySelect.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/test_SurfMeshWithEdgeSuppressBySelect_1784791388665.png",
+            "si": "screenshots/test_suppress_1784791415438.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_meshStretchSweep",
+            "d": 4220,
+            "p": {
+                "_screenshot_export": "screenshots/part11_output_1784791409205.png",
+                "_screenshot_import": "screenshots/part11_1784791388484.png",
+                "interface": "MeshStretchSweep",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/StretchMesh/part11.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/part11_output.nas"
+            },
+            "s": "YbStretchMesherTest",
+            "se": "screenshots/part11_output_1784791409205.png",
+            "si": "screenshots/part11_1784791388484.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "testBySelect",
+            "d": 2249,
+            "p": {
+                "_screenshot_export": "screenshots/edge_suppress_testBySelect_1784791397817.png",
+                "_screenshot_import": "screenshots/edge_suppress_1784791394972.png",
+                "interface": "SurfMeshWithEdgeSuppressBySelect",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/edge_suppress.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/edge_suppress_testBySelect.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/edge_suppress_testBySelect_1784791397817.png",
+            "si": "screenshots/edge_suppress_1784791394972.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "testBySize",
+            "d": 2450,
+            "p": {
+                "_screenshot_export": "screenshots/edge_suppress_testBySize_1784791388210.png",
+                "_screenshot_import": "screenshots/edge_suppress_1784791394972.png",
+                "interface": "SurfMeshWithEdgeSuppress",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/edge_suppress.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/edge_suppress_testBySize.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/edge_suppress_testBySize_1784791388210.png",
+            "si": "screenshots/edge_suppress_1784791394972.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "setGeomId_EdgeSuppressBySize",
+            "d": 2258,
+            "p": {
+                "_screenshot_export": "screenshots/setGeomId_EdgeSuppressBySize_1784791414748.png",
+                "_screenshot_import": "screenshots/sweep_crash_1784791394873.png",
+                "interface": "SurfMeshWithEdgeSuppress",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/sweep_crash.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/setGeomId_EdgeSuppressBySize.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/setGeomId_EdgeSuppressBySize_1784791414748.png",
+            "si": "screenshots/sweep_crash_1784791394873.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_SurfMeshWithEdgeSuppressBySelectSharp_angle04",
+            "d": 3334,
+            "p": {
+                "_screenshot_export": "screenshots/test_SurfMeshWithEdgeSuppressBySelectSharp_angle04_1784791397465.png",
+                "_screenshot_import": "screenshots/sharp_angle04_1784791414673.png",
+                "interface": "SurfMeshWithEdgeSuppressBySelect",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/sharp_angle04.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_SurfMeshWithEdgeSuppressBySelectSharp_angle04.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/test_SurfMeshWithEdgeSuppressBySelectSharp_angle04_1784791397465.png",
+            "si": "screenshots/sharp_angle04_1784791414673.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_SurfMeshWithEdgeSuppressSharp_angle04",
+            "d": 3567,
+            "p": {
+                "_screenshot_export": "screenshots/test_SurfMeshWithEdgeSuppressSharp_angle04_1784791414938.png",
+                "_screenshot_import": "screenshots/sharp_angle04_1784791414673.png",
+                "interface": "SurfMeshWithEdgeSuppress",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/sharp_angle04.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_SurfMeshWithEdgeSuppressSharp_angle04.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/test_SurfMeshWithEdgeSuppressSharp_angle04_1784791414938.png",
+            "si": "screenshots/sharp_angle04_1784791414673.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "setGeomId_EdgeSuppressBySelect",
+            "d": 2896,
+            "p": {
+                "_screenshot_export": "screenshots/edgeSuppressBySelect_geom1_1784791393684.png",
+                "_screenshot_import": "screenshots/sweep_crash_1784791394873.png",
+                "interface": "SurfMeshWithEdgeSuppressBySelect",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/sweep_crash.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/edgeSuppressBySelect_geom1.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/edgeSuppressBySelect_geom1_1784791393684.png",
+            "si": "screenshots/sweep_crash_1784791394873.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_normalCheck",
+            "d": 2114,
+            "p": {
+                "_screenshot_export": "screenshots/normalCheck_output_1784791396076.png",
+                "_screenshot_import": "screenshots/cube_1784791393875.png",
+                "interface": "SurfaceMeshNormalCheck",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/OffsetMesh/cube.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/normalCheck_output.nas"
+            },
+            "s": "YbSurfaceMeshNormalCheckTest",
+            "se": "screenshots/normalCheck_output_1784791396076.png",
+            "si": "screenshots/cube_1784791393875.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeElemType",
+            "d": 1818,
+            "p": {
+                "interface": "SurfaceMeshNormalCheck"
+            },
+            "s": "YbSurfaceMeshNormalCheckTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "emptyElemArr",
+            "d": 2057,
+            "p": {
+                "interface": "SurfaceMeshNormalCheck"
+            },
+            "s": "YbSurfaceMeshNormalCheckTest",
+            "st": "PASSED"
+        },
+        {
+            "c": "normalCheck",
+            "d": 2073,
+            "p": {
+                "_screenshot_export": "screenshots/normalCheck_output_1784791396076.png",
+                "_screenshot_import": "screenshots/cube_1784791393875.png",
+                "interface": "SurfaceMeshNormalCheck",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/OffsetMesh/cube.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/normalCheck_output.nas"
+            },
+            "s": "YbSurfaceMeshNormalCheckTest",
+            "se": "screenshots/normalCheck_output_1784791396076.png",
+            "si": "screenshots/cube_1784791393875.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "surfaceMeshNormalCheck",
+            "d": 3502,
+            "p": {
+                "_screenshot_export": "screenshots/DTS2022083082032__mesh_drag_offset_1784791389957.png",
+                "_screenshot_import": "screenshots/DTS2022083082032__mesh_drag_offset_1784791413863.png",
+                "interface": "SurfaceMeshNormalCheck",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/StretchMesh/DTS2022083082032__mesh_drag&offset.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/DTS2022083082032__mesh_drag&offset.nas"
+            },
+            "s": "YbSurfaceMeshNormalCheckTest",
+            "se": "screenshots/DTS2022083082032__mesh_drag_offset_1784791389957.png",
+            "si": "screenshots/DTS2022083082032__mesh_drag_offset_1784791413863.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "setAllGeomId_EdgeSuppressBySelect",
+            "d": 4223,
+            "p": {
+                "_screenshot_export": "screenshots/edgeSuppressBySelectPart_All_1784791396966.png",
+                "_screenshot_import": "screenshots/sweep_crash_1784791394873.png",
+                "interface": "SurfMeshWithEdgeSuppressBySelect",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/sweep_crash.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/edgeSuppressBySelectPart_All.nas"
+            },
+            "s": "YbSurfMeshWithEdgeSuppressTest",
+            "se": "screenshots/edgeSuppressBySelectPart_All_1784791396966.png",
+            "si": "screenshots/sweep_crash_1784791394873.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_surfaceMesh",
+            "d": 2178,
+            "p": {
+                "_screenshot_export": "screenshots/quad-circle_surfMesh_1784791395045.png",
+                "_screenshot_import": "screenshots/quad-circle_1784791399505.png",
+                "interface": "SurfaceMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/quad-circle.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/quad-circle_surfMesh.nas"
+            },
+            "s": "YbSurfaceMesherTest",
+            "se": "screenshots/quad-circle_surfMesh_1784791395045.png",
+            "si": "screenshots/quad-circle_1784791399505.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_surfaceMeshWithTwoFaces",
+            "d": 2300,
+            "p": {
+                "_screenshot_export": "screenshots/test_surfaceMeshAndClear_1784791392405.png",
+                "_screenshot_import": "screenshots/box_1784791395155.png",
+                "interface": "SurfaceMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/box.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_surfaceMeshAndClear.nas"
+            },
+            "s": "YbSurfaceMesherTest",
+            "se": "screenshots/test_surfaceMeshAndClear_1784791392405.png",
+            "si": "screenshots/box_1784791395155.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "hw_P2_quadall",
+            "d": 2034,
+            "p": {
+                "_screenshot_export": "screenshots/quad-circle_quadall_1784791388544.png",
+                "_screenshot_import": "screenshots/quad-circle_1784791399505.png",
+                "interface": "SurfaceMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/quad-circle.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/quad-circle_quadall.nas"
+            },
+            "s": "YbSurfaceMesherTest",
+            "se": "screenshots/quad-circle_quadall_1784791388544.png",
+            "si": "screenshots/quad-circle_1784791399505.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_Mapping",
+            "d": 2141,
+            "p": {
+                "_screenshot_export": "screenshots/test_Mapping_SQUARE_1784791395756.png",
+                "_screenshot_import": "screenshots/SQUARE_1784791392605.png",
+                "interface": "HexMappingMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/SQUARE.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_Mapping_SQUARE.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/test_Mapping_SQUARE_1784791395756.png",
+            "si": "screenshots/SQUARE_1784791392605.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_Mapping2",
+            "d": 2065,
+            "p": {
+                "_screenshot_export": "screenshots/test_Mapping2_mixed_solids_1784791406520.png",
+                "_screenshot_import": "screenshots/mixed_solids_1784791388924.png",
+                "interface": "HexMappingMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/mixed_solids.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_Mapping2_mixed_solids.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/test_Mapping2_mixed_solids_1784791406520.png",
+            "si": "screenshots/mixed_solids_1784791388924.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_createSharedTopo",
+            "d": 2103,
+            "p": {
+                "_screenshot_export": "screenshots/mixed_solids_SharedTopo_1784791395006.png",
+                "_screenshot_import": "screenshots/mixed_solids_1784791388924.png",
+                "interface": "CreateSharedTopo",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/mixed_solids.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/mixed_solids_SharedTopo.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/mixed_solids_SharedTopo_1784791395006.png",
+            "si": "screenshots/mixed_solids_1784791388924.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_hexMappingMesh",
+            "d": 1927,
+            "p": {
+                "_screenshot_export": "screenshots/cylinder_hexMapping_1784791415106.png",
+                "_screenshot_import": "screenshots/cylinder_1784791393956.png",
+                "interface": "HexMappingMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/cylinder.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/cylinder_hexMapping.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/cylinder_hexMapping_1784791415106.png",
+            "si": "screenshots/cylinder_1784791393956.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_meshStretchSweep",
+            "d": 1899,
+            "p": {
+                "_screenshot_export": "screenshots/ellipse2_stretchSweep_1784791394071.png",
+                "_screenshot_import": "screenshots/ellipse2_1784791392014.png",
+                "interface": "MeshStretchSweep",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/ellipse2.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/ellipse2_stretchSweep.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/ellipse2_stretchSweep_1784791394071.png",
+            "si": "screenshots/ellipse2_1784791392014.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "hw_P2_StructuredQuadAll",
+            "d": 3846,
+            "p": {
+                "_screenshot_export": "screenshots/quad-circle_StructuredQuadAll_1784791406956.png",
+                "_screenshot_import": "screenshots/quad-circle_1784791399505.png",
+                "interface": "SurfaceMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/quad-circle.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/quad-circle_StructuredQuadAll.nas"
+            },
+            "s": "YbSurfaceMesherTest",
+            "se": "screenshots/quad-circle_StructuredQuadAll_1784791406956.png",
+            "si": "screenshots/quad-circle_1784791399505.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_hexSweepMesh",
+            "d": 2196,
+            "p": {
+                "_screenshot_export": "screenshots/circle-cubic_hexsweep_1784791393767.png",
+                "_screenshot_import": "screenshots/circle-cubic_1784791394489.png",
+                "interface": "HexSweepMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/circle-cubic.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/circle-cubic_hexsweep.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/circle-cubic_hexsweep_1784791393767.png",
+            "si": "screenshots/circle-cubic_1784791394489.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "normalbLockingDir_stretchSweep",
+            "d": 2072,
+            "p": {
+                "_screenshot_export": "screenshots/checkbLockingDir_stretchSweep_1784791394672.png",
+                "_screenshot_import": "screenshots/triangle_1784791412828.png",
+                "interface": "MeshStretchSweep",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/triangle.nas",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/checkbLockingDir_stretchSweep.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/checkbLockingDir_stretchSweep_1784791394672.png",
+            "si": "screenshots/triangle_1784791412828.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "testAverageDistruType_stretchSweepAlongEdge_ybma",
+            "d": 2148,
+            "p": {
+                "_screenshot_export": "screenshots/testAverageDistruType_stretchSweepAlongEdge_ybma_1784791406103.png",
+                "_screenshot_import": "screenshots/square_along_curve_1784791392555.png",
+                "interface": "MeshStretchSweep",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/StretchSweepMesh/square_along_curve.ybmaocc",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/testAverageDistruType_stretchSweepAlongEdge_ybma.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/testAverageDistruType_stretchSweepAlongEdge_ybma_1784791406103.png",
+            "si": "screenshots/square_along_curve_1784791392555.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "testAverageDistruType_stretchSweepAlongEdge",
+            "d": 2408,
+            "p": {
+                "_screenshot_export": "screenshots/square_Avg_lockEdgeId_1784791388621.png",
+                "_screenshot_import": "screenshots/square_along_curve_1784791392656.png",
+                "interface": "MeshStretchSweep",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/StretchSweepMesh/square_along_curve.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/square_Avg_lockEdgeId.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/square_Avg_lockEdgeId_1784791388621.png",
+            "si": "screenshots/square_along_curve_1784791392656.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_hexSweepMesh_boundary_geo0",
+            "d": 3400,
+            "p": {
+                "_screenshot_export": "screenshots/geo_0_hexsweep_1784791397754.png",
+                "_screenshot_import": "screenshots/geo_0_1784791396522.png",
+                "interface": "HexSweepMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HexSweepMesh/geo_0.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/geo_0_hexsweep.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/geo_0_hexsweep_1784791397754.png",
+            "si": "screenshots/geo_0_1784791396522.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_hexSweepMesh_boundary_Sweep_model01",
+            "d": 3543,
+            "p": {
+                "_screenshot_export": "screenshots/test_hexSweepMesh_boundary_Sweep_model01_1784791415283.png",
+                "_screenshot_import": "screenshots/Sweep_model01_1784791406607.png",
+                "interface": "HexSweepMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HexSweepMesh/Sweep_model01.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/test_hexSweepMesh_boundary_Sweep_model01.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/test_hexSweepMesh_boundary_Sweep_model01_1784791415283.png",
+            "si": "screenshots/Sweep_model01_1784791406607.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_hexSweepThinMesh",
+            "d": 5346,
+            "p": {
+                "_screenshot_export": "screenshots/split2_hexSweepThinMesh_1784791399252.png",
+                "_screenshot_import": "screenshots/split2_1784791410089.png",
+                "interface": "HexSweepThinMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/split2.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/split2_hexSweepThinMesh.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/split2_hexSweepThinMesh_1784791399252.png",
+            "si": "screenshots/split2_1784791410089.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "neagtiveBodyIdsWithSharedTopo",
+            "d": 2138,
+            "p": {
+                "_screenshot_import": "screenshots/mixed_solids_1784791388924.png",
+                "interface": "CreateSharedTopo",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/mixed_solids.stp"
+            },
+            "s": "YbSweepMesherTest",
+            "si": "screenshots/mixed_solids_1784791388924.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "hw_circle_cubic_hexsweep",
+            "d": 2590,
+            "p": {
+                "_screenshot_export": "screenshots/circle-cubic_hexsweep_1784791392206.png",
+                "_screenshot_import": "screenshots/circle-cubic_1784791394489.png",
+                "interface": "HexSweepMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/circle-cubic.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/circle-cubic.hexsweep.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/circle-cubic_hexsweep_1784791392206.png",
+            "si": "screenshots/circle-cubic_1784791394489.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "hw_circle_cubic_hexmapsharedTopo",
+            "d": 2727,
+            "p": {
+                "_screenshot_export": "screenshots/HW-17-box_bound_5_hexmap_1784791396424.png",
+                "_screenshot_import": "screenshots/HW-17-box_bound_5_1784791394173.png",
+                "interface": "CreateSharedTopo",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/HW-17-box_bound_5.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/HW-17-box_bound_5.hexmap.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/HW-17-box_bound_5_hexmap_1784791396424.png",
+            "si": "screenshots/HW-17-box_bound_5_1784791394173.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "defultModelId_hexSweepThin",
+            "d": 2139,
+            "p": {
+                "_screenshot_import": "screenshots/split2_1784791410089.png",
+                "interface": "HexSweepThinMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/split2.step"
+            },
+            "s": "YbSweepMesherTest",
+            "si": "screenshots/split2_1784791410089.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "defultEntityId_hexSweepThin",
+            "d": 2107,
+            "p": {
+                "_screenshot_import": "screenshots/split2_1784791410089.png",
+                "interface": "HexSweepThinMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/split2.step"
+            },
+            "s": "YbSweepMesherTest",
+            "si": "screenshots/split2_1784791410089.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_hexSweepMesh_boundary",
+            "d": 7199,
+            "p": {
+                "_screenshot_export": "screenshots/plate_hexsweep_boundary_1784791393027.png",
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "HexSweepMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/plate_hexsweep_boundary.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/plate_hexsweep_boundary_1784791393027.png",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "hexMapSharedTopo",
+            "d": 4321,
+            "p": {
+                "_screenshot_export": "screenshots/mixed_solids_SharedTopoMap_1784791391883.png",
+                "_screenshot_import": "screenshots/mixed_solids_1784791388924.png",
+                "interface": "CreateSharedTopo",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SweepMesh/mixed_solids.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/mixed_solids_SharedTopoMap.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/mixed_solids_SharedTopoMap_1784791391883.png",
+            "si": "screenshots/mixed_solids_1784791388924.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "layerNumLessThanZero_hexSweepThin",
+            "d": 4828,
+            "p": {
+                "_screenshot_export": "screenshots/split2_negativeLayerNum_1784791397286.png",
+                "_screenshot_import": "screenshots/split2_1784791410089.png",
+                "interface": "HexSweepThinMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/HW_SDK_Model112_SIT/split2.step",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/split2_negativeLayerNum.nas"
+            },
+            "s": "YbSweepMesherTest",
+            "se": "screenshots/split2_negativeLayerNum_1784791397286.png",
+            "si": "screenshots/split2_1784791410089.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "defaultModelId_surfaceWrapper",
+            "d": 5319,
+            "p": {
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SurfaceWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp"
+            },
+            "s": "YbWrapperMesherTest",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "defaultGeomEntityId_SurfaceWrapper",
+            "d": 4522,
+            "p": {
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SurfaceWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp"
+            },
+            "s": "YbWrapperMesherTest",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeModelId_solidWrapper",
+            "d": 4831,
+            "p": {
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SolidWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp"
+            },
+            "s": "YbWrapperMesherTest",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeMeshSize_SurfaceWrapper",
+            "d": 6651,
+            "p": {
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SurfaceWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp"
+            },
+            "s": "YbWrapperMesherTest",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_solidWrapper_vector",
+            "d": 17617,
+            "p": {
+                "_screenshot_export": "screenshots/cube-cylinder_solidWrapper_1784791415372.png",
+                "_screenshot_import": "screenshots/cubic-cylinder_1784791395822.png",
+                "interface": "SolidWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/VolumeMesh/cubic-cylinder.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/cube-cylinder_solidWrapper.nas"
+            },
+            "s": "YbWrapperMesherTest",
+            "se": "screenshots/cube-cylinder_solidWrapper_1784791415372.png",
+            "si": "screenshots/cubic-cylinder_1784791395822.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "negativeGeomEntityId_solidWrapper",
+            "d": 4203,
+            "p": {
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SolidWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp"
+            },
+            "s": "YbWrapperMesherTest",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "R38",
+            "d": 70758,
+            "p": {
+                "_screenshot_export": "screenshots/R38_1784791420423.png",
+                "_screenshot_import": "screenshots/R38_1784791412502.png",
+                "interface": "SolidMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/DefeatureMesh/R38.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/R38.nas"
+            },
+            "s": "YbDefeatureMeshTest",
+            "se": "screenshots/R38_1784791420423.png",
+            "si": "screenshots/R38_1784791412502.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "surfaceWrapper",
+            "d": 27039,
+            "p": {
+                "_screenshot_export": "screenshots/plate_surfWrap_1784791399441.png",
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SurfaceWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/plate_surfWrap.nas"
+            },
+            "s": "YbWrapperMesherTest",
+            "se": "screenshots/plate_surfWrap_1784791399441.png",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "solidWrapper",
+            "d": 31261,
+            "p": {
+                "_screenshot_export": "screenshots/plate_solidWrap_1784791398276.png",
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SolidWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/plate_solidWrap.nas"
+            },
+            "s": "YbWrapperMesherTest",
+            "se": "screenshots/plate_solidWrap_1784791398276.png",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "R37",
+            "d": 106002,
+            "p": {
+            },
+            "s": "YbDefeatureMeshTest",
+            "st": "FAILED"
+        },
+        {
+            "c": "R26",
+            "d": 106224,
+            "p": {
+                "_screenshot_export": "screenshots/R26_1784791399340.png",
+                "_screenshot_import": "screenshots/R26_1784791405994.png",
+                "interface": "SolidMesh",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/DefeatureMesh/R26.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/R26.nas"
+            },
+            "s": "YbDefeatureMeshTest",
+            "se": "screenshots/R26_1784791399340.png",
+            "si": "screenshots/R26_1784791405994.png",
+            "st": "FAILED"
+        },
+        {
+            "c": "test_solidWrapper",
+            "d": 244833,
+            "p": {
+                "_screenshot_export": "screenshots/plate_solidWrapper_1784791390204.png",
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SolidWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/plate_solidWrapper.nas"
+            },
+            "s": "YbWrapperMesherTest",
+            "se": "screenshots/plate_solidWrapper_1784791390204.png",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        },
+        {
+            "c": "test_surfaceWrapper",
+            "d": 245317,
+            "p": {
+                "_screenshot_export": "screenshots/plate_surfWrapper_1784791406723.png",
+                "_screenshot_import": "screenshots/plate_1784791394338.png",
+                "interface": "SurfaceWrapper",
+                "model": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTestData/SurfaceMesh/plate.stp",
+                "resultModel": "D:/workspaces/hwSdk/src/ybaf-mesher/YBTmp/plate_surfWrapper.nas"
+            },
+            "s": "YbWrapperMesherTest",
+            "se": "screenshots/plate_surfWrapper_1784791406723.png",
+            "si": "screenshots/plate_1784791394338.png",
+            "st": "PASSED"
+        }
+    ],
+    "savedFilters": [
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfMeshWithEdgeSuppress"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfMeshWithEdgeSuppressBySelect"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.10"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfMeshWithEdgeSuppress"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.11"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.12"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.13"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.14"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidWrapper"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceWrapper"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.15"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "PartMeshElemQualityReport"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "PartMeshElemQuality"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "PartMeshElemQualityPro"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "VolMeshOptimizationByTarget"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.16"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexSweepMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.17"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexSweepMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.18"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.19"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMeshRefineElements_C"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.20"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "CreateSharedTopo"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexSweepMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.21"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexSweepThinMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.22"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "MultiLayeredThinSweepMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.23"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "MeshStretchSweep"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.24"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "MeshSurfaceOffset"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.25"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexSweepMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.26"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexSweepMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.27"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "ShellMeshImprint"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "ShellMeshImprintElem"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.28"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "ThinSolidByMidSurface"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.29"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "MeshStretchSweep"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.30"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.31"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.32"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.33"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.34"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.35"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "PartMeshElemQualityReport"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "PartMeshElemQuality"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "PartMeshElemQualityPro"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "VolMeshOptimizationByTarget"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.36"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "FaceMesh2D"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "FaceMesh2D_C"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.37"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.38"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "FaceMesh2DRefineElements_C"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.39"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.40"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "CreateSharedTopo"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMesh"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "HexMappingMesh"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.41"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SurfaceMeshNormalCheck"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.42"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "GetMeshMass"
+                },
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "GetMeshMassRaw"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.43"
+        },
+        {
+            "conds": [
+                {
+                    "c": "interface",
+                    "o": "in",
+                    "v": "SolidMeshRaw"
+                }
+            ],
+            "mode": "or",
+            "name": "5.1.2.50"
+        }
+    ],
+    "skipped": 0,
+    "time": "2026-07-23 15:17:33",
+    "total": 126
+}
