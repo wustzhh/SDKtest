@@ -640,8 +640,10 @@ void MainWindow::onExportReport() {
         return;
     }
 
-    // 只导出当前运行结果（不累积历史，方便修改筛选条件后重复导出）
-    QVector<QPair<TestReport, QString>> entries;
+    // 加载已有数据（按binary去重，每个配置只保留最新）+ 当前运行结果
+    QString err;
+    QVector<QPair<TestReport, QString>> entries = ReportExporter::loadAllData(dir, &err);
+
     QString runName = m_config.profiles().value(m_config.activeProfile()).name;
     if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
     // 附带当前方案的筛选条件（未选择时默认第一个）
@@ -650,10 +652,13 @@ void MainWindow::onExportReport() {
     auto& scenarios = m_config.currentProfile().scenarios;
     if (sceneIdx >= 0 && sceneIdx < scenarios.size())
         m_report.savedFilters = scenarios[sceneIdx].filterSets;
+    // 移除同binary的旧条目，用当前结果替换
+    entries.erase(std::remove_if(entries.begin(), entries.end(),
+        [&](const QPair<TestReport, QString>& e) { return e.first.testBinary == m_report.testBinary; }),
+        entries.end());
     entries.append({m_report, runName});
 
     // 一次性重建 HTML
-    QString err;
     QFile::remove(htmlPath);
     if (!ReportExporter::rebuildHtml(entries, dir, &err)) {
         QMessageBox::warning(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba\xe5\xa4\xb1\xe8\xb4\xa5"), err);
