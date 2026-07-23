@@ -306,6 +306,7 @@ void TestRunner::onBatchFinished(BatchState* batch) {
 
     // 全部完成时才处理未出现的用例（避免跨批次重复计数）
     if (m_batchesFinished >= m_batches.size()) {
+        if (m_watchdog) m_watchdog->stop();  // 正常完成，取消看门狗
         for (const auto& tc : m_expectedTests) {
             QString full = tc.fullName();
             if (tc.caseName == "*" || m_seen.contains(full)) continue;
@@ -327,9 +328,9 @@ void TestRunner::safeProgress(int done) {
         m_lastEmittedProgress = done;
         emit progressUpdated(done, m_totalCount);
     }
-    // 全部用例结果已收集，启动看门狗：5秒内进程未退出则自动结束
+    // 全部用例结果已收集，启动看门狗：60秒内进程未退出则自动结束
     if (done >= m_totalCount && m_totalCount > 0 && m_watchdog && !m_watchdog->isActive()) {
-        m_watchdog->start(5000);
+        m_watchdog->start(60000);
     }
 }
 
