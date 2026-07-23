@@ -76,14 +76,15 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_btnCollapse = new QPushButton("折叠", m_content);
     m_btnCollapse->setFixedHeight(28);m_btnCollapse->setStyleSheet(tbBtn);
     connect(m_btnCollapse, &QPushButton::clicked, this, &ModelRenderView::onCollapseAll);
-    m_btnLocate = new QPushButton("\xE2\x9C\x95", m_content);  // ✕
+    m_btnLocate = new QPushButton("\xE2\x97\x8A", m_content);  // ◊
     m_btnLocate->setFixedSize(28,28);
     m_btnLocate->setStyleSheet(
-        "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;padding:0;}"
+        "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}"
         "QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}");
-    m_btnLocate->setToolTip("清除搜索");
+    m_btnLocate->setToolTip("定位到当前选中结果");
     connect(m_btnLocate, &QPushButton::clicked, this, [this]() {
-        m_searchEdit->clear();
+        if (m_lastHighlighted)
+            m_tree->scrollToItem(m_lastHighlighted, QAbstractItemView::EnsureVisible);
     });
     m_lblStats = new QLabel("", m_content);
     m_lblStats->setStyleSheet("color:#8892a6; font-size:11px;");
