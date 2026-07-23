@@ -51,7 +51,18 @@ void StepWorker::doWork() {
     reader.TransferRoots(); TopoDS_Shape shape = reader.OneShape();
     if (shape.IsNull()) { r.error="Shape is null"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
-    BRepMesh_IncrementalMesh(shape, 0.1).Perform();
+    // 自适应偏差：根据模型尺寸调整，避免大模型剖分过密
+    {
+        Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
+        double deflection = 0.1;
+        if (!shapeBox.IsVoid()) {
+            double x1,y1,z1,x2,y2,z2;
+            shapeBox.Get(x1,y1,z1,x2,y2,z2);
+            double diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
+            deflection = qBound(0.1, sqrt(qMax(diag, 1.0) * 2.0), 5.0);
+        }
+        BRepMesh_IncrementalMesh(shape, deflection).Perform();
+    }
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int voff=0, faceIdx=0;
     TopExp_Explorer fExp(shape, TopAbs_FACE);
@@ -93,16 +104,28 @@ void StepWorker::doWork() {
     QVector<TopoDS_Edge> allEdges; QMap<void*,QSet<void*>> edgeFaceMap;
     { TopExp_Explorer eExp(shape, TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* p=eExp.Current().TShape().get(); if (!edgeFaceMap.contains(p)) { edgeFaceMap[p]={}; allEdges.append(TopoDS::Edge(eExp.Current())); } } }
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { void* fp=fExp.Current().TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].insert(fp); } } }
+    // 建顶点空间哈希（量化到0.001精度），加速后续边线顶点查找
+    QHash<quint64, int> vertHash;
+    for (int i = 0; i < r.verts.size(); i++) {
+        auto& v = r.verts[i];
+        quint64 key = (quint64)(v.x() * 1000 + 50000) << 42
+                    | (quint64)(v.y() * 1000 + 50000) << 21
+                    | (quint64)(v.z() * 1000 + 50000);
+        if (!vertHash.contains(key)) vertHash[key] = i;
+    }
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) continue;
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size(); if (nf==0) continue;
         QVector3D col=(nf==1)?QVector3D(1,0.15f,0.15f):((nf==2)?QVector3D(0.15f,0.85f,0.15f):QVector3D(1,0.85f,0.1f));
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        int ns=36; double st=(l-f)/ns; int prev=-1;
+        int ns=18; double st=(l-f)/ns; int prev=-1;
         for (int s=0;s<=ns;s++) {
-            double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u); int idx=-1;
-            for (int i=0;i<r.verts.size();i++) { if (qAbs(r.verts[i].x()-pt.X())<1e-6&&qAbs(r.verts[i].y()-pt.Y())<1e-6&&qAbs(r.verts[i].z()-pt.Z())<1e-6) { idx=i; break; } }
-            if (idx<0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); }
+            double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u);
+            quint64 key = (quint64)(pt.X() * 1000 + 50000) << 42
+                        | (quint64)(pt.Y() * 1000 + 50000) << 21
+                        | (quint64)(pt.Z() * 1000 + 50000);
+            int idx = vertHash.value(key, -1);
+            if (idx < 0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); vertHash[key]=idx; }
             if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
             if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
         }
