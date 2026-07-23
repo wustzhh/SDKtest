@@ -41,10 +41,16 @@ if exist "%SCRIPT_DIR%build\config\test_config.json" (
     xcopy /E /I /Y "%SCRIPT_DIR%config\*" "%SCRIPT_DIR%dist\config\" >nul 2>&1
 )
 
-echo   Running windeployqt...
-C:\Qt\6.11.1\msvc2022_64\bin\windeployqt.exe "%SCRIPT_DIR%dist\test_runner_ui.exe" --no-translations --no-system-d3d-compiler --no-opengl-sw >nul 2>&1
-if %ERRORLEVEL% NEQ 0 ( echo   [WARN] windeployqt failed )
+:: Qt: 只复制必需的5个DLL + platforms插件
+copy /Y "C:\Qt\6.11.1\msvc2022_64\bin\Qt6Core.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+copy /Y "C:\Qt\6.11.1\msvc2022_64\bin\Qt6Gui.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+copy /Y "C:\Qt\6.11.1\msvc2022_64\bin\Qt6Widgets.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+copy /Y "C:\Qt\6.11.1\msvc2022_64\bin\Qt6OpenGL.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+copy /Y "C:\Qt\6.11.1\msvc2022_64\bin\Qt6OpenGLWidgets.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
+if not exist "%SCRIPT_DIR%dist\platforms" mkdir "%SCRIPT_DIR%dist\platforms"
+copy /Y "C:\Qt\6.11.1\msvc2022_64\plugins\platforms\qwindows.dll" "%SCRIPT_DIR%dist\platforms\" >nul 2>&1
 
+:: 复制VC运行时
 if exist "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" (
     copy "%VCToolsRedistDir%\x64\Microsoft.VC143.CRT\*.dll" "%SCRIPT_DIR%dist\" >nul 2>&1
 )
