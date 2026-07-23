@@ -67,12 +67,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_searchEdit = new QLineEdit(m_content);
     m_searchEdit->setPlaceholderText("搜索模型数据...");
     m_searchEdit->setStyleSheet("padding:2px 4px; font-size:12px;");
-    connect(m_searchEdit, &QLineEdit::editingFinished, this, [this]() {
-        onSearchChanged(m_searchEdit->text());
-    });
-    connect(m_searchEdit, &QLineEdit::returnPressed, this, [this]() {
-        onSearchChanged(m_searchEdit->text());
-    });
+    connect(m_searchEdit, &QLineEdit::textChanged, this, &ModelRenderView::onSearchChanged);
     QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
                     "padding:3px 10px;font-size:12px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
     m_btnExpand = new QPushButton("展开", m_content);
@@ -81,14 +76,15 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_btnCollapse = new QPushButton("折叠", m_content);
     m_btnCollapse->setFixedHeight(28);m_btnCollapse->setStyleSheet(tbBtn);
     connect(m_btnCollapse, &QPushButton::clicked, this, &ModelRenderView::onCollapseAll);
-    m_btnLocate = new QPushButton("\xE2\x97\x8A", m_content);
+    m_btnLocate = new QPushButton("\xE2\x9C\x95", m_content);  // ✕
     m_btnLocate->setFixedSize(28,28);
     m_btnLocate->setStyleSheet(
-        "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;padding:0;}"
-        "QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}"
-        "QPushButton:disabled{color:#cbd5e1;background:#f8f9fb;}");
-    m_btnLocate->setToolTip("定位到当前选中结果");
-    m_btnLocate->setEnabled(false);
+        "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;padding:0;}"
+        "QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}");
+    m_btnLocate->setToolTip("清除搜索");
+    connect(m_btnLocate, &QPushButton::clicked, this, [this]() {
+        m_searchEdit->clear();
+    });
     m_lblStats = new QLabel("", m_content);
     m_lblStats->setStyleSheet("color:#8892a6; font-size:11px;");
     toolbar->addWidget(m_btnCollapsePanel);
@@ -287,19 +283,33 @@ void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& n
 }
 
 void ModelRenderView::onSearchChanged(const QString& text) {
-    // 遍历所有节点，高亮匹配
-    auto allItems = m_tree->findItems("", Qt::MatchContains | Qt::MatchRecursive);
-    for (auto* item : allItems) {
-        bool match = text.isEmpty() ||
-                     item->text(1).contains(text, Qt::CaseInsensitive) ||
-                     item->toolTip(1).contains(text, Qt::CaseInsensitive);
-        for (int c = 0; c < 2; c++) {
-            item->setBackground(c, match && !text.isEmpty() ? COLOR_HIGHLIGHT : QColor());
+    // 遍历所有项，匹配的高亮+展开，不匹配的隐藏
+    std::function<bool(QTreeWidgetItem*)> filter;
+    filter = [&](QTreeWidgetItem* item) -> bool {
+        bool selfMatch = text.isEmpty() ||
+                         item->text(1).contains(text, Qt::CaseInsensitive) ||
+                         item->toolTip(1).contains(text, Qt::CaseInsensitive);
+        bool childMatch = false;
+        for (int i = 0; i < item->childCount(); i++) {
+            if (filter(item->child(i))) childMatch = true;
         }
-        if (!text.isEmpty() && match) {
-            item->setExpanded(true);
+        bool visible = selfMatch || childMatch;
+        item->setHidden(!visible);
+        if (!text.isEmpty() && selfMatch) {
+            item->setBackground(0, COLOR_HIGHLIGHT);
+            item->setBackground(1, COLOR_HIGHLIGHT);
+            // 展开父链
+            QTreeWidgetItem* p = item->parent();
+            while (p) { p->setExpanded(true); p = p->parent(); }
+        } else {
+            item->setBackground(0, QColor());
+            item->setBackground(1, QColor());
         }
-    }
+        return visible;
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+        filter(m_tree->topLevelItem(i));
+    m_tree->viewport()->update();
 }
 
 void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
@@ -324,7 +334,6 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
     QFont bf = item->font(1); bf.setBold(true); item->setFont(1, bf);
-    m_btnLocate->setEnabled(true);
     m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
 
     // 点击 stdout 节点弹出完整内容
