@@ -236,7 +236,7 @@ void FilterEditDialog::onNewGroup() {
         QString::fromUtf8("\xe5\x90\x8d\xe7\xa7\xb0:"), QLineEdit::Normal,
         QString::fromUtf8("\xe7\xad\x9b\xe9\x80\x89\xe6\x9d\xa1\xe4\xbb\xb6 %1").arg(m_filterSets.size() + 1), &ok);
     if (!ok || name.isEmpty()) return;
-    FilterSet fs; fs.name = name;
+    FilterSet fs; fs.name = name; fs.mode = "or";
     m_filterSets.append(fs);
     refreshGroupList();
     m_groupList->setCurrentRow(m_groupList->count() - 1);
@@ -286,8 +286,15 @@ void FilterEditDialog::onAddCondition() {
     }
     if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
     flushCurrentGroup();  // 先保存当前编辑内容
+    // 复制上一个条件（方便快速修改），没有则默认
     FilterCondition c; c.op = "in";
-    m_filterSets[m_currentGroup].conditions.append(c);
+    auto& conds = m_filterSets[m_currentGroup].conditions;
+    if (!conds.isEmpty()) {
+        c.key = conds.last().key;
+        c.op  = conds.last().op;
+        c.value = conds.last().value;
+    }
+    conds.append(c);
     refreshConditionTable();
 }
 
@@ -330,7 +337,8 @@ void FilterEditDialog::flushCurrentGroup() {
 bool FilterEditDialog::eventFilter(QObject* obj, QEvent* ev) {
     if (ev->type() == QEvent::Wheel) {
         auto* combo = qobject_cast<QComboBox*>(obj);
-        if (combo) return true;
+        // 只在下拉框关闭时拦截滚轮（防止误修改），弹出后允许滚动
+        if (combo && !combo->view()->isVisible()) return true;
     }
     return QDialog::eventFilter(obj, ev);
 }
