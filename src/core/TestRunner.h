@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QProcess>
+#include <QTimer>
 #include <QElapsedTimer>
 #include <QStringList>
 #include <QMap>
@@ -77,4 +78,5 @@ private:
     int             m_lastRunCount = 0;
     int             m_lastDoneCount = 0;
     int             m_lastEmittedProgress = 0;
+    QTimer*         m_watchdog = nullptr;  // 全部结果收集完后等5秒强制结束
 };

@@ -53,6 +53,18 @@ void TestRunner::run(const QString& binaryPath,
     m_batches.clear();
     m_seen.clear();
     m_anyCrashed = false;
+    // 看门狗：全部结果收集完后5秒内进程未退出则自动结束
+    if (!m_watchdog) {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this]() {
+            if (isRunning()) {
+                LOG("RUN", "Watchdog: forcing finish (processes stuck)");
+                cancel();
+            }
+        });
+    }
+    m_watchdog->stop();
     m_lastRunCount = 0;
     m_lastDoneCount = 0;
     m_lastEmittedProgress = 0;
@@ -314,6 +326,10 @@ void TestRunner::safeProgress(int done) {
     if (done > m_lastEmittedProgress) {
         m_lastEmittedProgress = done;
         emit progressUpdated(done, m_totalCount);
+    }
+    // 全部用例结果已收集，启动看门狗：5秒内进程未退出则自动结束
+    if (done >= m_totalCount && m_totalCount > 0 && m_watchdog && !m_watchdog->isActive()) {
+        m_watchdog->start(5000);
     }
 }
 
