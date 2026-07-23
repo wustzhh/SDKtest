@@ -5,6 +5,7 @@
 #include <QTextStream>
 
 static QFile* g_file = nullptr;
+static int g_flushCounter = 0;
 
 void Logger::init() {
     if (g_file) return;
@@ -25,7 +26,11 @@ void Logger::write(const QString& tag, const QString& msg) {
     QTextStream out(g_file);
     QString ts = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
     out << ts << "  [" << tag << "]  " << msg << "\n";
-    out.flush();
+    // 每 50 条或每次含 "Done" / "FAIL" / "ERROR" 时 flush，避免频繁 fsync
+    if (++g_flushCounter >= 50 || msg.contains("Done") || msg.contains("FAIL") || msg.contains("ERROR")) {
+        out.flush();
+        g_flushCounter = 0;
+    }
 }
 
 void Logger::write(const QString& tag, const QString& key, const QString& val) {

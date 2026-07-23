@@ -108,7 +108,8 @@ void StepWorker::doWork() {
         }
     }
     if (r.normals.size()<r.verts.size()) { int o=r.normals.size(); r.normals.resize(r.verts.size()); for (int i=o;i<r.verts.size();i++) r.normals[i]=QVector3D(0,1,0); }
-    // 调试输出（追加到统一日志）
+    // 调试输出（仅在开启 debug 宏时启用，避免大模型下大量磁盘I/O拖慢加载）
+#if 0
     {   QString logPath = QCoreApplication::applicationDirPath() + "/test_runner_ui_debug.log";
         FILE* df = fopen(logPath.toUtf8().constData(), "a");
         if (df) { fprintf(df, "\n===== %s =====\n", QFileInfo(m_path).fileName().toUtf8().constData()); }
@@ -167,6 +168,7 @@ void StepWorker::doWork() {
             fclose(df);
         }
     }
+#endif
 
     r.ok=true; r.elapsedMs=(int)t.elapsed();
     LOG("3D",QString("Worker done: %1v %2t %3e %4ms").arg(r.verts.size()).arg(r.tris.size()/3).arg(r.edges.size()).arg(r.elapsedMs));
@@ -195,7 +197,8 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7")
         .arg(mx,0,'f',3).arg(Mx,0,'f',3).arg(my,0,'f',3).arg(My,0,'f',3)
         .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3));
-    // 所有面 AABB，6值排序输出
+    // 所有面 AABB（调试用，量大时关闭）
+#if 0
     for (const auto& b : fbb) {
         QVector<double> v = {b.minX,b.minY,b.minZ,b.maxX,b.maxY,b.maxZ};
         std::sort(v.begin(), v.end());
@@ -203,6 +206,7 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
             .arg(v[0],0,'f',3).arg(v[1],0,'f',3).arg(v[2],0,'f',3)
             .arg(v[3],0,'f',3).arg(v[4],0,'f',3).arg(v[5],0,'f',3));
     }
+#endif
 }
 void GLViewer::resetView(){
     m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
