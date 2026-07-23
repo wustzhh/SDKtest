@@ -190,7 +190,7 @@ function sel(i){
 
 function render(d){
   if(!d||!d.results){document.getElementById('contentWrap').innerHTML='<div class=empty>无数据</div>';return;}
-  var ps={};d.results.forEach(function(r){Object.keys(r.p).forEach(function(k){ps[k]=1;});});
+  var ps={};d.results.forEach(function(r){Object.keys(r.p).forEach(function(k){if(['filename','interface','model'].indexOf(k)>=0)ps[k]=1;});});
   var hasSI=d.results.some(function(r){return r.si;});
   var hasSE=d.results.some(function(r){return r.se;});
   var baseH=['#','状态','套件','用例','耗时(ms)'].concat(Object.keys(ps).sort());

@@ -620,8 +620,15 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
 }
 
 void MainWindow::onExportReport() {
-    QString dir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
-    QString htmlPath = dir + "/test_report.html";
+    // 按项目（profile）分报告目录
+    QString profileName = m_config.currentProfile().name;
+    if (profileName.isEmpty()) profileName = "default";
+    // 清理非法文件名字符
+    QString safeName = profileName;
+    safeName.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
+    QString baseDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
+    QString dir = baseDir + "/" + safeName;
+    QString htmlPath = dir + "/report.html";
 
     // 生成报告前先截取模型图片
     captureAllModelScreenshots(dir + "/screenshots");
@@ -1232,7 +1239,9 @@ void MainWindow::onAllFinished() {
     int sceneIdx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
     if (sceneIdx >= 0 && sceneIdx < prof.scenarios.size())
         m_report.savedFilters = prof.scenarios[sceneIdx].filterSets;
-    QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
+    QString safeProf = profileName.isEmpty() ? "default" : profileName;
+    safeProf.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
+    QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports/" + safeProf;
     if (!m_report.results.isEmpty()) {
         QString autoName = m_config.profiles().value(m_config.activeProfile()).name;
         if (autoName.isEmpty()) autoName = QDateTime::currentDateTime().toString("HH:mm:ss");
