@@ -646,8 +646,9 @@ void MainWindow::onExportReport() {
 
     QString runName = m_config.profiles().value(m_config.activeProfile()).name;
     if (runName.isEmpty()) runName = m_report.startTime.toString("HH:mm:ss");
-    // 附带当前方案的筛选条件
-    int sceneIdx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
+    // 附带当前方案的筛选条件（未选择时默认第一个）
+    int sceneIdx = m_scenarioCombo && m_scenarioCombo->currentIndex() > 0
+                   ? m_scenarioCombo->currentIndex() - 1 : 0;
     auto& scenarios = m_config.currentProfile().scenarios;
     if (sceneIdx >= 0 && sceneIdx < scenarios.size())
         m_report.savedFilters = scenarios[sceneIdx].filterSets;
@@ -1236,8 +1237,9 @@ void MainWindow::onAllFinished() {
         else if (s.name == QString::fromUtf8("\xe6\x97\xa0\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba")) foundWithout = true;
     }
     // 自动导出：仅保存 JSON 数据文件，不操作 HTML（点击"查看结果"时才统一重建）
-    // 附带当前方案的筛选条件
-    int sceneIdx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
+    // 附带当前方案的筛选条件（未选择时默认第一个）
+    int sceneIdx = m_scenarioCombo && m_scenarioCombo->currentIndex() > 0
+                   ? m_scenarioCombo->currentIndex() - 1 : 0;
     if (sceneIdx >= 0 && sceneIdx < prof.scenarios.size())
         m_report.savedFilters = prof.scenarios[sceneIdx].filterSets;
     QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
