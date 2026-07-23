@@ -999,15 +999,39 @@ void MainWindow::onEditConfig() {
         auto& s = m_config.currentProfile().scenarios[idx];
         // 收集当前结果的属性键值
         QStringList propKeys;
+        propKeys << "#" << QString::fromUtf8("\xe7\x8a\xb6\xe6\x80\x81")
+                 << QString::fromUtf8("\xe5\xa5\x97\xe4\xbb\xb6")
+                 << QString::fromUtf8("\xe7\x94\xa8\xe4\xbe\x8b")
+                 << QString::fromUtf8("\xe8\x80\x97\xe6\x97\xb6(ms)");
         QMap<QString, QStringList> propVals;
+        // 收集标准列的值
+        QStringList statusVals, suiteVals, caseVals;
         for (const auto& r : m_report.results) {
+            QString st = r.status == "PASSED" ? QString::fromUtf8("\xe2\x9c\x85 \xe9\x80\x9a\xe8\xbf\x87")
+                       : r.status == "SKIPPED" ? QString::fromUtf8("\xe2\x8f\xad \xe8\xb7\xb3\xe8\xbf\x87")
+                       : r.status == "DISABLED" ? QString::fromUtf8("\xf0\x9f\x94\x92 \xe7\xa6\x81\xe7\x94\xa8")
+                       : QString::fromUtf8("\xe2\x9d\x8c \xe5\xa4\xb1\xe8\xb4\xa5");
+            if (!statusVals.contains(st)) statusVals << st;
+            if (!suiteVals.contains(r.testCase.suiteName)) suiteVals << r.testCase.suiteName;
+            if (!caseVals.contains(r.testCase.caseName)) caseVals << r.testCase.caseName;
             for (auto it = r.properties.begin(); it != r.properties.end(); ++it) {
                 if (!propKeys.contains(it.key())) propKeys << it.key();
                 if (!propVals[it.key()].contains(it.value()))
                     propVals[it.key()].append(it.value());
             }
         }
-        propKeys.sort(); for (auto& v : propVals) v.sort();
+        propVals["#"] = QStringList();
+        propVals[QString::fromUtf8("\xe7\x8a\xb6\xe6\x80\x81")] = statusVals;
+        propVals[QString::fromUtf8("\xe5\xa5\x97\xe4\xbb\xb6")] = suiteVals;
+        propVals[QString::fromUtf8("\xe7\x94\xa8\xe4\xbe\x8b")] = caseVals;
+        propVals[QString::fromUtf8("\xe8\x80\x97\xe6\x97\xb6(ms)")] = QStringList();
+        for (auto& v : propVals) v.sort();
+        // 对属性部分排序（保留前5个标准列顺序）
+        if (propKeys.size() > 5) {
+            auto mid = propKeys.mid(5);
+            mid.sort();
+            propKeys = propKeys.first(5) + mid;
+        }
         FilterEditDialog fdlg(s.filterSets, propKeys, propVals, &dlg);
         if (fdlg.exec() == QDialog::Accepted) {
             s.filterSets = fdlg.result();

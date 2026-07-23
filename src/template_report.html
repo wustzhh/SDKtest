@@ -184,7 +184,7 @@ function sel(i){
 
 function render(d){
   if(!d||!d.results){document.getElementById('contentWrap').innerHTML='<div class=empty>无数据</div>';return;}
-  var ps={};d.results.forEach(function(r){Object.keys(r.p).forEach(function(k){if(['filename','interface','model'].indexOf(k)>=0)ps[k]=1;});});
+  var ps={};d.results.forEach(function(r){Object.keys(r.p).forEach(function(k){ps[k]=1;});});
   var hasSI=d.results.some(function(r){return r.si;});
   var hasSE=d.results.some(function(r){return r.se;});
   var baseH=['#','状态','套件','用例','耗时(ms)'].concat(Object.keys(ps).sort());
@@ -533,7 +533,7 @@ function ldF(i,fi){
   if(!sf)return;
   loadedFilter=fi;
   buildSidebar();
-  conds=sf.conds.map(function(c){return{c:c.c,o:c.o||'in',v:c.v};});
+  conds=sf.conds.map(function(c){var ci=c.c;if(typeof ci==='string'){var idx=H.indexOf(ci);ci=idx>=0?idx:0;}return{c:ci,o:c.o||'in',v:c.v};});
   logic=sf.mode||'and';
   renderFltRows();updateFltBtn();renderRows();
   document.querySelectorAll('.mode-group .md').forEach(function(e){e.classList.toggle('act',e.dataset.m===logic);});
