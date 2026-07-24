@@ -13,6 +13,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QShortcut>
+#include <QMouseEvent>
 
 FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
                                      const QStringList& propertyKeys,
@@ -152,6 +154,12 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     connect(btnOk, &QPushButton::clicked, this, &FilterEditDialog::onAccept);
     connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
 
+    // Ctrl+C/V 快捷键（WidgetWithChildrenShortcut 确保子控件有焦点时也生效）
+    auto* scCopy = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_C), this, nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    connect(scCopy, &QShortcut::activated, this, &FilterEditDialog::onCopyConditions);
+    auto* scPaste = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_V), this, nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    connect(scPaste, &QShortcut::activated, this, &FilterEditDialog::onPasteConditions);
+
     refreshGroupList();
     if (m_groupList->count() > 0)
         m_groupList->setCurrentRow(0);
@@ -222,12 +230,12 @@ void FilterEditDialog::refreshConditionTable() {
             valCombo->setCurrentText(conds[i].value);
         m_condTable->setCellWidget(i, 2, valCombo);
 
-        // 禁用 ComboBox 滚轮
-        keyCombo->setFocusPolicy(Qt::StrongFocus);
+        // 禁用 ComboBox 滚轮，改为 ClickFocus 避免始终抢占焦点
+        keyCombo->setFocusPolicy(Qt::ClickFocus);
         keyCombo->installEventFilter(this);
-        opCombo->setFocusPolicy(Qt::StrongFocus);
+        opCombo->setFocusPolicy(Qt::ClickFocus);
         opCombo->installEventFilter(this);
-        valCombo->setFocusPolicy(Qt::StrongFocus);
+        valCombo->setFocusPolicy(Qt::ClickFocus);
         valCombo->installEventFilter(this);
     }
     m_condTable->resizeRowsToContents();
@@ -356,26 +364,26 @@ void FilterEditDialog::flushCurrentGroup() {
 }
 
 bool FilterEditDialog::eventFilter(QObject* obj, QEvent* ev) {
+    if (ev->type() == QEvent::MouseButtonPress) {
+        auto* combo = qobject_cast<QComboBox*>(obj);
+        if (combo) {
+            // 点击组合框时同时选中所属行
+            for (int i = 0; i < m_condTable->rowCount(); i++) {
+                for (int j = 0; j < m_condTable->columnCount(); j++) {
+                    if (m_condTable->cellWidget(i, j) == combo) {
+                        m_condTable->selectRow(i);
+                        return false;  // 继续传递给 combo，不拦截
+                    }
+                }
+            }
+        }
+    }
     if (ev->type() == QEvent::Wheel) {
         auto* combo = qobject_cast<QComboBox*>(obj);
         // 只在下拉框关闭时拦截滚轮（防止误修改），弹出后允许滚动
         if (combo && !combo->view()->isVisible()) return true;
     }
     return QDialog::eventFilter(obj, ev);
-}
-
-void FilterEditDialog::keyPressEvent(QKeyEvent* ev) {
-    if (ev->modifiers() == Qt::ControlModifier) {
-        if (ev->key() == Qt::Key_C) {
-            onCopyConditions();
-            return;
-        }
-        if (ev->key() == Qt::Key_V) {
-            onPasteConditions();
-            return;
-        }
-    }
-    QDialog::keyPressEvent(ev);
 }
 
 void FilterEditDialog::onCopyConditions() {

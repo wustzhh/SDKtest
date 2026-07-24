@@ -7,7 +7,6 @@
 #include <QComboBox>
 #include <QLineEdit>
 #include <QVector>
-#include <QKeyEvent>
 #include "models/TestResult.h"
 
 // ────────────────────────────────────────────────────────────
@@ -39,7 +38,6 @@ private:
     void refreshGroupList();
     void refreshConditionTable();
     void flushCurrentGroup();
-    void keyPressEvent(QKeyEvent* ev) override;
     bool eventFilter(QObject* obj, QEvent* ev) override;
 
     QVector<FilterSet> m_filterSets;
