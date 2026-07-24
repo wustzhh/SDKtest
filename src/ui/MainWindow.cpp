@@ -1284,11 +1284,22 @@ void MainWindow::onSelectionChanged(int count) {
 
 void MainWindow::refreshScenarioCombo() {
     if (!m_scenarioCombo) return;
+    // 保存当前选中的方案名（直接从combo取文本，避免索引漂移）
+    QString prevName;
+    int prevIdx = m_scenarioCombo->currentIndex();
+    if (prevIdx > 0)
+        prevName = m_scenarioCombo->currentText();
     m_scenarioCombo->blockSignals(true);
     m_scenarioCombo->clear();
     m_scenarioCombo->addItem(QString::fromUtf8("\xe2\x80\x94 \xe6\x96\xb9\xe6\xa1\x88 \xe2\x80\x94"));
-    for (const auto& s : m_config.currentProfile().scenarios)
+    int restoreIdx = 0;
+    for (int i = 0; i < m_config.currentProfile().scenarios.size(); i++) {
+        const auto& s = m_config.currentProfile().scenarios[i];
         m_scenarioCombo->addItem(s.name);
+        if (!prevName.isEmpty() && s.name == prevName)
+            restoreIdx = i + 1;  // +1 因为第0项是占位符
+    }
+    m_scenarioCombo->setCurrentIndex(restoreIdx);
     m_scenarioCombo->blockSignals(false);
     // 恢复逐个运行复选框状态（从第1个方案）
     if (m_chkSingleTest) {
