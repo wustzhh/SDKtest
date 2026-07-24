@@ -362,55 +362,28 @@ function sortBy(i){
 }
 
 function colResize(e,i){
-  // 已废弃，改用 setupColDrag 中的 th mousedown 检测
+  // 已废弃，改用浏览器原生列宽拖拽 + ResizeObserver 保存
 }
 function setupColDrag(){
   var T=document.getElementById('tbl');if(!T)return;
-  // 恢复列宽
+  // 恢复保存的列宽
   var curData=DATA[cur];
   if(curData){
     try{var cs=JSON.parse(getStore('tr_cols_'+curData.id));if(cs&&cs.w){T.style.tableLayout='fixed';T.querySelectorAll('col').forEach(function(col,i){if(cs.w[i])col.style.width=cs.w[i];});}}catch(e){}
   }
-  // 列宽拖拽：检测th右边缘mousedown
-  var dragTh=null,dragIdx=-1,sx=0,sw=0,allW=[];
-  function onDown(e){
-    var th=e.target.closest('th'); if(!th)return;
-    var rect=th.getBoundingClientRect();
-    if(e.clientX < rect.right-8) return; // 不在右边缘
-    e.preventDefault(); e.stopPropagation();
-    dragTh=th; dragIdx=th.cellIndex;
-    sx=e.clientX; sw=th.offsetWidth;
-    T.querySelectorAll('th').forEach(function(h,j){allW[j]=h.offsetWidth;});
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
-  }
-  function onMove(e){
-    if(!dragTh)return;
-    T.style.tableLayout='fixed';
-    var nw=Math.max(60,sw+(e.clientX-sx));
-    T.querySelectorAll('col').forEach(function(c,j){c.style.width=(j===dragIdx?nw:allW[j])+'px';});
-    T.querySelectorAll('th').forEach(function(h,j){h.style.width=(j===dragIdx?nw:allW[j])+'px';});
-  }
-  function onUp(){
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onUp);
-    if(dragTh){_rszFlag=dragIdx+1; dragTh=null;}
-    if(_rszTimer)clearTimeout(_rszTimer);
-    _rszTimer=setTimeout(function(){
+  // 用ResizeObserver监听浏览器原生列宽拖拽，自动保存
+  if(window._colResizeObserver) window._colResizeObserver.disconnect();
+  var saveTimer;
+  window._colResizeObserver = new ResizeObserver(function(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
       if(cur>=0&&DATA[cur]){
         var w={};document.querySelectorAll('#tbl col').forEach(function(c,i){w[i]=c.style.width||'';});
         try{var cs=JSON.parse(getStore('tr_cols_'+DATA[cur].id)||'{}');cs.w=w;setStore('tr_cols_'+DATA[cur].id,JSON.stringify(cs));}catch(e){}
       }
-    },200);
-  }
-  T.querySelectorAll('th').forEach(function(th){
-    th.addEventListener('mousedown',onDown);
-    th.addEventListener('mousemove',function(e){
-      var rect=this.getBoundingClientRect();
-      this.style.cursor=e.clientX>=rect.right-8?'col-resize':'';
-    });
-    th.addEventListener('mouseleave',function(){this.style.cursor='';});
+    },300);
   });
+  T.querySelectorAll('th').forEach(function(th){window._colResizeObserver.observe(th);});
   // 拖拽列顺序
   var dc=-1;
   T.querySelectorAll('th').forEach(function(th,ci){
