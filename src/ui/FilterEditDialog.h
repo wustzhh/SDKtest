@@ -7,6 +7,7 @@
 #include <QComboBox>
 #include <QLineEdit>
 #include <QVector>
+#include <QKeyEvent>
 #include "models/TestResult.h"
 
 // ────────────────────────────────────────────────────────────
@@ -30,12 +31,15 @@ private slots:
     void onRenameGroup();
     void onAddCondition();
     void onRemoveCondition(int row);
+    void onCopyConditions();
+    void onPasteConditions();
     void onAccept();
 
 private:
     void refreshGroupList();
     void refreshConditionTable();
     void flushCurrentGroup();
+    void keyPressEvent(QKeyEvent* ev) override;
     bool eventFilter(QObject* obj, QEvent* ev) override;
 
     QVector<FilterSet> m_filterSets;
@@ -50,6 +54,8 @@ private:
     QComboBox*      m_modeCombo;
     QPushButton*    m_btnAddCond;
     QPushButton*    m_btnRemoveCond;
+    QPushButton*    m_btnCopy;
+    QPushButton*    m_btnPaste;
 
     QStringList m_propertyKeys;
     QMap<QString, QStringList> m_propertyValues;

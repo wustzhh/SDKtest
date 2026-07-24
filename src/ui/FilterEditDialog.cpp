@@ -8,6 +8,11 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QWheelEvent>
+#include <QApplication>
+#include <QClipboard>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
                                      const QStringList& propertyKeys,
@@ -98,6 +103,15 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
     m_btnRemoveCond = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4\xe9\x80\x89\xe4\xb8\xad"));
     m_btnAddCond->setStyleSheet(gbStyle); m_btnRemoveCond->setStyleSheet(gbStyle);
     crBtns->addWidget(m_btnAddCond); crBtns->addWidget(m_btnRemoveCond);
+
+    m_btnCopy = new QPushButton(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6"));
+    m_btnCopy->setToolTip(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe5\xbd\x93\xe5\x89\x8d\xe7\xbb\x84\xe6\x9d\xa1\xe4\xbb\xb6\xe5\x88\xb0\xe5\x89\xaa\xe8\xb4\xb4\xe6\x9d\xbf (Ctrl+C)"));
+    m_btnCopy->setStyleSheet(gbStyle);
+    m_btnPaste = new QPushButton(QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4"));
+    m_btnPaste->setToolTip(QString::fromUtf8("\xe4\xbb\x8e\xe5\x89\xaa\xe8\xb4\xb4\xe6\x9d\xbf\xe7\xb2\x98\xe8\xb4\xb4\xe6\x9d\xa1\xe4\xbb\xb6 (Ctrl+V)"));
+    m_btnPaste->setStyleSheet(gbStyle);
+    crBtns->addWidget(m_btnCopy); crBtns->addWidget(m_btnPaste);
+
     crBtns->addStretch();
     rightLay->addLayout(crBtns);
 
@@ -133,6 +147,8 @@ FilterEditDialog::FilterEditDialog(const QVector<FilterSet>& filterSets,
         int row = m_condTable->currentRow();
         if (row >= 0) onRemoveCondition(row);
     });
+    connect(m_btnCopy, &QPushButton::clicked, this, &FilterEditDialog::onCopyConditions);
+    connect(m_btnPaste, &QPushButton::clicked, this, &FilterEditDialog::onPasteConditions);
     connect(btnOk, &QPushButton::clicked, this, &FilterEditDialog::onAccept);
     connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
 
@@ -308,6 +324,11 @@ void FilterEditDialog::onRemoveCondition(int row) {
 
 void FilterEditDialog::onAccept() {
     flushCurrentGroup();
+    // 按当前显示顺序排序 filterSets，使保存/报告中的顺序与界面一致
+    std::sort(m_filterSets.begin(), m_filterSets.end(), [this](const FilterSet& a, const FilterSet& b) {
+        int cmp = a.name.compare(b.name, Qt::CaseInsensitive);
+        return m_sortAsc ? cmp < 0 : cmp > 0;
+    });
     accept();
 }
 
@@ -341,4 +362,100 @@ bool FilterEditDialog::eventFilter(QObject* obj, QEvent* ev) {
         if (combo && !combo->view()->isVisible()) return true;
     }
     return QDialog::eventFilter(obj, ev);
+}
+
+void FilterEditDialog::keyPressEvent(QKeyEvent* ev) {
+    if (ev->modifiers() == Qt::ControlModifier) {
+        if (ev->key() == Qt::Key_C) {
+            onCopyConditions();
+            return;
+        }
+        if (ev->key() == Qt::Key_V) {
+            onPasteConditions();
+            return;
+        }
+    }
+    QDialog::keyPressEvent(ev);
+}
+
+void FilterEditDialog::onCopyConditions() {
+    if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
+    const auto& conds = m_filterSets[m_currentGroup].conditions;
+    QJsonArray arr;
+    // 优先复制选中的行，否则复制全部
+    auto selRows = m_condTable->selectionModel()->selectedRows();
+    if (!selRows.isEmpty()) {
+        for (const auto& idx : selRows) {
+            int row = idx.row();
+            if (row >= 0 && row < conds.size()) {
+                QJsonObject o;
+                o["key"] = conds[row].key;
+                o["op"]   = conds[row].op;
+                o["value"] = conds[row].value;
+                arr.append(o);
+            }
+        }
+    } else {
+        for (const auto& c : conds) {
+            QJsonObject o;
+            o["key"] = c.key;
+            o["op"]   = c.op;
+            o["value"] = c.value;
+            arr.append(o);
+        }
+    }
+    QApplication::clipboard()->setText(
+        QJsonDocument(arr).toJson(QJsonDocument::Compact));
+}
+
+void FilterEditDialog::onPasteConditions() {
+    if (m_currentGroup < 0) {
+        // 没有选中组时自动新建
+        FilterSet fs;
+        fs.name = QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4 %1").arg(m_filterSets.size() + 1);
+        m_filterSets.append(fs);
+        refreshGroupList();
+        m_groupList->setCurrentRow(m_groupList->count() - 1);
+    }
+    if (m_currentGroup < 0 || m_currentGroup >= m_filterSets.size()) return;
+
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(
+        QApplication::clipboard()->text().toUtf8(), &err);
+    if (err.error != QJsonParseError::NoError || !doc.isArray()) {
+        // 也尝试解析为单个对象
+        QJsonParseError err2;
+        QJsonDocument doc2 = QJsonDocument::fromJson(
+            QApplication::clipboard()->text().toUtf8(), &err2);
+        if (err2.error == QJsonParseError::NoError && doc2.isObject()) {
+            QJsonArray arr;
+            arr.append(doc2.object());
+            doc = QJsonDocument(arr);
+        } else {
+            QMessageBox::information(this,
+                QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4\xe5\xa4\xb1\xe8\xb4\xa5"),
+                QString::fromUtf8("\xe5\x89\xaa\xe8\xb4\xb4\xe6\x9d\xbf\xe5\x86\x85\xe5\xae\xb9\xe4\xb8\x8d\xe6\x98\xaf\xe6\x9c\x89\xe6\x95\x88\xe7\x9a\x84\xe7\xad\x9b\xe9\x80\x89\xe6\x9d\xa1\xe4\xbb\xb6\xe6\xa0\xbc\xe5\xbc\x8f\xe3\x80\x82"));
+            return;
+        }
+    }
+
+    auto& conds = m_filterSets[m_currentGroup].conditions;
+    int added = 0;
+    for (const auto& val : doc.array()) {
+        if (!val.isObject()) continue;
+        QJsonObject o = val.toObject();
+        // 兼容内部格式(key/op/value)和报告格式(c/o/v)
+        QString key = o.contains("key") ? o["key"].toString() : o["c"].toString();
+        if (key.isEmpty()) continue;
+        FilterCondition c;
+        c.key = key;
+        c.op = o.contains("op") ? o["op"].toString()
+             : (o.contains("o") ? o["o"].toString() : "in");
+        c.value = o.contains("value") ? o["value"].toString()
+                : o["v"].toString();
+        conds.append(c);
+        added++;
+    }
+    if (added > 0)
+        refreshConditionTable();
 }
