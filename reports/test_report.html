@@ -384,15 +384,23 @@ function setupColDrag(){
     },300);
   });
   T.querySelectorAll('th').forEach(function(th){window._colResizeObserver.observe(th);});
-  // 右边缘显示col-resize光标提示，同时临时禁用draggable避免触发布列交换
+  // 列宽拖拽：mousedown在右边缘时禁用draggable，让浏览器原生resize生效
   T.querySelectorAll('th').forEach(function(th){
-    th.addEventListener('mousemove',function(e){
+    var rzW=0;
+    th.addEventListener('mousedown',function(e){
       var nearRight = e.clientX >= this.getBoundingClientRect().right - 4;
-      this.style.cursor = nearRight ? 'col-resize' : '';
-      if (nearRight) { this._origDraggable = this.draggable; this.draggable = false; }
-      else if (this._origDraggable !== undefined) { this.draggable = this._origDraggable; delete this._origDraggable; }
+      if (nearRight) { this.draggable = false; rzW = this.offsetWidth; }
+      else { this.draggable = true; rzW = 0; }
     });
-    th.addEventListener('mouseleave',function(){this.style.cursor=''; if(this._origDraggable!==undefined){this.draggable=this._origDraggable;delete this._origDraggable;}});
+    th.addEventListener('mouseup',function(){
+      if (rzW > 0 && Math.abs(this.offsetWidth - rzW) > 2) _rszFlag = this.cellIndex + 1;
+      rzW = 0;
+    });
+    th.addEventListener('mousemove',function(e){
+      if (e.buttons) return;
+      this.style.cursor = e.clientX >= this.getBoundingClientRect().right - 4 ? 'col-resize' : '';
+    });
+    th.addEventListener('mouseleave',function(){this.style.cursor='';});
   });
   // 拖拽列顺序
   var dc=-1;
