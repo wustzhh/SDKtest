@@ -31,6 +31,12 @@
 #include <QEventLoop>
 #include <QRegularExpression>
 #include <QProgressDialog>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QClipboard>
+#include <QKeyEvent>
+#include <QShortcut>
 
 #include "ui/FilterEditDialog.h"
 #include "core/Logger.h"
@@ -918,6 +924,16 @@ void MainWindow::onEditConfig() {
     auto* btnSceneFilter = new QPushButton(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe7\xad\x9b\xe9\x80\x89\xe6\x9d\xa1\xe4\xbb\xb6"));
     btnSceneFilter->setMinimumWidth(130);
     sceneBtns->addWidget(btnSceneFilter);
+
+    auto* btnSceneCopy = new QPushButton(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6"));
+    btnSceneCopy->setToolTip(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe9\x80\x89\xe4\xb8\xad\xe6\x96\xb9\xe6\xa1\x88 (Ctrl+C)"));
+    btnSceneCopy->setMinimumWidth(70);
+    auto* btnScenePaste = new QPushButton(QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4"));
+    btnScenePaste->setToolTip(QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4\xe6\x96\xb9\xe6\xa1\x88 (Ctrl+V)"));
+    btnScenePaste->setMinimumWidth(70);
+    sceneBtns->addWidget(btnSceneCopy);
+    sceneBtns->addWidget(btnScenePaste);
+
     sceneBtns->addStretch();
     sceneLay->addLayout(sceneBtns);
 
@@ -1044,6 +1060,91 @@ void MainWindow::onEditConfig() {
             sel[0]->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(s.filterSets.size()));
         }
     });
+
+    // 复制方案
+    connect(btnSceneCopy, &QPushButton::clicked, &dlg, [&]() {
+        auto sel = sceneTree->selectedItems();
+        if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
+        int idx = sceneTree->indexOfTopLevelItem(sel[0]);
+        const auto& s = m_config.currentProfile().scenarios[idx];
+        QJsonObject obj;
+        obj["name"] = s.name;
+        QJsonArray tests;
+        for (const auto& t : s.selectedTests) tests.append(t);
+        obj["selectedTests"] = tests;
+        obj["singleTest"] = s.singleTest;
+        QJsonArray filters;
+        for (const auto& fs : s.filterSets) {
+            QJsonObject fo;
+            fo["name"] = fs.name;
+            fo["mode"] = fs.mode;
+            QJsonArray conds;
+            for (const auto& c : fs.conditions) {
+                QJsonObject co;
+                co["key"] = c.key; co["op"] = c.op; co["value"] = c.value;
+                conds.append(co);
+            }
+            fo["conditions"] = conds;
+            filters.append(fo);
+        }
+        obj["filterSets"] = filters;
+        QApplication::clipboard()->setText(QJsonDocument(obj).toJson(QJsonDocument::Compact));
+    });
+
+    // 粘贴方案
+    connect(btnScenePaste, &QPushButton::clicked, &dlg, [&]() {
+        QJsonParseError err;
+        QJsonDocument doc = QJsonDocument::fromJson(QApplication::clipboard()->text().toUtf8(), &err);
+        if (err.error != QJsonParseError::NoError || !doc.isObject()) {
+            QMessageBox::information(&dlg, QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4\xe5\xa4\xb1\xe8\xb4\xa5"),
+                QString::fromUtf8("\xe5\x89\xaa\xe8\xb4\xb4\xe6\x9d\xbf\xe5\x86\x85\xe5\xae\xb9\xe4\xb8\x8d\xe6\x98\xaf\xe6\x9c\x89\xe6\x95\x88\xe7\x9a\x84\xe6\x96\xb9\xe6\xa1\x88\xe6\x95\xb0\xe6\x8d\xae\xe3\x80\x82"));
+            return;
+        }
+        QJsonObject obj = doc.object();
+        QString name = obj["name"].toString();
+        if (name.isEmpty()) name = QString::fromUtf8("\xe7\xb2\x98\xe8\xb4\xb4\xe6\x96\xb9\xe6\xa1\x88");
+        // 重名自动加后缀
+        auto& scs = m_config.currentProfile().scenarios;
+        int copyIdx = 1;
+        QString baseName = name;
+        auto nameExists = [&](const QString& n) {
+            for (const auto& s : scs) if (s.name == n) return true;
+            return false;
+        };
+        while (nameExists(name))
+            name = baseName + QString::fromUtf8(" (%1)").arg(++copyIdx);
+        TestScenario s;
+        s.name = name;
+        s.singleTest = obj["singleTest"].toBool(false);
+        for (const auto& v : obj["selectedTests"].toArray())
+            if (v.isString()) s.selectedTests << v.toString();
+        for (const auto& fv : obj["filterSets"].toArray()) {
+            QJsonObject fo = fv.toObject();
+            FilterSet fs;
+            fs.name = fo["name"].toString();
+            fs.mode = fo["mode"].toString("and");
+            for (const auto& cv : fo["conditions"].toArray()) {
+                QJsonObject co = cv.toObject();
+                FilterCondition fc;
+                fc.key = co["key"].toString();
+                fc.op = co["op"].toString();
+                fc.value = co["value"].toString();
+                fs.conditions.append(fc);
+            }
+            s.filterSets.append(fs);
+        }
+        m_config.addScenario(s);
+        auto* item = new QTreeWidgetItem(sceneTree);
+        item->setText(0, s.name);
+        item->setText(1, QString::number(s.selectedTests.size()));
+        item->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(s.filterSets.size()));
+    });
+
+    // Ctrl+C/V 快捷键
+    auto* shortcutCopy = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_C), sceneTree, nullptr, nullptr, Qt::WidgetShortcut);
+    QObject::connect(shortcutCopy, &QShortcut::activated, &dlg, [btnSceneCopy]() { btnSceneCopy->click(); });
+    auto* shortcutPaste = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_V), sceneTree, nullptr, nullptr, Qt::WidgetShortcut);
+    QObject::connect(shortcutPaste, &QShortcut::activated, &dlg, [btnScenePaste]() { btnScenePaste->click(); });
 
     tabs->addTab(sceneTab, QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88"));
 
