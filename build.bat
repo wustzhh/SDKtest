@@ -1,6 +1,12 @@
 @echo off
 title test_runner_ui Build
-call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 >nul 2>&1
+
+set "VSWHERE=%ProgramFiles%/Microsoft Visual Studio/18/Community/VC/Auxiliary/Build/vcvarsall.bat"
+if not exist "%VSWHERE%" (
+    echo [ERROR] vcvarsall.bat not found at "%VSWHERE%"
+    pause & exit /b 1
+)
+call "%VSWHERE%" x64 >nul 2>&1
 if %ERRORLEVEL% NEQ 0 ( echo [ERROR] vcvarsall.bat failed & pause & exit /b 1 )
 
 set "SCRIPT_DIR=%~dp0"
