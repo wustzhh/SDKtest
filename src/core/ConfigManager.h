@@ -39,6 +39,7 @@ struct ExeProfile {
     QMap<QString, QString> envVars;  // 自定义环境变量
     QVector<TestCategory> categories;
     QVector<TestScenario> scenarios;
+    QString     lastScenarioName; // 上次选择的方案名，启动时恢复
 
     bool isValid() const { return !testBinary.isEmpty(); }
 };

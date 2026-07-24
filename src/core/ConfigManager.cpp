@@ -209,6 +209,7 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
         }
         p.scenarios.push_back(s);
     }
+    p.lastScenarioName = obj["last_scenario_name"].toString();
     auto envObj = obj["env_vars"].toObject();
     for (auto it = envObj.begin(); it != envObj.end(); ++it)
         p.envVars[it.key()] = it.value().toString();
@@ -255,6 +256,8 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         scs.append(so);
     }
     obj["scenarios"] = scs;
+    if (!p.lastScenarioName.isEmpty())
+        obj["last_scenario_name"] = p.lastScenarioName;
     QJsonObject envObj;
     for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
         envObj[it.key()] = it.value();

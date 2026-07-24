@@ -222,6 +222,9 @@ void MainWindow::setupUi() {
             const auto& sc = prof.scenarios[idx-1];
             m_testList->setSelectedTestNames(sc.selectedTests);
             if (m_chkSingleTest) m_chkSingleTest->setChecked(sc.singleTest);
+            // 记录最后选择的方案，下次启动恢复
+            prof.lastScenarioName = sc.name;
+            m_config.save();
         }
     });
 
@@ -483,6 +486,13 @@ void MainWindow::onLoadTests() {
         m_testList->loadTests(m_loader.testCases(), m_config.categories());
         m_centerResultView->clear();
         m_report = {};
+        // 如果加载时有预设方案，自动勾选对应用例
+        if (m_scenarioCombo && m_scenarioCombo->currentIndex() > 0) {
+            int scIdx = m_scenarioCombo->currentIndex() - 1;
+            auto& scs = m_config.currentProfile().scenarios;
+            if (scIdx < scs.size())
+                m_testList->setSelectedTestNames(scs[scIdx].selectedTests);
+        }
         statusBar()->showMessage(QString("Loaded %1 tests").arg(n), 5000);
     } else {
         LOG("LOAD", "FAILED: " + m_loader.lastError());
@@ -1391,21 +1401,30 @@ void MainWindow::refreshScenarioCombo() {
     int prevIdx = m_scenarioCombo->currentIndex();
     if (prevIdx > 0)
         prevName = m_scenarioCombo->currentText();
+    // 优先用持久化的 lastScenarioName，其次用当前选中文本
+    QString targetName = m_config.currentProfile().lastScenarioName;
+    if (targetName.isEmpty()) targetName = prevName;
+    // 验证目标方案是否仍存在
+    auto& scs = m_config.currentProfile().scenarios;
+    bool targetExists = false;
+    for (const auto& s : scs)
+        if (s.name == targetName) { targetExists = true; break; }
+    if (!targetExists) targetName.clear();
+
     m_scenarioCombo->blockSignals(true);
     m_scenarioCombo->clear();
     m_scenarioCombo->addItem(QString::fromUtf8("\xe2\x80\x94 \xe6\x96\xb9\xe6\xa1\x88 \xe2\x80\x94"));
     int restoreIdx = 0;
-    for (int i = 0; i < m_config.currentProfile().scenarios.size(); i++) {
-        const auto& s = m_config.currentProfile().scenarios[i];
+    for (int i = 0; i < scs.size(); i++) {
+        const auto& s = scs[i];
         m_scenarioCombo->addItem(s.name);
-        if (!prevName.isEmpty() && s.name == prevName)
+        if (!targetName.isEmpty() && s.name == targetName)
             restoreIdx = i + 1;  // +1 因为第0项是占位符
     }
     m_scenarioCombo->setCurrentIndex(restoreIdx);
     m_scenarioCombo->blockSignals(false);
     // 恢复逐个运行复选框状态（从第1个方案）
     if (m_chkSingleTest) {
-        auto& scs = m_config.currentProfile().scenarios;
         m_chkSingleTest->setChecked(!scs.isEmpty() && scs[0].singleTest);
     }
 }
