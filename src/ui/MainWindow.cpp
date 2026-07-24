@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget* parent)
         refreshScenarioCombo();
         // 恢复线宽设置
         m_model3D->glViewer()->setEdgeWidthPct(m_config.uiState.edgeWidthPct);
+        LOG("CFG", QString("edgeWidthPct restored: %1").arg(m_config.uiState.edgeWidthPct));
         LOG("CFG", "Config loaded: " + m_config.configPath());
         LOG("LOAD", QString("ui state: geo=%1,%2 %3x%4 max=%5")
             .arg(m_config.uiState.windowX).arg(m_config.uiState.windowY)
@@ -275,6 +276,7 @@ void MainWindow::setupMenu() {
         connect(act, &QAction::triggered, this, [this, pct, lwMenu]() {
             m_model3D->glViewer()->setEdgeWidthPct(pct);
             m_config.uiState.edgeWidthPct = pct; m_config.save();
+            LOG("CFG", QString("edgeWidthPct saved: %1").arg(pct));
             for (auto* a : lwMenu->actions()) a->setChecked(false);
             qobject_cast<QAction*>(sender())->setChecked(true);
         });
@@ -288,6 +290,7 @@ void MainWindow::setupMenu() {
         if (ok) {
             m_model3D->glViewer()->setEdgeWidthPct((float)val);
             m_config.uiState.edgeWidthPct = (float)val; m_config.save();
+            LOG("CFG", QString("edgeWidthPct saved (custom): %1").arg(val));
             for (auto* a : lwMenu->actions()) a->setChecked(false);
         }
     });
