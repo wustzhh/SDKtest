@@ -139,6 +139,8 @@ DATA.forEach(function(d){
     sf.forEach(function(f){if(!names[f.name]){jsonSf.push(f);names[f.name]=1;}});
   }
   d._sf=jsonSf;
+  // 按名称字典序排列筛选条件组
+  d._sf.sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
   try{var n=getStore('tr_name_'+d.id);if(n)d.name=n;}catch(e){}
 });
 
