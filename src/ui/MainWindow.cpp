@@ -600,16 +600,31 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
         if (QFile::exists(path)) {
             QEventLoop loop;
             QTimer::singleShot(30000, &loop, &QEventLoop::quit);
+
+            // 等待模型加载完成
             bool loaded = false;
-            QMetaObject::Connection conn = connect(m_model3D, &Model3DViewer::modelLoaded,
+            QMetaObject::Connection conn1 = connect(m_model3D, &Model3DViewer::modelLoaded,
                 [&]() { loaded = true; loop.quit(); });
             m_model3D->loadFile(path);
             if (!loaded) loop.exec();
-            QObject::disconnect(conn);
+            QObject::disconnect(conn1);
+
             if (loaded) {
-                QImage raw = m_model3D->glViewer()->grab().toImage();
-                if (!raw.isNull())
-                    img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                // 模型数据就绪，但 paintGL 可能还没执行
+                // 用 frameSwapped 信号确保首帧已渲染再截图
+                auto* gl = m_model3D->glViewer();
+                bool painted = false;
+                QMetaObject::Connection conn2 = connect(gl, &QOpenGLWidget::frameSwapped,
+                    &loop, [&]() { painted = true; loop.quit(); });
+                gl->update();  // 触发 repaint
+                loop.exec();
+                QObject::disconnect(conn2);
+
+                if (painted) {
+                    QImage raw = gl->grabFramebuffer();
+                    if (!raw.isNull())
+                        img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                }
             }
         }
         if (img.isNull()) continue;
