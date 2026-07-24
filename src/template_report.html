@@ -247,7 +247,9 @@ function render(d){
   x+='<div id=fltRows></div><button class=btn-add onclick=addFlt()>+ 添加条件</button>';
   x+='</div>';
   // 表格
-  x+='<div class=tbl-wrap><table id=tbl><thead><tr>';
+  x+='<div class=tbl-wrap><table id=tbl><colgroup>';
+  H.forEach(function(h,i){x+='<col id=col'+i+'>';});
+  x+='</colgroup><thead><tr>';
   H.forEach(function(h,i){x+='<th onclick=sortBy('+i+')>'+h+'<span class=sort id=sort'+i+'></span></th>';});
   x+='</tr></thead><tbody id=tblBody></tbody></table></div>';
   document.getElementById('contentWrap').innerHTML=x;
@@ -367,14 +369,14 @@ function setupColDrag(){
   // 恢复列宽
   var curData=DATA[cur];
   if(curData){
-    try{var cs=JSON.parse(getStore('tr_cols_'+curData.id));if(cs&&cs.w){T.style.tableLayout='fixed';T.querySelectorAll('th').forEach(function(th,i){if(cs.w[i])th.style.width=cs.w[i];});}}catch(e){}
+    try{var cs=JSON.parse(getStore('tr_cols_'+curData.id));if(cs&&cs.w){T.style.tableLayout='fixed';T.querySelectorAll('col').forEach(function(col,i){if(cs.w[i])col.style.width=cs.w[i];});}}catch(e){}
   }
   // 列宽拖拽：检测th右边缘mousedown
   var dragTh=null,dragIdx=-1,sx=0,sw=0,allW=[];
   function onDown(e){
     var th=e.target.closest('th'); if(!th)return;
     var rect=th.getBoundingClientRect();
-    if(e.clientX < rect.right-5) return; // 不在右边缘
+    if(e.clientX < rect.right-8) return; // 不在右边缘
     e.preventDefault(); e.stopPropagation();
     dragTh=th; dragIdx=th.cellIndex;
     sx=e.clientX; sw=th.offsetWidth;
@@ -386,6 +388,7 @@ function setupColDrag(){
     if(!dragTh)return;
     T.style.tableLayout='fixed';
     var nw=Math.max(60,sw+(e.clientX-sx));
+    T.querySelectorAll('col').forEach(function(c,j){c.style.width=(j===dragIdx?nw:allW[j])+'px';});
     T.querySelectorAll('th').forEach(function(h,j){h.style.width=(j===dragIdx?nw:allW[j])+'px';});
   }
   function onUp(){
@@ -395,7 +398,7 @@ function setupColDrag(){
     if(_rszTimer)clearTimeout(_rszTimer);
     _rszTimer=setTimeout(function(){
       if(cur>=0&&DATA[cur]){
-        var w={};document.querySelectorAll('#tbl th').forEach(function(th,i){w[i]=th.style.width||'';});
+        var w={};document.querySelectorAll('#tbl col').forEach(function(c,i){w[i]=c.style.width||'';});
         try{var cs=JSON.parse(getStore('tr_cols_'+DATA[cur].id)||'{}');cs.w=w;setStore('tr_cols_'+DATA[cur].id,JSON.stringify(cs));}catch(e){}
       }
     },200);
@@ -404,7 +407,7 @@ function setupColDrag(){
     th.addEventListener('mousedown',onDown);
     th.addEventListener('mousemove',function(e){
       var rect=this.getBoundingClientRect();
-      this.style.cursor=e.clientX>=rect.right-5?'col-resize':'';
+      this.style.cursor=e.clientX>=rect.right-8?'col-resize':'';
     });
     th.addEventListener('mouseleave',function(){this.style.cursor='';});
   });
