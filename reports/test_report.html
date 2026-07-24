@@ -384,6 +384,13 @@ function setupColDrag(){
     },300);
   });
   T.querySelectorAll('th').forEach(function(th){window._colResizeObserver.observe(th);});
+  // 右边缘显示col-resize光标提示（不拦截事件，浏览器原生拖拽仍生效）
+  T.querySelectorAll('th').forEach(function(th){
+    th.addEventListener('mousemove',function(e){
+      this.style.cursor=e.clientX>=this.getBoundingClientRect().right-4?'col-resize':'';
+    });
+    th.addEventListener('mouseleave',function(){this.style.cursor='';});
+  });
   // 拖拽列顺序
   var dc=-1;
   T.querySelectorAll('th').forEach(function(th,ci){
