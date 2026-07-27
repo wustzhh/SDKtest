@@ -233,10 +233,10 @@ void TestRunner::onBatchFinished(BatchState* batch) {
                 while (it.hasNext()) {
                     auto m = it.next();
                     QString full = m.captured(2) + "." + m.captured(1);
-                    // 提取 time（GTest 小数毫秒精度，远优于 stdout 整数 ms）
+                    // 提取 time（GTest XML 以秒为单位，转为 ms）
                     auto timeM = timeRe.match(m.captured(0));
                     if (timeM.hasMatch())
-                        xmlDurations[full] = timeM.captured(1).toDouble();
+                        xmlDurations[full] = timeM.captured(1).toDouble() * 1000.0;
                     // 提取 status
                     auto statusM = statusRe.match(m.captured(0));
                     if (statusM.hasMatch())
