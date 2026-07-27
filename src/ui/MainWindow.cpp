@@ -610,21 +610,20 @@ void MainWindow::captureAllModelScreenshots(const QString& screenshotDir) {
             QObject::disconnect(conn1);
 
             if (loaded) {
-                // 模型数据就绪，但 paintGL 可能还没执行
-                // 用 frameSwapped 信号确保首帧已渲染再截图
+                // 模型数据就绪，确保 paintGL 已执行再截图
                 auto* gl = m_model3D->glViewer();
-                bool painted = false;
-                QMetaObject::Connection conn2 = connect(gl, &QOpenGLWidget::frameSwapped,
-                    &loop, [&]() { painted = true; loop.quit(); });
-                gl->update();  // 触发 repaint
-                loop.exec();
-                QObject::disconnect(conn2);
-
-                if (painted) {
-                    QImage raw = gl->grabFramebuffer();
-                    if (!raw.isNull())
-                        img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                }
+                
+                // 先消费可能残留的旧 paint 事件（上一轮循环或UI事件触发）
+                QApplication::processEvents();
+                
+                // 同步触发渲染：repaint() 直接调用 paintGL，不经过事件循环
+                // 比 frameSwapped 更可靠 — 不依赖异步信号、不受队列残留影响
+                gl->repaint();
+                
+                // grabFramebuffer 内部会确保读取的是已完成的帧缓冲
+                QImage raw = gl->grabFramebuffer();
+                if (!raw.isNull())
+                    img = raw.scaled(800, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             }
         }
         if (img.isNull()) continue;

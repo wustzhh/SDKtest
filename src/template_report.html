@@ -193,6 +193,8 @@ function delRun(i){
 // ═══════════ 视图 ═══════════
 function sel(i){
   cur=i;
+  loadedFilter=-1;
+  document.querySelectorAll('.sf-item').forEach(function(e){e.classList.remove('sf-act');});
   document.querySelectorAll('.item').forEach(function(e){e.classList.toggle('act',parseInt(e.dataset.idx)===i);});
   render(DATA[i]);
 }
