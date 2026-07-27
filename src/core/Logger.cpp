@@ -26,11 +26,7 @@ void Logger::write(const QString& tag, const QString& msg) {
     QTextStream out(g_file);
     QString ts = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
     out << ts << "  [" << tag << "]  " << msg << "\n";
-    // 每 50 条或每次含 "Done" / "FAIL" / "ERROR" 时 flush，避免频繁 fsync
-    if (++g_flushCounter >= 50 || msg.contains("Done") || msg.contains("FAIL") || msg.contains("ERROR")) {
-        out.flush();
-        g_flushCounter = 0;
-    }
+    out.flush();  // 每次写入立即落盘，崩溃时不会丢日志
 }
 
 void Logger::write(const QString& tag, const QString& key, const QString& val) {
