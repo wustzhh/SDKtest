@@ -204,6 +204,9 @@ void TestRunner::onBatchFinished(BatchState* batch) {
 
     // 解析 XML
     QMap<QString, QMap<QString, QString>> allProps;
+    // 存储 XML 中精确的耗时和状态（GTest 小数毫秒精度）
+    QMap<QString, double> xmlDurations;
+    QMap<QString, QString> xmlStatuses;
     {
         QFile f(batch->xmlPath);
         if (f.open(QIODevice::ReadOnly)) {
@@ -220,11 +223,30 @@ void TestRunner::onBatchFinished(BatchState* batch) {
             QRegularExpression propRe(
                 R"pr(<property name="([^"]+)" value="([^"]+)"/?>)pr",
                 QRegularExpression::DotMatchesEverythingOption);
-            auto parseXmlTc = [&](const QRegularExpression& re) {
+            // 提取开标签中的 time/status 属性（用自定义 raw string 分隔符避免 )" 冲突）
+            QRegularExpression timeRe(R"re(time="([\d.]+)")re");
+            QRegularExpression statusRe(R"re(status="([^"]+)")re");
+            // 子元素中的 failure/skipped
+            QRegularExpression failEl(R"re(<failure[^>]*/>|<failure[^>]*>.*?</failure>)re");
+            QRegularExpression skipEl(R"re(<skipped[^>]*/>|<skipped[^>]*>.*?</skipped>)re");            auto parseXmlTc = [&](const QRegularExpression& re) {
                 auto it = re.globalMatch(xml);
                 while (it.hasNext()) {
                     auto m = it.next();
                     QString full = m.captured(2) + "." + m.captured(1);
+                    // 提取 time（GTest 小数毫秒精度，远优于 stdout 整数 ms）
+                    auto timeM = timeRe.match(m.captured(0));
+                    if (timeM.hasMatch())
+                        xmlDurations[full] = timeM.captured(1).toDouble();
+                    // 提取 status
+                    auto statusM = statusRe.match(m.captured(0));
+                    if (statusM.hasMatch())
+                        xmlStatuses[full] = statusM.captured(1);
+                    // 子元素判定
+                    if (failEl.match(m.captured(3)).hasMatch())
+                        xmlStatuses[full] = "FAILED";
+                    if (skipEl.match(m.captured(3)).hasMatch())
+                        xmlStatuses[full] = "SKIPPED";
+                    // 提取 RecordProperty
                     auto pIt = propRe.globalMatch(m.captured(3));
                     while (pIt.hasNext()) {
                         auto pm = pIt.next();
@@ -254,6 +276,7 @@ void TestRunner::onBatchFinished(BatchState* batch) {
     }
 
     // 发射结果（使用成员 m_seen 避免跨批次重复）
+    // XML 的 time/status 优先级高于 stdout 正则解析
     for (const auto& b : blocks) {
         TestRunResult res;
         res.testCase.suiteName = b.suite;
@@ -262,10 +285,24 @@ void TestRunner::onBatchFinished(BatchState* batch) {
         res.durationMs = b.durationMs;
         res.rawStdout = b.output;
         res.properties = allProps.value(res.testCase.fullName());
-        m_seen.insert(res.testCase.fullName());
+        // XML time 覆盖（更精确，小数毫秒）
+        QString fullName = res.testCase.fullName();
+        if (xmlDurations.contains(fullName) && xmlDurations[fullName] > 0)
+            res.durationMs = xmlDurations[fullName];
+        // XML status 覆盖（区分 SKIPPED/DISABLED/CRASHED）
+        if (xmlStatuses.contains(fullName)) {
+            QString xst = xmlStatuses[fullName];
+            if (xst == "notrun")
+                res.status = "SKIPPED";
+            else if (xst == "FAILED")
+                res.status = "FAILED";
+            // "run" 保持不变（由 stdout 决定 PASSED/FAILED）
+        }
+        m_seen.insert(fullName);
         m_doneCount++;
         emit testFinished(res);
     }
+    // XML 中有但 stdout 中缺失的测试（splitRe 解析遗漏等）
     for (auto it = allProps.begin(); it != allProps.end(); ++it) {
         if (m_seen.contains(it.key()) || it.value().isEmpty()) continue;
         int dot = it.key().lastIndexOf('.');
@@ -273,10 +310,19 @@ void TestRunner::onBatchFinished(BatchState* batch) {
         TestRunResult res;
         res.testCase.suiteName = it.key().left(dot);
         res.testCase.caseName  = it.key().mid(dot + 1);
-        res.status = "SKIPPED";
+        QString fullName = it.key();
+        // 优先用 XML status
+        if (xmlStatuses.contains(fullName)) {
+            QString xst = xmlStatuses[fullName];
+            res.status = (xst == "FAILED") ? "FAILED" :
+                         (xst == "notrun") ? "SKIPPED" : "PASSED";
+        } else {
+            res.status = "SKIPPED";
+        }
+        res.durationMs = xmlDurations.value(fullName, 0);
         res.properties = it.value();
         m_doneCount++;
-        m_seen.insert(it.key());
+        m_seen.insert(fullName);
         emit testFinished(res);
     }
 
@@ -345,47 +391,79 @@ bool TestRunner::isRunning() const {
 
 QVector<TestRunner::ParsedBlock> TestRunner::parseCombinedOutput(const QString& allOutput) {
     QVector<ParsedBlock> blocks;
-    static QRegularExpression splitRe(R"(\[ RUN      \] ([^ \r\n]+)\.([^ \r\n]+))");
-    static QRegularExpression okRe(R"(\[       OK \] [^ ]+ \((\d+) ms\))");
-    static QRegularExpression failRe(R"(\[  FAILED  \] [^ ]+ \((\d+) ms\))");
-    static QRegularExpression skipRe(R"(\[  SKIPPED \] [^ ]+ \((\d+) ms\))");
+    // 匹配 [ RUN      ] 后的完整测试名（Suite.Test 或 Prefix/Suite.Test/0）
+    static QRegularExpression splitRe(R"(\[ RUN      \] ([^ \r\n]+))");
+    // 耗时在 stdout 中为整数 ms，XML 才是权威来源
+    static QRegularExpression okRe(R"(\[       OK \] [^ \r\n]+(?: \((\d+) ms\))?)");
+    static QRegularExpression failRe(R"(\[  FAILED  \] [^ \r\n]+(?: \((\d+) ms\))?)");
+    // SKIPPED 通常没有耗时
+    static QRegularExpression skipRe(R"(\[  SKIPPED \] [^ \r\n]+)");
 
     auto it = splitRe.globalMatch(allOutput);
     int lastPos = 0;
-    QString lastSuite, lastName;
+    QString lastFullName;
     while (it.hasNext()) {
         auto m = it.next();
         int pos = m.capturedStart();
-        if (!lastSuite.isEmpty()) {
+        if (!lastFullName.isEmpty()) {
             ParsedBlock block;
-            block.suite = lastSuite;
-            block.name  = lastName;
+            // 从完整测试名中分割 suite 和 case：找最后一个 '.'
+            int dot = lastFullName.lastIndexOf('.');
+            if (dot > 0) {
+                block.suite = lastFullName.left(dot);
+                block.name  = lastFullName.mid(dot + 1);
+            } else {
+                // 无点号：整个作为 suite，name 留空（由 XML 补全）
+                block.suite = lastFullName;
+            }
             block.output = allOutput.mid(lastPos, pos - lastPos);
             auto okM = okRe.match(block.output);
             auto fM  = failRe.match(block.output);
             auto sM  = skipRe.match(block.output);
-            if (okM.hasMatch())      { block.status = "PASSED"; block.durationMs = okM.captured(1).toDouble(); }
-            else if (fM.hasMatch())  { block.status = "FAILED"; block.durationMs = fM.captured(1).toDouble(); }
-            else if (sM.hasMatch())  { block.status = "SKIPPED"; block.durationMs = sM.captured(1).toDouble(); }
-            else                     { block.status = "ERROR"; }
+            if (okM.hasMatch()) {
+                block.status = "PASSED";
+                if (!okM.captured(1).isEmpty())
+                    block.durationMs = okM.captured(1).toDouble();
+            } else if (fM.hasMatch()) {
+                block.status = "FAILED";
+                if (!fM.captured(1).isEmpty())
+                    block.durationMs = fM.captured(1).toDouble();
+            } else if (sM.hasMatch()) {
+                block.status = "SKIPPED";
+            } else {
+                block.status = "ERROR";
+            }
             blocks.append(block);
         }
-        lastSuite = m.captured(1).remove('\r').remove('\n').trimmed();
-        lastName  = m.captured(2).remove('\r').remove('\n').trimmed();
+        lastFullName = m.captured(1).remove('\r').remove('\n').trimmed();
         lastPos   = pos;
     }
-    if (!lastSuite.isEmpty()) {
+    if (!lastFullName.isEmpty()) {
         ParsedBlock block;
-        block.suite = lastSuite;
-        block.name  = lastName;
+        int dot = lastFullName.lastIndexOf('.');
+        if (dot > 0) {
+            block.suite = lastFullName.left(dot);
+            block.name  = lastFullName.mid(dot + 1);
+        } else {
+            block.suite = lastFullName;
+        }
         block.output = allOutput.mid(lastPos);
         auto okM = okRe.match(block.output);
         auto fM  = failRe.match(block.output);
         auto sM  = skipRe.match(block.output);
-        if (okM.hasMatch())      { block.status = "PASSED"; block.durationMs = okM.captured(1).toDouble(); }
-        else if (fM.hasMatch())  { block.status = "FAILED"; block.durationMs = fM.captured(1).toDouble(); }
-        else if (sM.hasMatch())  { block.status = "SKIPPED"; block.durationMs = sM.captured(1).toDouble(); }
-        else                     { block.status = "ERROR"; }
+        if (okM.hasMatch()) {
+            block.status = "PASSED";
+            if (!okM.captured(1).isEmpty())
+                block.durationMs = okM.captured(1).toDouble();
+        } else if (fM.hasMatch()) {
+            block.status = "FAILED";
+            if (!fM.captured(1).isEmpty())
+                block.durationMs = fM.captured(1).toDouble();
+        } else if (sM.hasMatch()) {
+            block.status = "SKIPPED";
+        } else {
+            block.status = "ERROR";
+        }
         blocks.append(block);
     }
     return blocks;
