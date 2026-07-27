@@ -105,6 +105,9 @@ ModelRenderView::ModelRenderView(QWidget* parent)
         "QTreeWidget::item:selected { background:#eef2ff; color:#1e293b; }"
         "QTreeWidget::item:hover { background:#f8f9fb; }"
         "QTreeWidget{outline:none;}");
+    m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_tree, &QTreeWidget::customContextMenuRequested,
+            this, &ModelRenderView::onResultTreeContextMenu);
     connect(m_tree, &QTreeWidget::itemClicked, this, &ModelRenderView::onTreeItemClicked);
     connect(m_btnLocate, &QPushButton::clicked, this, [this]() {
         if (m_lastHighlighted)
@@ -527,4 +530,37 @@ void ModelRenderView::onPropTreeContextMenu(const QPoint& pos) {
     } else if (chosen->text().contains(QString::fromUtf8("\xe6\x89\x93\xe5\xbc\x80\xe6\x96\x87\xe4\xbb\xb6"))) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
     }
+}
+
+void ModelRenderView::onResultTreeContextMenu(const QPoint& pos) {
+    QTreeWidgetItem* item = m_tree->itemAt(pos);
+    if (!item) return;
+    
+    QMenu menu(this);
+    
+    // 复制节点文本（显示名）
+    QString text = item->text(1);
+    if (!text.isEmpty()) {
+        menu.addAction(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe6\x96\x87\xe6\x9c\xac"), [text]() {
+            QApplication::clipboard()->setText(text);
+        });
+    }
+    
+    // 复制 stdout 完整内容（仅 stdout 节点）
+    if (item->text(1).startsWith("stdout") && item->toolTip(1).length() > 0) {
+        QString fullStdout = item->toolTip(1);
+        menu.addAction(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe5\xae\x8c\xe6\x95\xb4 stdout"), [fullStdout]() {
+            QApplication::clipboard()->setText(fullStdout);
+        });
+    }
+    
+    // 复制用例全名（顶层 case 节点）
+    QString fullName = item->data(1, Qt::UserRole).toString();
+    if (!fullName.isEmpty()) {
+        menu.addAction(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe7\x94\xa8\xe4\xbe\x8b\xe5\x90\x8d"), [fullName]() {
+            QApplication::clipboard()->setText(fullName);
+        });
+    }
+    
+    menu.exec(m_tree->viewport()->mapToGlobal(pos));
 }

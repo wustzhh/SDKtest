@@ -49,6 +49,7 @@ private slots:
     void onExpandAll();
     void onCollapseAll();
     void onPropTreeContextMenu(const QPoint& pos);
+    void onResultTreeContextMenu(const QPoint& pos);
 
 private:
     void buildResultTree(const QVector<TestRunResult>& results);
