@@ -327,7 +327,7 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
 
     // 点击 stdout 节点弹出完整内容
-    if (item->text(1) == "stdout" && item->toolTip(1).length() > 300) {
+    if (item->text(1).startsWith("stdout") && item->toolTip(1).length() > 300) {
         showFullOutput("stdout", item->toolTip(1));
         return;
     }

@@ -1102,6 +1102,7 @@ void MainWindow::onEditConfig() {
         auto sel = sceneTree->selectedItems();
         if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
+        if (idx < 0 || idx >= m_config.currentProfile().scenarios.size()) return;
         const auto& s = m_config.currentProfile().scenarios[idx];
         QJsonObject obj;
         obj["name"] = s.name;
