@@ -27,3 +27,4 @@ cmake-*
 __pycache__/
 *.pyc
 reports/
+/reports.7z
