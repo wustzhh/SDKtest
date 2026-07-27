@@ -568,6 +568,7 @@ void TestListPanel::onTreeContextMenu(const QPoint& pos) {
             [this, item, checked]() { toggleItem(item); });
     }
     m_contextMenu->addSeparator();
+    // 复制当前节点名称
     QString fullName;
     if (type == "case") {
         fullName = item->data(0, Role_SuiteName).toString() + "." + item->data(0, Role_CaseName).toString();
@@ -581,6 +582,25 @@ void TestListPanel::onTreeContextMenu(const QPoint& pos) {
             QApplication::clipboard()->setText(fullName);
         });
     }
+    // 复制该节点下所有选中用例的完整名（用于报告/对比）
+    m_contextMenu->addAction(QString::fromUtf8("\xe5\xa4\x8d\xe5\x88\xb6\xe6\x89\x80\xe6\x9c\x89\xe9\x80\x89\xe4\xb8\xad\xe7\x94\xa8\xe4\xbe\x8b"), [this, item, fullName]() {
+        QStringList names;
+        std::function<void(QTreeWidgetItem*)> collect = [&](QTreeWidgetItem* it) {
+            if (!it || it->isHidden()) return;
+            if (it->data(0, Role_Type).toString() == "case" && itemChecked(it)) {
+                QString sn = it->data(0, Role_SuiteName).toString();
+                QString cn = it->data(0, Role_CaseName).toString();
+                if (!sn.isEmpty()) names << sn + "." + cn;
+            }
+            for (int i = 0; i < it->childCount(); i++) collect(it->child(i));
+        };
+        collect(item);
+        if (names.isEmpty()) {
+            // 如果是case节点且被选中，复制自身
+            names << fullName;
+        }
+        QApplication::clipboard()->setText(names.join("\n"));
+    });
     m_contextMenu->popup(m_tree->viewport()->mapToGlobal(pos));
 }
 
