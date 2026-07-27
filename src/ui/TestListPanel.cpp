@@ -92,6 +92,10 @@ TestListPanel::TestListPanel(QWidget* parent)
     });
     layout->addWidget(m_tree, 1);
 
+    m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_tree, &QTreeWidget::customContextMenuRequested,
+            this, &TestListPanel::onTreeContextMenu);
+
     m_contextMenu = new QMenu(this);
 
     // Alt+数字 = 折叠到对应层级, Alt+Shift+数字 = 展开到对应层级
