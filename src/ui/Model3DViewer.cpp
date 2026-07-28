@@ -85,8 +85,10 @@ void StepWorker::doWork() {
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
         }
-        double deflection = qBound(0.001, diag * 0.001, 2.0);
+        double deflection = qBound(0.001, diag * 0.01, 2.0);
         double angularDeflection = (diag < 1.0) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
+        LOG("MESH",QString("diag=%.3f deflection=%.4f angular=%.3f°")
+            .arg(diag).arg(deflection).arg(angularDeflection*180.0/M_PI,0,'f',3));
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     // 边线采样间距：模型尺寸自适应
