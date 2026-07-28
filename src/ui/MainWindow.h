@@ -85,6 +85,7 @@ private:
     QComboBox* m_scenarioCombo = nullptr;
     QCheckBox* m_chkSingleTest = nullptr;
     QComboBox* m_restoreCombo = nullptr;
+    QList<QAction*> m_lwActions;
     int m_restoreLW = 0, m_restoreRW = 0, m_restoreVP = 0, m_restoreVP2 = 0;
     QStringList m_suiteNames;
 };

@@ -425,6 +425,7 @@ void GLViewer::paintGL(){
         glVertexPointer(3, GL_FLOAT, 0, nullptr);
         float lw=m_edgeWidthPct*width()/100.0f;
         glLineWidth(qMax(0.5f,lw));
+        if (lw > 1.0f) glEnable(GL_LINE_SMOOTH); else glDisable(GL_LINE_SMOOTH);
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
