@@ -41,6 +41,9 @@
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <Geom_Curve.hxx>
+#include <GeomAdaptor_Curve.hxx>
+#include <GCPnts_UniformAbscissa.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
 
 void StepWorker::doWork() {
     StepLoadResult r; QElapsedTimer t; t.start();
@@ -120,16 +123,38 @@ void StepWorker::doWork() {
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size(); if (nf==0) continue;
         QVector3D col=(nf==1)?QVector3D(1,0.15f,0.15f):((nf==2)?QVector3D(0.15f,0.85f,0.15f):QVector3D(1,0.85f,0.1f));
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        int ns=18; double st=(l-f)/ns; int prev=-1;
-        for (int s=0;s<=ns;s++) {
-            double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u);
-            quint64 key = (quint64)(pt.X() * 1000 + 50000) << 42
-                        | (quint64)(pt.Y() * 1000 + 50000) << 21
-                        | (quint64)(pt.Z() * 1000 + 50000);
-            int idx = vertHash.value(key, -1);
-            if (idx < 0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); vertHash[key]=idx; }
-            if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
-            if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
+        // 自适应采样：根据边长度动态调整点数，最少18段最多200段
+        GeomAdaptor_Curve acrv(crv, f, l);
+        double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
+        int ns = qBound(18, (int)(edgeLen / 0.5), 200);
+        // 用均匀弧长采样
+        GCPnts_UniformAbscissa ua(acrv, ns + 1);
+        if (ua.IsDone() && ua.NbPoints() >= 2) {
+            int prev = -1;
+            for (int s = 1; s <= ua.NbPoints(); s++) {
+                double u = ua.Parameter(s);
+                gp_Pnt pt = crv->Value(u);
+                quint64 key = (quint64)(pt.X() * 1000 + 50000) << 42
+                            | (quint64)(pt.Y() * 1000 + 50000) << 21
+                            | (quint64)(pt.Z() * 1000 + 50000);
+                int idx = vertHash.value(key, -1);
+                if (idx < 0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); vertHash[key]=idx; }
+                if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
+                if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
+            }
+        } else {
+            // 回退到固定采样
+            int ns=36; double st=(l-f)/ns; int prev=-1;
+            for (int s=0;s<=ns;s++) {
+                double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u);
+                quint64 key = (quint64)(pt.X() * 1000 + 50000) << 42
+                            | (quint64)(pt.Y() * 1000 + 50000) << 21
+                            | (quint64)(pt.Z() * 1000 + 50000);
+                int idx = vertHash.value(key, -1);
+                if (idx < 0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); vertHash[key]=idx; }
+                if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
+                if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
+            }
         }
     }
     if (r.normals.size()<r.verts.size()) { int o=r.normals.size(); r.normals.resize(r.verts.size()); for (int i=o;i<r.verts.size();i++) r.normals[i]=QVector3D(0,1,0); }
