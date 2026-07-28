@@ -425,13 +425,46 @@ void GLViewer::paintGL(){
 }
 
 
-void GLViewer::mousePressEvent(QMouseEvent* e){m_lastPos=e->pos();m_dragging=true;}
-void GLViewer::mouseMoveEvent(QMouseEvent* e){if(!m_dragging)return;float dx=e->position().x()-m_lastPos.x(),dy=e->position().y()-m_lastPos.y();if(e->buttons()&Qt::LeftButton){QQuaternion dq=QQuaternion::fromAxisAndAngle(QVector3D(0,1,0),dx*.4f)*QQuaternion::fromAxisAndAngle(QVector3D(1,0,0),dy*.4f);m_rot=dq*m_rot;m_rot.normalize();}else if(e->buttons()&Qt::MiddleButton){m_panX+=dx*.005f*m_modelSize/m_zoom;m_panY-=dy*.005f*m_modelSize/m_zoom;}m_lastPos=e->pos();update();}
+void GLViewer::mousePressEvent(QMouseEvent* e){m_lastPos=e->pos();m_dragging=true;m_arcballFrom=screenToArcball(e->pos());}
+void GLViewer::mouseMoveEvent(QMouseEvent* e){
+    if(!m_dragging)return;
+    if(e->buttons()&Qt::LeftButton){
+        m_arcballTo = screenToArcball(e->pos());
+        QVector3D axis = QVector3D::crossProduct(m_arcballFrom, m_arcballTo);
+        float dot = QVector3D::dotProduct(m_arcballFrom, m_arcballTo);
+        dot = qBound(-1.0f, dot, 1.0f);
+        float angle = acos(dot);
+        if (axis.length() > 0.001f && angle > 0.001f) {
+            axis.normalize();
+            m_rot = QQuaternion::fromAxisAndAngle(axis, angle * 180.0f / M_PI) * m_rot;
+            m_rot.normalize();
+            m_arcballFrom = m_arcballTo;
+        }
+    }else if(e->buttons()&Qt::MiddleButton){
+        float dx=e->position().x()-m_lastPos.x(), dy=e->position().y()-m_lastPos.y();
+        m_panX+=dx*.005f*m_modelSize/m_zoom; m_panY-=dy*.005f*m_modelSize/m_zoom;
+    }
+    m_lastPos=e->pos();update();
+}
 void GLViewer::wheelEvent(QWheelEvent* e){if(e->angleDelta().y()>0)m_zoom=qMin(m_zoom*1.15f,100.f);else m_zoom=qMax(m_zoom*.85f,.01f);update();}
 
 QImage GLViewer::grabScreenshot() const {
     // Qt 6: QOpenGLWidget::grab() returns QPixmap
     return const_cast<GLViewer*>(this)->grab().toImage();
+}
+
+QVector3D GLViewer::screenToArcball(const QPointF& screenPos) const {
+    // 将屏幕坐标映射到单位球面（arcball）
+    float x = 2.0f * screenPos.x() / width() - 1.0f;
+    float y = 1.0f - 2.0f * screenPos.y() / height();
+    float r2 = x*x + y*y;
+    float z = (r2 < 1.0f) ? sqrt(1.0f - r2) : 0.0f;
+    if (r2 > 1.0f) {
+        // 球外：归一化到单位圆上
+        float r = sqrt(r2);
+        x /= r; y /= r;
+    }
+    return QVector3D(x, y, z);
 }
 
 // ═══════════════════════════════════════════════════════════════

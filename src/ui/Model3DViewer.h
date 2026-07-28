@@ -109,6 +109,8 @@ private:
     QPointF m_pickPos;
     QPoint m_lastPos;
     bool m_dragging=false;
+    QVector3D m_arcballFrom, m_arcballTo;
+    QVector3D screenToArcball(const QPointF& screenPos) const;
 };
 
 class Model3DViewer : public QWidget {
