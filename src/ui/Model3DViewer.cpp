@@ -359,28 +359,6 @@ void GLViewer::paintGL(){
     glDepthMask(GL_TRUE);
 
     if(m_verts.isEmpty())return;
-    // ── 处理待定的锚点拾取（使用上一帧的深度缓冲） ──
-    if (m_pendingPick) {
-        m_pendingPick = false;
-        float depth = 1.0f;
-        float dpr = devicePixelRatioF();
-        int dx = qRound(m_pickPos.x() * dpr);
-        int dy = qRound((height() - m_pickPos.y() - 1) * dpr);
-        glReadPixels(dx, dy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-        if (depth < 1.0f) {
-            QVector3D wp = QVector3D(m_pickPos.x(), height() - m_pickPos.y() - 1, depth)
-                .unproject(m_mvMat, m_pjMat, QRect(0, 0, width(), height()));
-            if (!wp.isNull()) {
-                // wp 是世界空间坐标，逆变换到模型空间求锚点
-                QVector3D pan3(m_panX, m_panY, 0);
-                QVector3D modelPt = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
-                // 调整平移使点击点保持在同一屏幕位置
-                m_anchor = modelPt;
-                m_panX = wp.x() - m_anchor.x();
-                m_panY = wp.y() - m_anchor.y();
-            }
-        }
-    }
     float as=float(width())/float(height()),sz=m_modelSize*.6f/qMax(m_zoom,.01f);
     glMatrixMode(GL_PROJECTION);glLoadIdentity();
     double depthRange = sz * 100.0;  // 合理深度范围，确保polygon offset生效
@@ -446,6 +424,26 @@ void GLViewer::paintGL(){
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDisable(GL_POLYGON_OFFSET_LINE);
         if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
+    }
+    // ── 处理锚点拾取（使用当前帧刚渲染的深度缓冲） ──
+    if (m_pendingPick) {
+        m_pendingPick = false;
+        float depth = 1.0f;
+        float dpr = devicePixelRatioF();
+        int dx = qRound(m_pickPos.x() * dpr);
+        int dy = qRound((height() - m_pickPos.y() - 1) * dpr);
+        glReadPixels(dx, dy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+        if (depth < 1.0f) {
+            QVector3D wp = QVector3D(m_pickPos.x(), height() - m_pickPos.y() - 1, depth)
+                .unproject(m_mvMat, m_pjMat, QRect(0, 0, width(), height()));
+            if (!wp.isNull()) {
+                QVector3D pan3(m_panX, m_panY, 0);
+                QVector3D modelPt = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
+                m_anchor = modelPt;
+                m_panX = wp.x() - m_anchor.x();
+                m_panY = wp.y() - m_anchor.y();
+            }
+        }
     }
     // ── 锚点标记：红色十字 ──
     {
