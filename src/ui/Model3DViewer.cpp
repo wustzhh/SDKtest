@@ -146,15 +146,27 @@ void StepWorker::doWork() {
                       : (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)  // 正常绿色
                                 : QVector3D(1.0f, 0.85f, 0.1f);   // 非流形黄色
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        // 从相邻面的pcurve取实际trim范围（修剪面的边可能只用曲线的一段）
+        // 从相邻面的pcurve取实际trim范围
         double trimF = f, trimL = l;
         {
             auto& faces = edgeFaceMap[ed.TShape().get()];
-            for (const auto& face : faces) {
-                double pf, pl;
-                if (BRep_Tool::CurveOnSurface(ed, face, pf, pl)) {
-                    trimF = qMin(trimF, pf);
-                    trimL = qMax(trimL, pl);
+            // nf==0的孤立边：遍历所有面查找pcurve（trim面边可能对不上face遍历）
+            if (faces.isEmpty()) {
+                for (TopExp_Explorer fe(shape, TopAbs_FACE); fe.More(); fe.Next()) {
+                    TopoDS_Face face = TopoDS::Face(fe.Current());
+                    double pf, pl;
+                    if (BRep_Tool::CurveOnSurface(ed, face, pf, pl)) {
+                        trimF = qMin(trimF, pf);
+                        trimL = qMax(trimL, pl);
+                    }
+                }
+            } else {
+                for (const auto& face : faces) {
+                    double pf, pl;
+                    if (BRep_Tool::CurveOnSurface(ed, face, pf, pl)) {
+                        trimF = qMin(trimF, pf);
+                        trimL = qMax(trimL, pl);
+                    }
                 }
             }
         }
