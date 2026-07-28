@@ -447,6 +447,21 @@ void GLViewer::paintGL(){
         glDisable(GL_POLYGON_OFFSET_LINE);
         if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
     }
+    // ── 锚点标记：红色十字 ──
+    {
+        QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
+        float s = m_modelSize * 0.02f / m_zoom;  // 十字大小（模型尺寸2%）
+        GLfloat cross[] = {
+            ap.x()-s, ap.y(),   ap.z(),   ap.x()+s, ap.y(),   ap.z(),
+            ap.x(),   ap.y()-s, ap.z(),   ap.x(),   ap.y()+s, ap.z(),
+        };
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, cross);
+        glColor3f(1, 0.2f, 0.2f);
+        glLineWidth(2.0f);
+        glDrawArrays(GL_LINES, 0, 4);
+        glDisableClientState(GL_VERTEX_ARRAY);
+    }
 }
 
 
