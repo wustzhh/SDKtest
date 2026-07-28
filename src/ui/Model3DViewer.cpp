@@ -359,6 +359,21 @@ void GLViewer::paintGL(){
     glDepthMask(GL_TRUE);
 
     if(m_verts.isEmpty())return;
+    // ── 处理待定的锚点拾取（使用上一帧的深度缓冲） ──
+    if (m_pendingPick) {
+        m_pendingPick = false;
+        float depth = 1.0f;
+        float dpr = devicePixelRatioF();
+        int dx = qRound(m_pickPos.x() * dpr);
+        int dy = qRound((height() - m_pickPos.y() - 1) * dpr);
+        glReadPixels(dx, dy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+        if (depth < 1.0f) {
+            QVector3D wp = QVector3D(m_pickPos.x(), height() - m_pickPos.y() - 1, depth)
+                .unproject(m_mvMat, m_pjMat,
+                    QRect(0, 0, width(), height()));
+            if (!wp.isNull()) m_anchor = wp;
+        }
+    }
     float as=float(width())/float(height()),sz=m_modelSize*.6f/qMax(m_zoom,.01f);
     glMatrixMode(GL_PROJECTION);glLoadIdentity();
     double depthRange = sz * 100.0;  // 合理深度范围，确保polygon offset生效
@@ -430,16 +445,10 @@ void GLViewer::paintGL(){
 
 void GLViewer::mousePressEvent(QMouseEvent* e){
     m_lastPos=e->pos();m_dragging=true;
-    // 读取点击处的深度，unproject 获取3D位置作为新锚点
-    makeCurrent();
-    float depth = 1.0f;
-    int y = m_viewport[3] - e->pos().y() - 1;
-    glReadPixels(e->pos().x(), y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-    if (depth < 1.0f) {
-        QVector3D wp = QVector3D(e->pos().x(), y, depth).unproject(m_mvMat, m_pjMat, QRect(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]));
-        if (!wp.isNull()) m_anchor = wp;
-    }
+    m_pickPos = e->pos();
+    m_pendingPick = true;
     m_arcballFrom = screenToArcball(e->pos());
+    update(); // 触发paintGL处理pick
 }
 void GLViewer::mouseMoveEvent(QMouseEvent* e){
     if(!m_dragging)return;
