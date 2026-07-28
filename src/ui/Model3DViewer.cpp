@@ -57,6 +57,8 @@ void StepWorker::doWork() {
     r.shape = shape;  // 保存用于射线拾取
     if (shape.IsNull()) { r.error="Shape is null"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
+    qint64 tMesh=0, tFaces=0, tEdges=0;
+    QElapsedTimer stage;
     // 根据模型尺寸自适应调整参数
     double diag = 1.0;
     {
@@ -71,9 +73,11 @@ void StepWorker::doWork() {
         LOG("MESH",QString("diag=%1 deflection=%2 angular=%3°")
             .arg(diag,0,'f',3).arg(deflection,0,'f',4).arg(angularDeflection*180.0/M_PI,0,'f',3));
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
+        tMesh = stage.elapsed();
     }
     // 边线采样间距：模型尺寸自适应
     double edgeSpacing = qBound(0.001, diag * 0.0005, 2.0);
+    stage.start();
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int totalFaces = 0, skippedFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
@@ -221,6 +225,8 @@ void StepWorker::doWork() {
         .arg(r.tris.size()/3).arg(r.verts.size())
         .arg(renderedEdges).arg(totalEdges).arg(filteredEdges)
         .arg(r.elapsedMs));
+    LOG("TIME",QString("mesh=%1ms rest=%2ms total=%3ms")
+        .arg(tMesh).arg(r.elapsedMs - tMesh).arg(r.elapsedMs));
     if (nonManifoldEdges > 0)
         LOG("3D",QString("WARNING: %1 non-manifold edges (yellow)").arg(nonManifoldEdges));
     if (skippedFaces > 0)
