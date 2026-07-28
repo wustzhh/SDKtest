@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QDialog>
 #include <QCheckBox>
+#include <QPainter>
 #include <QListWidget>
 #include <QScrollArea>
 
