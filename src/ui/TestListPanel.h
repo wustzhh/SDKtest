@@ -40,6 +40,7 @@ private:
 
     QLineEdit* m_input;
     QCheckBox* m_enableCheck;
+    class ToggleSwitch* m_enableSwitch;
     QWidget* m_ruleWidget;
     class FlowLayout* m_ruleLayout;
     QTreeWidget* m_previewTree;

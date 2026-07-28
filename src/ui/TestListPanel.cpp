@@ -8,6 +8,7 @@
 #include <QStyle>
 #include <QClipboard>
 #include <QScreen>
+#include <QPainter>
 
 // 简易FlowLayout：自动换行的水平布局
 class FlowLayout : public QLayout {
@@ -40,6 +41,23 @@ private:
     int m_hSpace, m_vSpace;
 };
 
+// 网页风格Toggle开关
+class ToggleSwitch : public QCheckBox {
+public:
+    ToggleSwitch(QWidget* p=nullptr):QCheckBox(p){setFixedSize(40,22);setCursor(Qt::PointingHandCursor);}
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter p(this); p.setRenderHint(QPainter::Antialiasing);
+        bool on=isChecked();
+        p.setBrush(on?QColor("#6366f1"):QColor("#d1d5db"));
+        p.setPen(Qt::NoPen);
+        p.drawRoundedRect(rect(),11,11);
+        p.setBrush(Qt::white);
+        int x=on?width()-19:2;
+        p.drawEllipse(x,2,18,18);
+    }
+};
+
 // ═══════════════════════════════════════════════════════════
 //  AdvancedFilterDialog
 // ═══════════════════════════════════════════════════════════
@@ -49,38 +67,42 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     setAttribute(Qt::WA_TranslucentBackground);
     setModal(true);
-    // 全屏遮罩
     auto* screen = QApplication::primaryScreen();
-    if (screen) resize(screen->size());
-    setStyleSheet("background:rgba(0,0,0,0.45);");
+    if (screen) setGeometry(screen->geometry());
     
     auto* overlay = new QVBoxLayout(this);
     overlay->setAlignment(Qt::AlignCenter);
+    overlay->setContentsMargins(60,40,60,40);
     auto* card = new QWidget;
     card->setStyleSheet("background:#ffffff;border-radius:16px;");
-    card->setMinimumSize(700, 500);
-    card->setMaximumSize(900, 700);
+    card->setMinimumSize(640,480);
     auto* lay = new QVBoxLayout(card);
-    lay->setSpacing(12);
-    lay->setContentsMargins(24,20,24,16);
+    lay->setSpacing(14);
+    lay->setContentsMargins(24,20,24,18);
 
+    auto* titleRow = new QHBoxLayout;
     auto* title = new QLabel(QString::fromUtf8("\xf0\x9f\x94\x8d \xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
     title->setStyleSheet("background:transparent;font-size:18px;font-weight:700;color:#1f2937;");
-    lay->addWidget(title);
+    titleRow->addWidget(title);
+    titleRow->addStretch();
+    auto* toggleRow = new QHBoxLayout;
+    auto* toggleLabel = new QLabel(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
+    toggleLabel->setStyleSheet("background:transparent;font-size:13px;color:#6b7280;margin-right:4px;");
+    toggleRow->addWidget(toggleLabel);
+    m_enableSwitch = new ToggleSwitch;
+    connect(m_enableSwitch, &QCheckBox::toggled, this, [this](){ emit filterChanged(); });
+    toggleRow->addWidget(m_enableSwitch);
+    titleRow->addLayout(toggleRow);
+    lay->addLayout(titleRow);
 
-    auto* topRow = new QHBoxLayout;
+    auto* inputRow = new QHBoxLayout;
     m_input = new QLineEdit;
     m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6..."));
     m_input->setStyleSheet("background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:14px;");
     connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
-    m_enableCheck = new QCheckBox(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
-    m_enableCheck->setStyleSheet("QCheckBox{background:transparent;font-weight:600;color:#6366f1;font-size:14px;}");
-    connect(m_enableCheck, &QCheckBox::toggled, this, [this]() { emit filterChanged(); });
-    topRow->addWidget(m_input, 1);
-    topRow->addWidget(m_enableCheck);
-    lay->addLayout(topRow);
+    inputRow->addWidget(m_input, 1);
+    lay->addLayout(inputRow);
 
-    // 规则FlowLayout（可换行）
     m_ruleWidget = new QWidget;
     m_ruleWidget->setStyleSheet("background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;");
     m_ruleLayout = new FlowLayout(m_ruleWidget, 8, 8, 6);
@@ -102,13 +124,12 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     btnClose->setStyleSheet("QPushButton{background:#e5e7eb;color:#374151;border-radius:8px;padding:8px 20px;font-size:14px;}");
     connect(btnSave, &QPushButton::clicked, this, &QDialog::accept);
     connect(btnClose, &QPushButton::clicked, this, &QDialog::reject);
-    connect(btnApply, &QPushButton::clicked, this, [this]() { emit filterChanged(); });
-    btnRow->addWidget(btnApply);
-    btnRow->addWidget(btnSave);
-    btnRow->addWidget(btnClose);
+    connect(btnApply, &QPushButton::clicked, this, [this](){ emit filterChanged(); });
+    btnRow->addWidget(btnApply); btnRow->addWidget(btnSave); btnRow->addWidget(btnClose);
     lay->addLayout(btnRow);
 
     overlay->addWidget(card);
+    setStyleSheet("AdvancedFilterDialog{background:rgba(0,0,0,0.45);}");
     updatePreview();
 }
 
@@ -147,27 +168,31 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
     for (int i = 0; i < m_rules.size(); i++) {
         const auto& r = m_rules[i];
         auto* chip = new QWidget;
-        chip->setStyleSheet(QString("background:%1;border-radius:8px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
+        chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
         auto* hl = new QHBoxLayout(chip);
-        hl->setContentsMargins(8,2,4,2);
+        hl->setContentsMargins(8,3,4,3);
         hl->setSpacing(4);
         auto* label = new QLabel(r.keyword);
-        label->setStyleSheet("background:transparent;font-size:13px;color:#1f2937;");
-        label->setMaximumWidth(200);
-        QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 200);
+        label->setStyleSheet("background:transparent;font-size:12px;color:#374151;border:none;");
+        label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        label->setMaximumWidth(180);
+        QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 180);
         label->setText(elided);
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
-        auto* toggle = new QPushButton(r.include ? QString::fromUtf8("\xe6\xad\xa3") : QString::fromUtf8("\xe5\x8f\x8d"));
-        toggle->setFixedSize(28, 22);
-        toggle->setStyleSheet(r.include
-            ? "QPushButton{background:#10b981;color:white;border:none;border-radius:5px;font-size:10px;font-weight:700;}"
-            : "QPushButton{background:#ef4444;color:white;border:none;border-radius:5px;font-size:10px;font-weight:700;}");
-        connect(toggle, &QPushButton::clicked, this, [this, i]() { toggleRule(i); });
-        hl->addWidget(toggle);
+        // 正/反小圆点
+        auto* dot = new QLabel;
+        dot->setFixedSize(8,8);
+        dot->setStyleSheet(QString("background:%1;border-radius:4px;").arg(r.include ? "#10b981" : "#ef4444"));
+        hl->addWidget(dot);
+        // 切换按钮（点击圆点切换）
+        chip->setCursor(Qt::PointingHandCursor);
+        // 用eventFilter或直接重载mousePress
+        // 简化：整个chip点击切换
+        // ×删除
         auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-        delBtn->setFixedSize(18, 18);
-        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:13px;font-weight:700;}");
+        delBtn->setFixedSize(16,16);
+        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:11px;font-weight:700;}QPushButton:hover{color:#ef4444;}");
         connect(delBtn, &QPushButton::clicked, this, [this, i]() { removeRule(i); });
         hl->addWidget(delBtn);
         m_ruleLayout->addWidget(chip);
