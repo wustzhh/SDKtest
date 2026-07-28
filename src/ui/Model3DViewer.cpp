@@ -431,7 +431,7 @@ void GLViewer::paintGL(){
     // ── 处理锚点拾取（使用当前帧刚渲染的深度缓冲） ──
     if (m_pendingPick) {
         m_pendingPick = false;
-        if (!m_shape.IsNull()) {
+        if (!m_tri.isEmpty()) {
             float dpr = devicePixelRatioF();
             int devX = qRound(m_pickPos.x() * dpr);
             int devY = qRound(m_pickPos.y() * dpr);
@@ -443,37 +443,44 @@ void GLViewer::paintGL(){
             double left, right, bottom, top;
             if (as > 1) { left = -sz*as; right = sz*as; bottom = -sz; top = sz; }
             else        { left = -sz; right = sz; bottom = -sz/as; top = sz/as; }
-            double wx = left   + (double)devX / devW * (right - left);
-            double wy = bottom + (double)glY  / devH * (top - bottom);
-            // 射线从 near 到 far
-            gp_Pnt pNear(wx, wy, -dr);
-            gp_Pnt pFar(wx, wy, dr);
-            // 变换到模型空间：应用 MV 的逆
+            // 眼空间射线起点和方向
+            QVector3D eyeOrg(left + (double)devX/devW*(right-left),
+                             bottom + (double)glY/devH*(top-bottom), -dr);
+            QVector3D eyeDir(0, 0, 1);
+            // 变换到模型空间
             QVector3D pan3(m_panX, m_panY, 0);
-            auto toModel = [&](const gp_Pnt& worldPt) -> gp_Pnt {
-                QVector3D v(worldPt.X(), worldPt.Y(), worldPt.Z());
-                QVector3D m = m_rot.inverted().rotatedVector(v - m_anchor - pan3) + m_anchor;
-                return gp_Pnt(m.x(), m.y(), m.z());
-            };
-            gp_Pnt mpNear = toModel(pNear);
-            gp_Pnt mpFar  = toModel(pFar);
-            // 构造射线边
-            BRepBuilderAPI_MakeEdge rayMaker(mpNear, mpFar);
-            if (rayMaker.IsDone()) {
-                TopoDS_Edge rayEdge = rayMaker.Edge();
-                BRepExtrema_DistShapeShape ext(rayEdge, m_shape);
-                ext.Perform();
-                if (ext.IsDone() && ext.NbSolution() > 0) {
-                    // 取第1个交点（射线穿入点）
-                    gp_Pnt pt1 = ext.PointOnShape1(1); // 射线上的点
-                    gp_Pnt pt2 = ext.PointOnShape2(1); // 模型上的点
-                    double dist = pt1.Distance(pt2);
-                    if (dist < 1.0) {
-                        m_anchor = QVector3D(pt2.X(), pt2.Y(), pt2.Z());
-                        m_panX = wx - m_anchor.x();
-                        m_panY = wy - m_anchor.y();
-                    }
+            QVector3D mOrg = m_rot.inverted().rotatedVector(eyeOrg - m_anchor - pan3) + m_anchor;
+            QVector3D mDir = m_rot.inverted().rotatedVector(eyeDir);
+            // 射线-三角求交 (Möller–Trumbore)
+            float bestT = 1e30f;
+            QVector3D bestPt;
+            for (int ti = 0; ti < m_tri.size(); ti += 3) {
+                QVector3D v0 = m_verts[m_tri[ti]];
+                QVector3D v1 = m_verts[m_tri[ti+1]];
+                QVector3D v2 = m_verts[m_tri[ti+2]];
+                QVector3D e1 = v1 - v0, e2 = v2 - v0;
+                QVector3D h = QVector3D::crossProduct(mDir, e2);
+                float a = QVector3D::dotProduct(e1, h);
+                if (qAbs(a) < 1e-8f) continue;
+                float f = 1.0f / a;
+                QVector3D s = mOrg - v0;
+                float u = f * QVector3D::dotProduct(s, h);
+                if (u < 0 || u > 1) continue;
+                QVector3D q = QVector3D::crossProduct(s, e1);
+                float v = f * QVector3D::dotProduct(mDir, q);
+                if (v < 0 || u + v > 1) continue;
+                float t = f * QVector3D::dotProduct(e2, q);
+                if (t > 0 && t < bestT) {
+                    bestT = t;
+                    bestPt = mOrg + mDir * t;
                 }
+            }
+            if (bestT < 1e30f) {
+                m_anchor = bestPt;
+                // 调整pan使锚点在屏幕位置不变
+                QVector3D newEye = m_rot.rotatedVector(bestPt - m_anchor) + m_anchor + pan3;
+                m_panX = eyeOrg.x() - newEye.x();
+                m_panY = eyeOrg.y() - newEye.y();
             }
         }
     }
