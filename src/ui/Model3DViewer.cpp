@@ -386,9 +386,6 @@ void GLViewer::paintGL(){
     if(!m_tri.isEmpty()){
         // 首次或数据变更时上传 VBO
         if (m_vboDirty) uploadVBO();
-        // 面往后推，让边线不被面遮挡
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(1, 2);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
         glVertexPointer(3, GL_FLOAT, 0, nullptr);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboNorms);
@@ -401,7 +398,6 @@ void GLViewer::paintGL(){
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         if (m_showFaceIds) glDisable(GL_BLEND);
         glDisableClientState(GL_NORMAL_ARRAY); glDisableClientState(GL_VERTEX_ARRAY);
-        glDisable(GL_POLYGON_OFFSET_FILL);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     // 高亮面（半透明黄色填充，用于属性高亮）
