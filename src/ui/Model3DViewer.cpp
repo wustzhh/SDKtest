@@ -430,12 +430,14 @@ void GLViewer::paintGL(){
         m_pendingPick = false;
         float depth = 1.0f;
         float dpr = devicePixelRatioF();
-        int dx = qRound(m_pickPos.x() * dpr);
-        int dy = qRound((height() - m_pickPos.y() - 1) * dpr);
-        glReadPixels(dx, dy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+        int devX = qRound(m_pickPos.x() * dpr);
+        int devY = qRound(m_pickPos.y() * dpr);
+        int devW = width(), devH = height();
+        int glY = devH - devY - 1;  // OpenGL原点在左下
+        glReadPixels(devX, glY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
         if (depth < 1.0f) {
-            QVector3D wp = QVector3D(m_pickPos.x(), height() - m_pickPos.y() - 1, depth)
-                .unproject(m_mvMat, m_pjMat, QRect(0, 0, width(), height()));
+            QVector3D wp = QVector3D(devX, glY, depth)
+                .unproject(m_mvMat, m_pjMat, QRect(0, 0, devW, devH));
             if (!wp.isNull()) {
                 QVector3D pan3(m_panX, m_panY, 0);
                 QVector3D modelPt = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
