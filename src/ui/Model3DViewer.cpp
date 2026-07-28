@@ -76,21 +76,21 @@ void StepWorker::doWork() {
         LOG("DIAG", QString("FaceTypes: %1").arg(ftStr));
         LOG("DIAG", QString("EdgeTypes: %1").arg(etStr));
     }
-    // 自适应偏差：根据模型尺寸调整，弧面需要更密三角
+    // 根据模型尺寸自适应调整参数
+    double diag = 1.0;
     {
         Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
-        double deflection = 0.1;
         if (!shapeBox.IsVoid()) {
             double x1,y1,z1,x2,y2,z2;
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
-            double diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
-            // 线性偏差：对角线0.2%，最小0.1mm，最大2mm
-            deflection = qBound(0.1, diag * 0.002, 2.0);
+            diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
         }
-        // 角度偏差 0.5°
-        double angularDeflection = 0.5 * M_PI / 180.0;
+        double deflection = qBound(0.05, diag * 0.001, 2.0);
+        double angularDeflection = (diag < 1.0) ? 0.2 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
+    // 边线采样间距：模型尺寸自适应
+    double edgeSpacing = qBound(0.05, diag * 0.0005, 2.0);
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int totalFaces = 0, skippedFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
@@ -148,8 +148,8 @@ void StepWorker::doWork() {
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
         GeomAdaptor_Curve acrv(crv, f, l);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
-        // 间距0.5mm，18~200段
-        int ns = qBound(18, (int)(edgeLen / 0.5), 200);
+        // 自适应间距和段数
+        int ns = qBound(18, (int)(edgeLen / edgeSpacing), (diag < 1.0) ? 500 : 200);
         GCPnts_UniformAbscissa ua(acrv, ns + 1);
         int prev = -1;
         auto sampleAndAdd = [&](const gp_Pnt& pt) {
