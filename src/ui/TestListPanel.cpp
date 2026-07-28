@@ -9,6 +9,7 @@
 #include <QClipboard>
 #include <QScreen>
 #include <QPainter>
+#include <QPropertyAnimation>
 
 // 简易FlowLayout：自动换行的水平布局
 class FlowLayout : public QLayout {
@@ -44,22 +45,33 @@ private:
 // 网页风格Toggle开关
 class ToggleSwitch : public QCheckBox {
 public:
-    ToggleSwitch(QWidget* p=nullptr):QCheckBox(p){setFixedSize(40,22);setCursor(Qt::PointingHandCursor);}
+    ToggleSwitch(QWidget* p=nullptr):QCheckBox(p),m_animPos(isChecked()?1.0:0.0){
+        setFixedSize(44,24);setCursor(Qt::PointingHandCursor);
+        m_anim = new QPropertyAnimation(this,"animPos");
+        m_anim->setDuration(150);
+        connect(this,&QCheckBox::toggled,this,[this](bool on){
+            m_anim->stop();
+            m_anim->setStartValue(m_animPos);
+            m_anim->setEndValue(on?1.0:0.0);
+            m_anim->start();
+        });
+    }
+    Q_PROPERTY(double animPos MEMBER m_animPos)
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter p(this); p.setRenderHint(QPainter::Antialiasing);
         bool on=isChecked();
+        double t = m_animPos;
         p.setBrush(on?QColor("#6366f1"):QColor("#d1d5db"));
         p.setPen(Qt::NoPen);
-        p.drawRoundedRect(rect(),11,11);
+        p.drawRoundedRect(rect(),12,12);
         p.setBrush(Qt::white);
-        int x=on?width()-19:2;
-        p.drawEllipse(x,2,18,18);
+        int x = (int)(2 + t*(width()-21));
+        p.drawEllipse(x,2,20,20);
     }
-    void mousePressEvent(QMouseEvent* e) override {
-        setChecked(!isChecked());
-        QCheckBox::mousePressEvent(e);
-    }
+private:
+    double m_animPos;
+    QPropertyAnimation* m_anim;
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -176,15 +188,14 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         label->setText(elided);
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
-        // 正/反小圆点
-        auto* dot = new QLabel;
-        dot->setFixedSize(8,8);
-        dot->setStyleSheet(QString("background:%1;border-radius:4px;").arg(r.include ? "#10b981" : "#ef4444"));
+        hl->addWidget(label);
+        // 正/反切换按钮（小圆点）
+        auto* dot = new QPushButton;
+        dot->setFixedSize(12,12);
+        dot->setCursor(Qt::PointingHandCursor);
+        dot->setStyleSheet(QString("QPushButton{background:%1;border-radius:6px;border:none;}QPushButton:hover{opacity:0.8;}").arg(r.include ? "#10b981" : "#ef4444"));
+        connect(dot, &QPushButton::clicked, this, [this,i](){ toggleRule(i); });
         hl->addWidget(dot);
-        // 切换按钮（点击圆点切换）
-        chip->setCursor(Qt::PointingHandCursor);
-        // 用eventFilter或直接重载mousePress
-        // 简化：整个chip点击切换
         // ×删除
         auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
         delBtn->setFixedSize(16,16);
