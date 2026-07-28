@@ -258,6 +258,16 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
             .arg(v[3],0,'f',3).arg(v[4],0,'f',3).arg(v[5],0,'f',3));
     }
 #endif
+    // 填充 VBO 缓存
+    m_vaCache.resize(m_verts.size() * 3);
+    m_naCache.resize(m_normals.size() * 3);
+    for (int i = 0; i < m_verts.size(); i++) {
+        m_vaCache[i*3] = m_verts[i].x(); m_vaCache[i*3+1] = m_verts[i].y(); m_vaCache[i*3+2] = m_verts[i].z();
+    }
+    for (int i = 0; i < m_normals.size(); i++) {
+        m_naCache[i*3] = m_normals[i].x(); m_naCache[i*3+1] = m_normals[i].y(); m_naCache[i*3+2] = m_normals[i].z();
+    }
+    m_vboDirty = true;
 }
 void GLViewer::resetView(){
     m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
@@ -335,7 +345,7 @@ QVector<int> GLViewer::findFacesByCenter(double x, double y, double z, double ep
 void GLViewer::setShowFaceIds(bool show){m_showFaceIds=show;update();}
 void GLViewer::setNoDepthEdges(bool on){m_noDepthEdges=on;update();}
 void GLViewer::setEdgeWidthPct(float pct){m_edgeWidthPct=qBound(0.01f,pct,2.0f);update();}
-void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();m_faceCenterIds.clear();m_faceBBoxes.clear();m_hlFaces.clear();update();}
+void GLViewer::clear(){m_verts.clear();m_tri.clear();m_normals.clear();m_edges.clear();m_faceIds.clear();m_faceCenters.clear();m_faceCenterIds.clear();m_faceBBoxes.clear();m_hlFaces.clear();m_vaCache.clear();m_naCache.clear();m_vboDirty=true;update();}
 void GLViewer::initializeGL(){initializeOpenGLFunctions();glClearColor(.18f,.18f,.22f,1);glEnable(GL_DEPTH_TEST);glEnable(GL_LIGHTING);glEnable(GL_LIGHT0);glEnable(GL_LIGHT1);glEnable(GL_NORMALIZE);
     GLfloat a0[]={.4f,.4f,.45f,1};glLightfv(GL_LIGHT0,GL_AMBIENT,a0);GLfloat d0[]={.6f,.6f,.7f,1};glLightfv(GL_LIGHT0,GL_DIFFUSE,d0);GLfloat s0[]={.2f,.2f,.2f,1};glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
     GLfloat a1[]={.15f,.15f,.2f,1};glLightfv(GL_LIGHT1,GL_AMBIENT,a1);GLfloat d1[]={.3f,.3f,.4f,1};glLightfv(GL_LIGHT1,GL_DIFFUSE,d1);
@@ -366,19 +376,21 @@ void GLViewer::paintGL(){
     QMatrix4x4 mvMat((const float*)mv), pjMat((const float*)pj);
     glEnable(GL_LIGHTING);
     if(!m_tri.isEmpty()){
-        glEnableClientState(GL_VERTEX_ARRAY);glEnableClientState(GL_NORMAL_ARRAY);
-        float* va=new float[m_verts.size()*3];float* na=new float[m_normals.size()*3];
-        for(int i=0;i<m_verts.size();i++){va[i*3]=m_verts[i].x();va[i*3+1]=m_verts[i].y();va[i*3+2]=m_verts[i].z();
-            if(i<m_normals.size()){na[i*3]=m_normals[i].x();na[i*3+1]=m_normals[i].y();na[i*3+2]=m_normals[i].z();}else{na[i*3]=0;na[i*3+1]=1;na[i*3+2]=0;}}
-        glVertexPointer(3,GL_FLOAT,0,va);glNormalPointer(GL_FLOAT,0,na);
-        if (m_showFaceIds) {
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        }
+        // 首次或数据变更时上传 VBO
+        if (m_vboDirty) uploadVBO();
+        glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
+        glVertexPointer(3, GL_FLOAT, 0, nullptr);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vboNorms);
+        glNormalPointer(GL_FLOAT, 0, nullptr);
+        glEnableClientState(GL_VERTEX_ARRAY); glEnableClientState(GL_NORMAL_ARRAY);
+        if (m_showFaceIds) { glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); }
         glColor4f(.75f,.80f,.88f, m_showFaceIds ? .35f : 1.f);
-        glDrawElements(GL_TRIANGLES,m_tri.size(),GL_UNSIGNED_INT,m_tri.data());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vboIdx);
+        glDrawElements(GL_TRIANGLES, m_tri.size(), GL_UNSIGNED_INT, nullptr);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         if (m_showFaceIds) glDisable(GL_BLEND);
-        glDisableClientState(GL_NORMAL_ARRAY);glDisableClientState(GL_VERTEX_ARRAY);delete[]va;delete[]na;
+        glDisableClientState(GL_NORMAL_ARRAY); glDisableClientState(GL_VERTEX_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     // 高亮面（半透明黄色填充，用于属性高亮）
     if(!m_hlFaces.isEmpty()&&!m_tri.isEmpty()){
@@ -386,26 +398,28 @@ void GLViewer::paintGL(){
         QVector<int> hlTri; hlTri.reserve(m_tri.size());
         for(int ti=0;ti<m_tri.size()/3;ti++) if(ti<m_faceIds.size()&&hlFaceSet.contains(m_faceIds[ti])){hlTri.append(m_tri[ti*3]);hlTri.append(m_tri[ti*3+1]);hlTri.append(m_tri[ti*3+2]);}
         if(!hlTri.isEmpty()){
-            glEnableClientState(GL_VERTEX_ARRAY);float* va2=new float[m_verts.size()*3];
-            for(int i=0;i<m_verts.size();i++){va2[i*3]=m_verts[i].x();va2[i*3+1]=m_verts[i].y();va2[i*3+2]=m_verts[i].z();}
-            glVertexPointer(3,GL_FLOAT,0,va2);
+            glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glVertexPointer(3, GL_FLOAT, 0, nullptr);
             glDisable(GL_LIGHTING);glColor3f(1,.85f,.1f);glEnable(GL_POLYGON_OFFSET_FILL);glPolygonOffset(-10,-10);
             glDrawElements(GL_TRIANGLES,hlTri.size(),GL_UNSIGNED_INT,hlTri.data());
             glDisable(GL_POLYGON_OFFSET_FILL);glEnable(GL_LIGHTING);
-            glDisableClientState(GL_VERTEX_ARRAY);delete[]va2;
+            glDisableClientState(GL_VERTEX_ARRAY);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
         if(m_noDepthEdges) glDisable(GL_DEPTH_TEST);
         glEnable(GL_POLYGON_OFFSET_LINE);glPolygonOffset(-1,-2);
-        glEnableClientState(GL_VERTEX_ARRAY);float* ea=new float[m_verts.size()*3];
-        for(int i=0;i<m_verts.size();i++){ea[i*3]=m_verts[i].x();ea[i*3+1]=m_verts[i].y();ea[i*3+2]=m_verts[i].z();}
-        glVertexPointer(3,GL_FLOAT,0,ea);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, nullptr);
         float lw=m_edgeWidthPct*width()/100.0f;
         glLineWidth(qMax(0.5f,lw));
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
-        glDisableClientState(GL_VERTEX_ARRAY);delete[]ea;
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDisable(GL_POLYGON_OFFSET_LINE);
         if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
     }
@@ -1037,4 +1051,33 @@ void Model3DViewer::applyPendingBoxes() {
         highlightFacesInBoxes(it.key(), it.value(), true);
 }
 void Model3DViewer::toggleFaceIds(){bool on=m_btnShowFaceIds->isChecked();m_gl->setNoDepthEdges(on);}
+
+void GLViewer::uploadVBO() {
+    makeCurrent();
+    // 删除旧 VBO
+    if (m_vboVerts) { glDeleteBuffers(1, &m_vboVerts); m_vboVerts = 0; }
+    if (m_vboNorms) { glDeleteBuffers(1, &m_vboNorms); m_vboNorms = 0; }
+    if (m_vboIdx)   { glDeleteBuffers(1, &m_vboIdx);   m_vboIdx = 0; }
+    if (m_vaCache.isEmpty() || m_tri.isEmpty()) { m_vboDirty = false; return; }
+
+    // 上传顶点
+    glGenBuffers(1, &m_vboVerts);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
+    glBufferData(GL_ARRAY_BUFFER, m_vaCache.size() * sizeof(float), m_vaCache.constData(), GL_STATIC_DRAW);
+
+    // 上传法线
+    glGenBuffers(1, &m_vboNorms);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vboNorms);
+    glBufferData(GL_ARRAY_BUFFER, m_naCache.size() * sizeof(float), m_naCache.constData(), GL_STATIC_DRAW);
+
+    // 上传索引
+    glGenBuffers(1, &m_vboIdx);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vboIdx);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_tri.size() * sizeof(int), m_tri.constData(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    m_vboDirty = false;
+}
+
 #include "Model3DViewer.moc"

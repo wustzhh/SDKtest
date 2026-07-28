@@ -92,6 +92,12 @@ private:
     QVector<int> m_faceCenterIds;
     QVector<FaceBBox> m_faceBBoxes;
     QVector<int> m_hlFaces;
+    // VBO 缓存：避免每帧分配顶点数组
+    QVector<float> m_vaCache;
+    QVector<float> m_naCache;
+    GLuint m_vboVerts = 0, m_vboNorms = 0, m_vboIdx = 0;
+    bool m_vboDirty = true;
+    void uploadVBO();
     bool m_showFaceIds=false;
     bool m_noDepthEdges=false;
     float m_edgeWidthPct=0.1f;  // 默认屏幕宽度0.1%
