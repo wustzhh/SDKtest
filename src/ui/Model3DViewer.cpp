@@ -528,10 +528,8 @@ void GLViewer::paintGL(){
     }
     // ── Ctrl锚点高亮 ──
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_LIGHTING);
         glColor3f(1, 1, 0);
-        float r = m_modelSize * 0.05f / m_zoom;  // 半径5%模型尺寸
+        float r = m_modelSize * 0.01f / m_zoom;  // 半径1%模型尺寸
         // 3D球体：6个纬度圈×16经度点，用三角形条带
         for (int lat = 0; lat < 6; lat++) {
             float phi1 = lat * M_PI / 6.0f;
@@ -548,11 +546,11 @@ void GLViewer::paintGL(){
                 ring.append(m_anchor.z() + r * cos(phi1));
             }
             glEnableClientState(GL_VERTEX_ARRAY);
+            glDisable(GL_LIGHTING);  // 纯色不依赖光照
             glVertexPointer(3, GL_FLOAT, 0, ring.constData());
             glDrawArrays(GL_TRIANGLE_STRIP, 0, ring.size() / 3);
             glDisableClientState(GL_VERTEX_ARRAY);
         }
-        glEnable(GL_DEPTH_TEST);
     }
 }
 
