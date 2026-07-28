@@ -454,11 +454,15 @@ void GLViewer::paintGL(){
                 .arg(wx,0,'f',3).arg(wy,0,'f',3).arg(wz,0,'f',3)
                 .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3)
                 .arg(m_panX,0,'f',3).arg(m_panY,0,'f',3));
-            // 逆 MODELVIEW → 模型空间
             QVector3D pan3(m_panX, m_panY, 0);
-            m_anchor = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
-            LOG("PICK", QString("anchor_after=(%1,%2,%3)")
-                .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3));
+            QVector3D modelPt = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
+            // 调整pan使点击点在屏幕上不动
+            m_panX = wp.x() - modelPt.x();
+            m_panY = wp.y() - modelPt.y();
+            m_anchor = modelPt;
+            LOG("PICK", QString("anchor_after=(%1,%2,%3) pan_after=(%4,%5)")
+                .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3)
+                .arg(m_panX,0,'f',3).arg(m_panY,0,'f',3));
         }
     }
     // ── 锚点标记：红色十字 ──
