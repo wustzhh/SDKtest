@@ -112,60 +112,37 @@ void StepWorker::doWork() {
     QVector<TopoDS_Edge> allEdges; QMap<void*,QSet<void*>> edgeFaceMap;
     { TopExp_Explorer eExp(shape, TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* p=eExp.Current().TShape().get(); if (!edgeFaceMap.contains(p)) { edgeFaceMap[p]={}; allEdges.append(TopoDS::Edge(eExp.Current())); } } }
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { void* fp=fExp.Current().TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].insert(fp); } } }
-    // 建顶点空间哈希（量化到0.001精度），加速后续边线顶点查找
-    QHash<quint64, int> vertHash;
-    for (int i = 0; i < r.verts.size(); i++) {
-        auto& v = r.verts[i];
-        quint64 key = (quint64)(v.x() * 1000 + 50000) << 42
-                    | (quint64)(v.y() * 1000 + 50000) << 21
-                    | (quint64)(v.z() * 1000 + 50000);
-        if (!vertHash.contains(key)) vertHash[key] = i;
-    }
+    // 边线使用独立顶点（不复用面网格顶点），避免哈希碰撞导致错误连线
+    int edgeVertBase = r.verts.size();
     int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0, nonManifoldEdges = 0;
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) { filteredEdges++; continue; }
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size();
-        if (nf < 2) { filteredEdges++; continue; }  // 过滤自由边/缝边
+        if (nf < 2) { filteredEdges++; continue; }
         if (nf >= 3) nonManifoldEdges++;
-        // nf=2 正常绿色，nf>=3 非流形边用黄色标记
         QVector3D col = (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)
                                 : QVector3D(1.0f, 0.85f, 0.1f);
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        // 自适应采样：根据边长度动态调整点数，最少18段最多200段
         GeomAdaptor_Curve acrv(crv, f, l);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
         int ns = qBound(18, (int)(edgeLen / 0.5), 200);
-        // 用均匀弧长采样
         GCPnts_UniformAbscissa ua(acrv, ns + 1);
+        int prev = -1;
+        auto sampleAndAdd = [&](const gp_Pnt& pt) {
+            int idx = r.verts.size();
+            r.verts.append(QVector3D(pt.X(), pt.Y(), pt.Z()));
+            if (prev >= 0) r.edges.append({prev, idx, col});
+            prev = idx;
+        };
         if (ua.IsDone() && ua.NbPoints() >= 2) {
-            int prev = -1;
-            for (int s = 1; s <= ua.NbPoints(); s++) {
-                double u = ua.Parameter(s);
-                gp_Pnt pt = crv->Value(u);
-                quint64 key = (quint64)(pt.X() * 1000 + 50000) << 42
-                            | (quint64)(pt.Y() * 1000 + 50000) << 21
-                            | (quint64)(pt.Z() * 1000 + 50000);
-                int idx = vertHash.value(key, -1);
-                if (idx < 0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); vertHash[key]=idx; }
-                if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
-                if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
-            }
-            renderedEdges++;
+            for (int s = 1; s <= ua.NbPoints(); s++)
+                sampleAndAdd(crv->Value(ua.Parameter(s)));
         } else {
-            // 回退到固定采样
-            int ns=36; double st=(l-f)/ns; int prev=-1;
-            for (int s=0;s<=ns;s++) {
-                double u=(s==ns)?l:f+s*st; gp_Pnt pt=crv->Value(u);
-                quint64 key = (quint64)(pt.X() * 1000 + 50000) << 42
-                            | (quint64)(pt.Y() * 1000 + 50000) << 21
-                            | (quint64)(pt.Z() * 1000 + 50000);
-                int idx = vertHash.value(key, -1);
-                if (idx < 0) { idx=r.verts.size(); r.verts.append(QVector3D(pt.X(),pt.Y(),pt.Z())); vertHash[key]=idx; }
-                if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
-                if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
-            }
-            renderedEdges++;
+            int ns2 = 36; double st = (l-f)/ns2;
+            for (int s = 0; s <= ns2; s++)
+                sampleAndAdd(crv->Value((s==ns2) ? l : f + s*st));
         }
+        renderedEdges++;
     }
     if (r.normals.size()<r.verts.size()) { int o=r.normals.size(); r.normals.resize(r.verts.size()); for (int i=o;i<r.verts.size();i++) r.normals[i]=QVector3D(0,1,0); }
     // 调试输出（仅在开启 debug 宏时启用，避免大模型下大量磁盘I/O拖慢加载）
