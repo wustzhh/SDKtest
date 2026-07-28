@@ -159,7 +159,6 @@ void StepWorker::doWork() {
         double trimF = f, trimL = l;
         {
             auto& faces = edgeFaceMap[ed.TShape().get()];
-            // nf==0的孤立边：遍历所有面查找pcurve（trim面边可能对不上face遍历）
             if (faces.isEmpty()) {
                 for (TopExp_Explorer fe(shape, TopAbs_FACE); fe.More(); fe.Next()) {
                     TopoDS_Face face = TopoDS::Face(fe.Current());
@@ -179,6 +178,10 @@ void StepWorker::doWork() {
                 }
             }
         }
+        LOG("EDGE",QString("nf=%1 curve=[%2,%3] pcurve=[%4,%5] len=%6")
+            .arg(nf).arg(f,0,'f',6).arg(l,0,'f',6)
+            .arg(trimF,0,'f',6).arg(trimL,0,'f',6)
+            .arg(GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(crv,f,l)),0,'f',4));
         GeomAdaptor_Curve acrv(crv, trimF, trimL);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
         // 间距0.05mm，保证小模型弧边圆滑
