@@ -1438,6 +1438,12 @@ void MainWindow::onAllFinished() {
             jr["c"] = r.testCase.caseName;
             jr["st"] = r.status;
             jr["d"] = r.durationMs;
+            if (!r.properties.isEmpty()) {
+                QJsonObject jp;
+                for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
+                    jp[it.key()] = it.value();
+                jr["p"] = jp;
+            }
             arr.append(jr);
         }
         root["results"] = arr;
@@ -1486,7 +1492,29 @@ void MainWindow::onRestoreFromFile(int index) {
     if (!m_restoreCombo || index <= 0) return;
     QString path = m_restoreCombo->itemData(index).toString();
     if (path.isEmpty() || !QFile::exists(path)) return;
-    m_testList->loadFromRestore(path);
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+    f.close();
+    if (!doc.isObject()) return;
+    QJsonArray results = doc.object()["results"].toArray();
+
+    QVector<TestRunResult> restored;
+    for (const auto& v : results) {
+        QJsonObject r = v.toObject();
+        TestRunResult rr;
+        rr.testCase.suiteName = r["s"].toString();
+        rr.testCase.caseName  = r["c"].toString();
+        rr.status    = r["st"].toString("PASSED");
+        rr.durationMs = r["d"].toDouble();
+        QJsonObject props = r["p"].toObject();
+        for (auto it = props.begin(); it != props.end(); ++it)
+            rr.properties[it.key()] = it.value().toString();
+        restored.append(rr);
+    }
+
+    m_centerResultView->showResults(restored);
     m_restoreCombo->setCurrentIndex(0);
 }
 

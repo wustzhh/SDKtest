@@ -7,14 +7,12 @@
 #include <QApplication>
 #include <QStyle>
 #include <QClipboard>
-#include <QFile>
-#include <QRegularExpression>
 
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
 static const QString MARK_YES  = QString::fromUtf8("\xe2\x98\x91");
 static const QString MARK_HALF = QString::fromUtf8("\xe2\x98\x92");
 
-enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName, Role_Status };
+enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName };
 
 TestListPanel::TestListPanel(QWidget* parent)
     : QWidget(parent)
@@ -253,79 +251,6 @@ void TestListPanel::loadTests(const QVector<TestCase>& cases,
     QTimer::singleShot(50, m_tree, &QTreeWidget::expandAll);
     updateStats();
     emit selectionChanged(0);
-}
-
-void TestListPanel::loadFromRestore(const QString& jsonPath) {
-    QFile f(jsonPath);
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-    f.close();
-    if (!doc.isObject()) return;
-    QJsonObject root = doc.object();
-    QJsonArray results = root["results"].toArray();
-    if (results.isEmpty()) return;
-
-    // suite+case → {status, duration}
-    QMap<QString, QPair<QString, double>> caseInfo;
-    QSet<QString> seen;
-    QVector<TestCase> cases;
-
-    for (const auto& v : results) {
-        QJsonObject r = v.toObject();
-        QString suite = r["s"].toString();
-        QString name  = r["c"].toString();
-        QString full  = suite + "." + name;
-        if (seen.contains(full)) continue;
-        seen.insert(full);
-
-        QString status = r["st"].toString("PASSED");
-        double dur = r["d"].toDouble();
-        caseInfo[full] = {status, dur};
-
-        TestCase tc;
-        tc.suiteName = suite;
-        tc.caseName  = name;
-        cases.append(tc);
-    }
-
-    m_lastHighlighted = nullptr;
-    m_tree->clear();
-    m_searchEdit->clear();
-    m_updating = true;
-    buildTree(cases, {});
-    m_updating = false;
-
-    for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
-        markStatus(m_tree->topLevelItem(i), caseInfo);
-
-    QTimer::singleShot(50, m_tree, &QTreeWidget::expandAll);
-    updateStats();
-    emit selectionChanged(0);
-}
-
-void TestListPanel::markStatus(QTreeWidgetItem* item,
-                               const QMap<QString, QPair<QString, double>>& info) {
-    QString type = item->data(0, Role_Type).toString();
-    if (type == "case") {
-        QString suite = item->data(0, Role_SuiteName).toString();
-        QString name  = item->data(0, Role_CaseName).toString();
-        QString full  = suite + "." + name;
-        if (info.contains(full)) {
-            const auto& si = info[full];
-            item->setData(0, Role_Status, si.first);
-            // 给用例文字加状态标记
-            QString prefix;
-            if (si.first == "FAILED")
-                prefix = QString::fromUtf8("\xe2\x9c\x97 ");  // ✗
-            else if (si.first == "SKIPPED")
-                prefix = QString::fromUtf8("\xe2\x8f\xad ");  // ⏭
-            else
-                prefix = QString::fromUtf8("\xe2\x9c\x93 ");  // ✓
-            item->setText(0, prefix + "  " + name);
-        }
-    }
-    for (int i = 0; i < item->childCount(); ++i)
-        markStatus(item->child(i), info);
 }
 
 void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,

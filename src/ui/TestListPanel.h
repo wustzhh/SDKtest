@@ -20,7 +20,6 @@ public:
 
     void loadTests(const QVector<TestCase>& cases,
                    const QVector<TestCategory>& categories = {});
-    void loadFromRestore(const QString& jsonPath);
 
     QVector<TestCase> selectedTests() const;
     QStringList selectedTestNames() const;
@@ -54,8 +53,6 @@ private:
     void updateParentState(QTreeWidgetItem* item);
     void updateItemText(QTreeWidgetItem* item);
     void collectChecked(QTreeWidgetItem* item, QVector<TestCase>& out) const;
-    void markStatus(QTreeWidgetItem* item,
-                    const QMap<QString, QPair<QString, double>>& info);
     bool applyFilter(QTreeWidgetItem* item, const QString& text);
     void showEmptyPlaceholder();
     int  countVisibleLeaf() const;
