@@ -85,12 +85,12 @@ void StepWorker::doWork() {
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
         }
-        double deflection = qBound(0.05, diag * 0.001, 2.0);
-        double angularDeflection = (diag < 1.0) ? 0.2 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
+        double deflection = qBound(0.001, diag * 0.001, 2.0);
+        double angularDeflection = (diag < 1.0) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     // 边线采样间距：模型尺寸自适应
-    double edgeSpacing = qBound(0.05, diag * 0.0005, 2.0);
+    double edgeSpacing = qBound(0.001, diag * 0.0005, 2.0);
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int totalFaces = 0, skippedFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
