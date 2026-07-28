@@ -77,7 +77,7 @@ void StepWorker::doWork() {
         LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
             .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
             .arg(angularDeflection*180.0/M_PI,0,'f',2));
-        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
+        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection, true).Perform();
         tMesh = stage.elapsed();
     }
     // 边线采样间距：模型尺寸自适应
@@ -87,6 +87,14 @@ void StepWorker::doWork() {
     int skippedFaces = 0;
     { } // totalFaces already counted above
     int voff=0, faceIdx=0;
+    // 预分配内存减少reallocation
+    r.verts.reserve(totalFaces * 100);
+    r.tris.reserve(totalFaces * 300);
+    r.normals.reserve(totalFaces * 100);
+    r.faceIds.reserve(totalFaces * 100);
+    r.faceCenters.reserve(totalFaces);
+    r.faceCenterIds.reserve(totalFaces);
+    r.faceBBoxes.reserve(totalFaces);
     TopExp_Explorer fExp(shape, TopAbs_FACE);
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
