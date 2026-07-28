@@ -57,25 +57,6 @@ void StepWorker::doWork() {
     r.shape = shape;  // 保存用于射线拾取
     if (shape.IsNull()) { r.error="Shape is null"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
-    // 诊断：面/边类型统计
-    {
-        QMap<QString,int> faceTypes, edgeTypes;
-        for (TopExp_Explorer fe(shape, TopAbs_FACE); fe.More(); fe.Next()) {
-            TopoDS_Face f = TopoDS::Face(fe.Current());
-            Handle(Geom_Surface) surf = BRep_Tool::Surface(f);
-            if (!surf.IsNull()) faceTypes[QString::fromUtf8(surf->DynamicType()->Name())]++;
-        }
-        for (TopExp_Explorer ee(shape, TopAbs_EDGE); ee.More(); ee.Next()) {
-            TopoDS_Edge e = TopoDS::Edge(ee.Current());
-            double f2,l2; Handle(Geom_Curve) crv = BRep_Tool::Curve(e, f2, l2);
-            if (!crv.IsNull()) edgeTypes[QString::fromUtf8(crv->DynamicType()->Name())]++;
-        }
-        QString ftStr, etStr;
-        for (auto it=faceTypes.begin(); it!=faceTypes.end(); ++it) ftStr += QString("%1:%2 ").arg(it.key()).arg(it.value());
-        for (auto it=edgeTypes.begin(); it!=edgeTypes.end(); ++it) etStr += QString("%1:%2 ").arg(it.key()).arg(it.value());
-        LOG("DIAG", QString("FaceTypes: %1").arg(ftStr));
-        LOG("DIAG", QString("EdgeTypes: %1").arg(etStr));
-    }
     // 根据模型尺寸自适应调整参数
     double diag = 1.0;
     {
@@ -87,8 +68,8 @@ void StepWorker::doWork() {
         }
         double deflection = qBound(0.001, diag * 0.01, 2.0);
         double angularDeflection = (diag < 1.0) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
-        LOG("MESH",QString("diag=%.3f deflection=%.4f angular=%.3f°")
-            .arg(diag).arg(deflection).arg(angularDeflection*180.0/M_PI,0,'f',3));
+        LOG("MESH",QString("diag=%1 deflection=%2 angular=%3°")
+            .arg(diag,0,'f',3).arg(deflection,0,'f',4).arg(angularDeflection*180.0/M_PI,0,'f',3));
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     // 边线采样间距：模型尺寸自适应
