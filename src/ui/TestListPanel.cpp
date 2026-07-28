@@ -73,10 +73,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     setModal(true);
     auto* screen = QApplication::primaryScreen();
     if (screen) setGeometry(screen->geometry());
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(0,0,0,115));
-    setPalette(pal);
+    setAutoFillBackground(false);
     
     auto* lay = new QVBoxLayout(this);
     lay->setContentsMargins(80, 60, 80, 60);

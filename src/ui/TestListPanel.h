@@ -28,6 +28,10 @@ public:
     AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent = nullptr);
     QVector<FilterRule> rules() const { return m_rules; }
     bool enabled() const;
+    void paintEvent(QPaintEvent*) override {
+        QPainter p(this);
+        p.fillRect(rect(), QColor(0,0,0,128));
+    }
 signals:
     void filterChanged();
 private:
