@@ -389,6 +389,13 @@ bool TestRunner::isRunning() const {
     return m_activeCount > 0 || m_nextBatchIdx < m_batches.size();
 }
 
+QStringList TestRunner::xmlPaths() const {
+    QStringList paths;
+    for (const auto& b : m_batches)
+        if (!b.xmlPath.isEmpty()) paths << b.xmlPath;
+    return paths;
+}
+
 QVector<TestRunner::ParsedBlock> TestRunner::parseCombinedOutput(const QString& allOutput) {
     QVector<ParsedBlock> blocks;
     // 匹配 [ RUN      ] 后的完整测试名（Suite.Test 或 Prefix/Suite.Test/0）

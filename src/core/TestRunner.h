@@ -27,6 +27,7 @@ public:
 
     void cancel();
     bool isRunning() const;
+    QStringList xmlPaths() const;
 
 signals:
     void testFinished(const TestRunResult& result);

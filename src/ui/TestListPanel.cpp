@@ -7,12 +7,14 @@
 #include <QApplication>
 #include <QStyle>
 #include <QClipboard>
+#include <QFile>
+#include <QRegularExpression>
 
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
 static const QString MARK_YES  = QString::fromUtf8("\xe2\x98\x91");
 static const QString MARK_HALF = QString::fromUtf8("\xe2\x98\x92");
 
-enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName };
+enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName, Role_Status };
 
 TestListPanel::TestListPanel(QWidget* parent)
     : QWidget(parent)
@@ -251,6 +253,102 @@ void TestListPanel::loadTests(const QVector<TestCase>& cases,
     QTimer::singleShot(50, m_tree, &QTreeWidget::expandAll);
     updateStats();
     emit selectionChanged(0);
+}
+
+void TestListPanel::loadFromXml(const QString& xmlPath) {
+    QFile f(xmlPath);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+    QString xml = QString::fromUtf8(f.readAll());
+    f.close();
+
+    // 解析所有 <testcase> 元素
+    QRegularExpression tcRe(
+        R"re(<testcase\s+classname="([^"]+)"\s+name="([^"]+)"[^>]*>)re",
+        QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpression failRe(R"re(<failure[^>]*/>|<failure[^>]*>.*?</failure>)re");
+    QRegularExpression skipRe(R"re(<skipped[^>]*/>|<skipped[^>]*>.*?</skipped>)re");
+    QRegularExpression timeRe(R"re(time="([\d.]+)")re");
+
+    // suite+case → {status, duration}
+    QMap<QString, QPair<QString, double>> caseInfo;
+    // 去重用 set
+    QSet<QString> seen;
+
+    auto it = tcRe.globalMatch(xml);
+    while (it.hasNext()) {
+        auto m = it.next();
+        QString suite = m.captured(1);
+        QString name  = m.captured(2);
+        QString full  = suite + "." + name;
+        QString fullXml = m.captured(0);
+
+        QString status = "PASSED";
+        if (failRe.match(fullXml).hasMatch())
+            status = "FAILED";
+        else if (skipRe.match(fullXml).hasMatch())
+            status = "SKIPPED";
+
+        auto tm = timeRe.match(fullXml);
+        double dur = tm.hasMatch() ? tm.captured(1).toDouble() * 1000.0 : 0;
+
+        if (!seen.contains(full)) {
+            seen.insert(full);
+            caseInfo[full] = {status, dur};
+        }
+    }
+
+    if (seen.isEmpty()) return;
+
+    // 构建 TestCase 列表（暂不分类，全部归入 "Restored"）
+    QVector<TestCase> cases;
+    for (const auto& fullName : seen) {
+        int dot = fullName.lastIndexOf('.');
+        if (dot < 0) continue;
+        TestCase tc;
+        tc.suiteName = fullName.left(dot);
+        tc.caseName  = fullName.mid(dot + 1);
+        cases.append(tc);
+    }
+
+    m_lastHighlighted = nullptr;
+    m_tree->clear();
+    m_searchEdit->clear();
+    m_updating = true;
+    buildTree(cases, {});
+    m_updating = false;
+
+    // 标记状态
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
+        markStatus(m_tree->topLevelItem(i), caseInfo);
+
+    QTimer::singleShot(50, m_tree, &QTreeWidget::expandAll);
+    updateStats();
+    emit selectionChanged(0);
+}
+
+void TestListPanel::markStatus(QTreeWidgetItem* item,
+                               const QMap<QString, QPair<QString, double>>& info) {
+    QString type = item->data(0, Role_Type).toString();
+    if (type == "case") {
+        QString suite = item->data(0, Role_SuiteName).toString();
+        QString name  = item->data(0, Role_CaseName).toString();
+        QString full  = suite + "." + name;
+        if (info.contains(full)) {
+            const auto& si = info[full];
+            item->setData(0, Role_Status, si.first);
+            // 给用例文字加状态标记
+            QString prefix;
+            if (si.first == "FAILED")
+                prefix = QString::fromUtf8("\xe2\x9c\x97 ");  // ✗
+            else if (si.first == "SKIPPED")
+                prefix = QString::fromUtf8("\xe2\x8f\xad ");  // ⏭
+            else
+                prefix = QString::fromUtf8("\xe2\x9c\x93 ");  // ✓
+            item->setText(0, prefix + "  " + name);
+        }
+    }
+    for (int i = 0; i < item->childCount(); ++i)
+        markStatus(item->child(i), info);
 }
 
 void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,

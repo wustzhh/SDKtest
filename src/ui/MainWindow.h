@@ -53,6 +53,8 @@ private:
     void updateButtonStates();
     void refreshProfileCombo();
     void refreshScenarioCombo();
+    void refreshRestoreCombo();
+    void onRestoreFromXml(int index);
     void saveLayout();
     // 模型截图
     void captureAllModelScreenshots(const QString& screenshotDir);
@@ -82,6 +84,7 @@ private:
     QMenu* m_profileMenu = nullptr;
     QComboBox* m_scenarioCombo = nullptr;
     QCheckBox* m_chkSingleTest = nullptr;
+    QComboBox* m_restoreCombo = nullptr;
     int m_restoreLW = 0, m_restoreRW = 0, m_restoreVP = 0, m_restoreVP2 = 0;
     QStringList m_suiteNames;
 };
