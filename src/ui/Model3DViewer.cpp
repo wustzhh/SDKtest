@@ -131,9 +131,9 @@ void StepWorker::doWork() {
     }
     if (r.verts.isEmpty()||r.tris.isEmpty()) { r.error="No triangles"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE7\x94\x9F\xE6\x88\x90\xE8\xBE\xB9\xE7\xBA\xBF..."));
-    QVector<TopoDS_Edge> allEdges; QMap<void*,QSet<void*>> edgeFaceMap;
+    QVector<TopoDS_Edge> allEdges; QMap<void*,QVector<TopoDS_Face>> edgeFaceMap;
     { TopExp_Explorer eExp(shape, TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* p=eExp.Current().TShape().get(); if (!edgeFaceMap.contains(p)) { edgeFaceMap[p]={}; allEdges.append(TopoDS::Edge(eExp.Current())); } } }
-    { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { void* fp=fExp.Current().TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].insert(fp); } } }
+    { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { TopoDS_Face face = TopoDS::Face(fExp.Current()); void* fp=face.TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].append(face); } } }
     // 边线使用独立顶点（不复用面网格顶点），避免哈希碰撞导致错误连线
     int edgeVertBase = r.verts.size();
     int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0, nonManifoldEdges = 0;
@@ -146,7 +146,19 @@ void StepWorker::doWork() {
                       : (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)  // 正常绿色
                                 : QVector3D(1.0f, 0.85f, 0.1f);   // 非流形黄色
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        GeomAdaptor_Curve acrv(crv, f, l);
+        // 从相邻面的pcurve取实际trim范围（修剪面的边可能只用曲线的一段）
+        double trimF = f, trimL = l;
+        {
+            auto& faces = edgeFaceMap[ed.TShape().get()];
+            for (const auto& face : faces) {
+                double pf, pl;
+                if (BRep_Tool::CurveOnSurface(ed, face, pf, pl)) {
+                    trimF = qMin(trimF, pf);
+                    trimL = qMax(trimL, pl);
+                }
+            }
+        }
+        GeomAdaptor_Curve acrv(crv, trimF, trimL);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
         // 间距0.05mm，保证小模型弧边圆滑
         int ns = qBound(50, (int)(edgeLen / 0.05), 500);
