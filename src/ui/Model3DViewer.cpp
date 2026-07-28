@@ -70,12 +70,14 @@ void StepWorker::doWork() {
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
+    int totalFaces = 0, skippedFaces = 0;
+    { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
     int voff=0, faceIdx=0;
     TopExp_Explorer fExp(shape, TopAbs_FACE);
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
-        if (tri.IsNull()) continue;
+        if (tri.IsNull()) { skippedFaces++; faceIdx++; continue; }
         int base=voff, triStart=r.tris.size()/3;
         r.faceCenterIds.append(faceIdx);
         for (int i=1;i<=tri->NbNodes();i++) { gp_Pnt p=tri->Node(i).Transformed(loc.Transformation()); r.verts.append(QVector3D(p.X(),p.Y(),p.Z())); voff++; }
@@ -119,10 +121,11 @@ void StepWorker::doWork() {
                     | (quint64)(v.z() * 1000 + 50000);
         if (!vertHash.contains(key)) vertHash[key] = i;
     }
+    int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0;
     for (const auto& ed : allEdges) {
-        if (BRep_Tool::Degenerated(ed)) continue;
+        if (BRep_Tool::Degenerated(ed)) { filteredEdges++; continue; }
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size();
-        if (nf < 2) continue;  // 只渲染两面之间的真实边，过滤自由边/缝边
+        if (nf < 2) { filteredEdges++; continue; }  // 只渲染两面之间的真实边
         QVector3D col(0.15f, 0.85f, 0.15f);  // 统一绿色
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
         // 自适应采样：根据边长度动态调整点数，最少18段最多200段
@@ -144,6 +147,7 @@ void StepWorker::doWork() {
                 if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
                 if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
             }
+            renderedEdges++;
         } else {
             // 回退到固定采样
             int ns=36; double st=(l-f)/ns; int prev=-1;
@@ -157,6 +161,7 @@ void StepWorker::doWork() {
                 if (r.normals.size()<r.verts.size()) r.normals.resize(r.verts.size());
                 if (prev>=0) r.edges.append({prev,idx,col}); prev=idx;
             }
+            renderedEdges++;
         }
     }
     if (r.normals.size()<r.verts.size()) { int o=r.normals.size(); r.normals.resize(r.verts.size()); for (int i=o;i<r.verts.size();i++) r.normals[i]=QVector3D(0,1,0); }
@@ -223,7 +228,14 @@ void StepWorker::doWork() {
 #endif
 
     r.ok=true; r.elapsedMs=(int)t.elapsed();
-    LOG("3D",QString("Worker done: %1v %2t %3e %4ms").arg(r.verts.size()).arg(r.tris.size()/3).arg(r.edges.size()).arg(r.elapsedMs));
+    int renderedFaces = totalFaces - skippedFaces;
+    LOG("3D",QString("Worker: faces=%1/%2 tri=%3 verts=%4 edges=%5/%6(filt=%7) %8ms")
+        .arg(renderedFaces).arg(totalFaces)
+        .arg(r.tris.size()/3).arg(r.verts.size())
+        .arg(renderedEdges).arg(totalEdges).arg(filteredEdges)
+        .arg(r.elapsedMs));
+    if (skippedFaces > 0)
+        LOG("3D",QString("WARNING: %1 faces have no triangulation").arg(skippedFaces));
     emit finished(r);
 }
 #endif
