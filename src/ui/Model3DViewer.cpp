@@ -149,7 +149,7 @@ void StepWorker::doWork() {
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) { filteredEdges++; continue; }
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size();
-        if (nf == 0) nf = 1;  // 孤立边按自由边渲染（trim边可能对不上face遍历）
+        if (nf == 0) { filteredEdges++; continue; }  // 孤立边不渲染
         if (nf >= 3) nonManifoldEdges++;
         QVector3D col = (nf==1) ? QVector3D(1.0f, 0.15f, 0.15f)  // 自由边红色
                       : (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)  // 正常绿色
