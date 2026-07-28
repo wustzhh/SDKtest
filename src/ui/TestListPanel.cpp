@@ -60,9 +60,8 @@ public:
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter p(this); p.setRenderHint(QPainter::Antialiasing);
-        bool on=isChecked();
         double t = m_animPos;
-        p.setBrush(on?QColor("#6366f1"):QColor("#d1d5db"));
+        p.setBrush(QColor(t>0.5?QString("#6366f1"):QString("#d1d5db")));
         p.setPen(Qt::NoPen);
         p.drawRoundedRect(rect(),12,12);
         p.setBrush(Qt::white);
@@ -179,7 +178,7 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
         auto* hl = new QHBoxLayout(chip);
         hl->setContentsMargins(8,3,4,3);
-        hl->setSpacing(4);
+        hl->setSpacing(6);
         auto* label = new QLabel(r.keyword);
         label->setStyleSheet("background:transparent;font-size:12px;color:#374151;border:none;");
         label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -189,13 +188,12 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
         hl->addWidget(label);
-        // 正/反切换按钮（小圆点）
-        auto* dot = new QPushButton;
-        dot->setFixedSize(12,12);
-        dot->setCursor(Qt::PointingHandCursor);
-        dot->setStyleSheet(QString("QPushButton{background:%1;border-radius:6px;border:none;}QPushButton:hover{opacity:0.8;}").arg(r.include ? "#10b981" : "#ef4444"));
-        connect(dot, &QPushButton::clicked, this, [this,i](){ toggleRule(i); });
-        hl->addWidget(dot);
+        // 正/反ToggleSwitch
+        auto* sw = new ToggleSwitch;
+        sw->setChecked(r.include);
+        sw->setFixedSize(36,20);
+        connect(sw, &QCheckBox::toggled, this, [this,i](bool on){ m_rules[i].include=on; rebuildRuleWidgets(); updatePreview(); emit filterChanged(); });
+        hl->addWidget(sw);
         // ×删除
         auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
         delBtn->setFixedSize(16,16);
