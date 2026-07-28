@@ -220,7 +220,7 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         btnNo->setStyleSheet(!r.include
             ? "QPushButton{background:#ef4444;color:white;border:none;border-radius:3px;font-size:10px;}"
             : "QPushButton{background:#e5e7eb;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
-        auto toggle = [this,i,btnYes,btnNo](bool inc){
+        auto toggle = [this,i,btnYes,btnNo,chip](bool inc){
             m_rules[i].include=inc;
             btnYes->setChecked(inc); btnNo->setChecked(!inc);
             btnYes->setStyleSheet(inc?"QPushButton{background:#10b981;color:white;border:none;border-radius:3px;font-size:10px;}":"QPushButton{background:#e5e7eb;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
