@@ -9,9 +9,40 @@
 #include <QVector>
 #include <QMenu>
 #include <QTimer>
+#include <QDialog>
+#include <QCheckBox>
+#include <QListWidget>
 
 #include "models/TestResult.h"
 #include "core/ConfigManager.h"
+
+struct FilterRule {
+    QString keyword;
+    bool include = true; // true=正选, false=反选
+};
+
+class AdvancedFilterDialog : public QDialog {
+    Q_OBJECT
+public:
+    AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent = nullptr);
+    QVector<FilterRule> rules() const { return m_rules; }
+    bool enabled() const { return m_enableCheck->isChecked(); }
+signals:
+    void filterChanged();
+private:
+    void addRule();
+    void removeRule(int idx);
+    void toggleRule(int idx);
+    void updatePreview();
+    QVector<TestCase> applyFilter() const;
+
+    QLineEdit* m_input;
+    QCheckBox* m_enableCheck;
+    QListWidget* m_ruleList;
+    QTreeWidget* m_previewTree;
+    QVector<TestCase> m_allCases;
+    QVector<FilterRule> m_rules;
+};
 
 class TestListPanel : public QWidget {
     Q_OBJECT
@@ -35,6 +66,7 @@ private slots:
     void onSelectAllClicked();
     void onDeselectAllClicked();
     void onReverseFilterClicked();
+    void onAdvancedFilter();
     void collapseToLevel(int level);
     void expandToLevel(int level);
     void onExpandAllClicked();
@@ -72,6 +104,7 @@ private:
     QLabel*         m_lblStats;
     QTreeWidget*    m_tree;
     QMenu*          m_contextMenu;
+    QVector<TestCase> m_allCases;  // 所有用例，用于高级筛选
 
     bool            m_updating = false;
 };

@@ -8,6 +8,132 @@
 #include <QStyle>
 #include <QClipboard>
 
+// ═══════════════════════════════════════════════════════════
+//  AdvancedFilterDialog
+// ═══════════════════════════════════════════════════════════
+AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent)
+    : QDialog(parent), m_allCases(allCases)
+{
+    setWindowTitle(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
+    setMinimumSize(500, 500);
+    auto* lay = new QVBoxLayout(this);
+
+    // 顶部：输入框 + 启用开关
+    auto* topRow = new QHBoxLayout;
+    m_input = new QLineEdit;
+    m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6\xe6\xb7\xbb\xe5\x8a\xa0..."));
+    connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
+    m_enableCheck = new QCheckBox(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
+    connect(m_enableCheck, &QCheckBox::toggled, this, [this]() { emit filterChanged(); });
+    topRow->addWidget(m_input, 1);
+    topRow->addWidget(m_enableCheck);
+    lay->addLayout(topRow);
+
+    // 规则列表
+    m_ruleList = new QListWidget;
+    lay->addWidget(m_ruleList, 1);
+
+    // 预览树
+    m_previewTree = new QTreeWidget;
+    m_previewTree->setHeaderHidden(true);
+    lay->addWidget(m_previewTree, 3);
+
+    updatePreview();
+}
+
+void AdvancedFilterDialog::addRule() {
+    QString kw = m_input->text().trimmed();
+    if (kw.isEmpty()) return;
+    m_input->clear();
+    m_rules.append({kw, true});
+    // 添加列表项
+    auto* item = new QListWidgetItem;
+    auto* w = new QWidget;
+    auto* hl = new QHBoxLayout(w);
+    hl->setContentsMargins(0,0,0,0);
+    auto* incBtn = new QPushButton(kw);
+    incBtn->setStyleSheet("background:#d4edda;border:1px solid #c3e6cb;border-radius:3px;padding:2px 8px;");
+    int idx = m_rules.size() - 1;
+    connect(incBtn, &QPushButton::clicked, this, [this, idx]() { toggleRule(idx); });
+    hl->addWidget(incBtn, 1);
+    auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
+    delBtn->setFixedSize(24, 24);
+    connect(delBtn, &QPushButton::clicked, this, [this, idx]() { removeRule(idx); });
+    hl->addWidget(delBtn);
+    w->setLayout(hl);
+    item->setSizeHint(w->sizeHint());
+    m_ruleList->setItemWidget(item, w);
+    updatePreview();
+    emit filterChanged();
+}
+
+void AdvancedFilterDialog::removeRule(int idx) {
+    if (idx < 0 || idx >= m_rules.size()) return;
+    m_rules.remove(idx);
+    delete m_ruleList->takeItem(idx);
+    updatePreview();
+    emit filterChanged();
+}
+
+void AdvancedFilterDialog::toggleRule(int idx) {
+    if (idx < 0 || idx >= m_rules.size()) return;
+    m_rules[idx].include = !m_rules[idx].include;
+    // 更新按钮样式
+    auto* item = m_ruleList->item(idx);
+    if (item && item->sizeHint().isValid()) {
+        // 重建widget
+        auto* w = new QWidget;
+        auto* hl = new QHBoxLayout(w);
+        hl->setContentsMargins(0,0,0,0);
+        auto& r = m_rules[idx];
+        auto* incBtn = new QPushButton(r.keyword);
+        incBtn->setStyleSheet(r.include 
+            ? "background:#d4edda;border:1px solid #c3e6cb;border-radius:3px;padding:2px 8px;"
+            : "background:#f8d7da;border:1px solid #f5c6cb;border-radius:3px;padding:2px 8px;");
+        connect(incBtn, &QPushButton::clicked, this, [this, idx]() { toggleRule(idx); });
+        hl->addWidget(incBtn, 1);
+        auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
+        delBtn->setFixedSize(24, 24);
+        connect(delBtn, &QPushButton::clicked, this, [this, idx]() { removeRule(idx); });
+        hl->addWidget(delBtn);
+        w->setLayout(hl);
+        m_ruleList->setItemWidget(item, w);
+    }
+    updatePreview();
+    emit filterChanged();
+}
+
+QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
+    if (m_rules.isEmpty() || !m_enableCheck->isChecked()) return m_allCases;
+    QVector<TestCase> result;
+    for (const auto& tc : m_allCases) {
+        QString name = tc.fullName();
+        bool pass = true;
+        for (const auto& r : m_rules) {
+            bool match = name.contains(r.keyword, Qt::CaseInsensitive);
+            if (r.include && !match) { pass = false; break; }
+            if (!r.include && match) { pass = false; break; }
+        }
+        if (pass) result.append(tc);
+    }
+    return result;
+}
+
+void AdvancedFilterDialog::updatePreview() {
+    m_previewTree->clear();
+    auto filtered = applyFilter();
+    QMap<QString, QVector<TestCase>> groups;
+    for (const auto& tc : filtered) groups[tc.suiteName].append(tc);
+    for (auto it = groups.begin(); it != groups.end(); ++it) {
+        auto* suiteItem = new QTreeWidgetItem(m_previewTree);
+        suiteItem->setText(0, it.key() + QString(" (%1)").arg(it.value().size()));
+        for (const auto& tc : it.value()) {
+            auto* caseItem = new QTreeWidgetItem(suiteItem);
+            caseItem->setText(0, tc.caseName);
+        }
+    }
+}
+
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
 static const QString MARK_YES  = QString::fromUtf8("\xe2\x98\x91");
 static const QString MARK_HALF = QString::fromUtf8("\xe2\x98\x92");
@@ -49,7 +175,7 @@ TestListPanel::TestListPanel(QWidget* parent)
     m_btnDeselectAll->setFixedHeight(28);m_btnDeselectAll->setStyleSheet(tbBtn);
     m_btnReverseFilter = new QPushButton(QString::fromUtf8("\xE2\x87\x84 \xE5\x8F\x8D\xE9\x80\x89"), this);
     m_btnReverseFilter->setFixedHeight(28);m_btnReverseFilter->setStyleSheet(tbBtn);
-    m_btnReverseFilter->setToolTip("反转当前选区");
+    m_btnReverseFilter->setToolTip(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
     m_lblStats = new QLabel("0", this);
     tb->addWidget(m_btnSelectAll);
     tb->addWidget(m_btnDeselectAll);
@@ -59,7 +185,7 @@ TestListPanel::TestListPanel(QWidget* parent)
     layout->addWidget(m_toolbar);
     connect(m_btnSelectAll,   &QPushButton::clicked, this, &TestListPanel::onSelectAllClicked);
     connect(m_btnDeselectAll, &QPushButton::clicked, this, &TestListPanel::onDeselectAllClicked);
-    connect(m_btnReverseFilter, &QPushButton::clicked, this, &TestListPanel::onReverseFilterClicked);
+    connect(m_btnReverseFilter, &QPushButton::clicked, this, &TestListPanel::onAdvancedFilter);
 
     // Tree
     m_tree = new QTreeWidget(this);
@@ -237,6 +363,7 @@ void TestListPanel::updateStats() {
 void TestListPanel::loadTests(const QVector<TestCase>& cases,
                                const QVector<TestCategory>& categories)
 {
+    m_allCases = cases;  // 保存全部用例用于高级筛选
     m_lastHighlighted = nullptr;
     m_tree->clear();
     m_searchEdit->clear();
@@ -533,6 +660,46 @@ void TestListPanel::onReverseFilterClicked() {
     for (int i = 0; i < m_tree->topLevelItemCount(); i++) { rev(m_tree->topLevelItem(i)); if (!m_tree->topLevelItem(i)->isHidden()) updateItemText(m_tree->topLevelItem(i)); }
     m_tree->viewport()->update();
     updateStats();
+}
+
+void TestListPanel::onAdvancedFilter() {
+    AdvancedFilterDialog dlg(m_allCases, this);
+    if (dlg.exec() == QDialog::Accepted && dlg.enabled()) {
+        auto filtered = dlg.rules();
+        if (filtered.isEmpty()) return;
+        std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
+            if (item->childCount() == 0) {
+                QString suite = item->data(0, Role_SuiteName).toString();
+                QString name  = item->data(0, Role_CaseName).toString();
+                QString full = suite + "." + name;
+                bool pass = true;
+                for (const auto& r : filtered) {
+                    bool match = full.contains(r.keyword, Qt::CaseInsensitive);
+                    if (r.include && !match) { pass = false; break; }
+                    if (!r.include && match) { pass = false; break; }
+                }
+                item->setHidden(!pass);
+                if (!pass) { setItemChecked(item, false); item->setText(0, MARK_NO + "  " + name); }
+            } else {
+                bool anyVis = false;
+                for (int i = 0; i < item->childCount(); i++) {
+                    apply(item->child(i));
+                    if (!item->child(i)->isHidden()) anyVis = true;
+                }
+                item->setHidden(!anyVis);
+                if (!item->isHidden()) updateItemText(item);
+            }
+        };
+        m_updating = true;
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++) {
+            apply(m_tree->topLevelItem(i));
+            if (!m_tree->topLevelItem(i)->isHidden()) updateItemText(m_tree->topLevelItem(i));
+        }
+        m_updating = false;
+        m_tree->viewport()->update();
+        updateStats();
+        emit selectionChanged(selectedTests().size());
+    }
 }
 void TestListPanel::onExpandAllClicked()   {
     m_tree->expandAll();
