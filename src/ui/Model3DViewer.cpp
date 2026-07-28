@@ -121,10 +121,11 @@ void StepWorker::doWork() {
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) { filteredEdges++; continue; }
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size();
-        if (nf < 2) { filteredEdges++; continue; }
+        if (nf == 0) { filteredEdges++; continue; }
         if (nf >= 3) nonManifoldEdges++;
-        QVector3D col = (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)
-                                : QVector3D(1.0f, 0.85f, 0.1f);
+        QVector3D col = (nf==1) ? QVector3D(1.0f, 0.15f, 0.15f)  // 自由边红色
+                      : (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)  // 正常绿色
+                                : QVector3D(1.0f, 0.85f, 0.1f);   // 非流形黄色
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
         GeomAdaptor_Curve acrv(crv, f, l);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
