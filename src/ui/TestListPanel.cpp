@@ -261,12 +261,15 @@ void TestListPanel::loadFromXml(const QString& xmlPath) {
     QString xml = QString::fromUtf8(f.readAll());
     f.close();
 
-    // 解析所有 <testcase> 元素
+    // 先移除自闭合的空标签（<testcase ... />），它们不含子元素
+    xml.replace(QRegularExpression(R"re(<testcase[^>]*/>)re"), "");
+
+    // 解析所有完整的 <testcase> 元素（含子元素和闭合标签）
     QRegularExpression tcRe(
-        R"re(<testcase\s+classname="([^"]+)"\s+name="([^"]+)"[^>]*>)re",
+        R"re(<testcase\s+classname="([^"]+)"\s+name="([^"]+)"[^>]*>(.*?)</testcase>)re",
         QRegularExpression::DotMatchesEverythingOption);
-    QRegularExpression failRe(R"re(<failure[^>]*/>|<failure[^>]*>.*?</failure>)re");
-    QRegularExpression skipRe(R"re(<skipped[^>]*/>|<skipped[^>]*>.*?</skipped>)re");
+    QRegularExpression failRe(R"re(<failure)re");
+    QRegularExpression skipRe(R"re(<skipped)re");
     QRegularExpression timeRe(R"re(time="([\d.]+)")re");
 
     // suite+case → {status, duration}
