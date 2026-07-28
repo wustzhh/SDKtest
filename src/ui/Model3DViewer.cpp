@@ -529,21 +529,22 @@ void GLViewer::paintGL(){
     // ── Ctrl锚点高亮 ──
     if (m_ctrlHeld) {
         glDisable(GL_DEPTH_TEST);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
+        float r = m_modelSize * 0.05f / m_zoom;  // 半径=模型尺寸5%
         QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
-        glTranslatef(ap.x(), ap.y(), ap.z());
-        float r = m_modelSize * 0.02f / m_zoom;  // 半径=模型尺寸2%
-        glColor3f(1, 1, 0);
-        glBegin(GL_TRIANGLE_FAN);
-        glVertex3f(0,0,0);
+        GLfloat dotVerts[102];  // 34点 * 3
+        dotVerts[0]=ap.x(); dotVerts[1]=ap.y(); dotVerts[2]=ap.z();
         for (int i = 0; i <= 32; i++) {
             float a = i * 2.0f * M_PI / 32.0f;
-            glVertex3f(cos(a)*r, sin(a)*r, 0);
+            dotVerts[3 + i*3] = ap.x() + cos(a)*r;
+            dotVerts[4 + i*3] = ap.y() + sin(a)*r;
+            dotVerts[5 + i*3] = ap.z();
         }
-        glEnd();
-        glPopMatrix();
+        glDisable(GL_LIGHTING);  // 黄色不依赖光照
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, dotVerts);
+        glColor3f(1, 1, 0);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 34);
+        glDisableClientState(GL_VERTEX_ARRAY);
         glEnable(GL_DEPTH_TEST);
     }
 }
