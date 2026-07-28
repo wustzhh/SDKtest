@@ -500,11 +500,17 @@ void GLViewer::paintGL(){
     }
     // ── 锚点标记：红色十字 ──
     {
+        // 保存当前MV，用新anchor/pan构建独立MV避免和模型变换冲突
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        // 红x在世界空间位置 = m_anchor + pan
         QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
-        float s = m_modelSize * 0.02f / m_zoom;  // 十字大小（模型尺寸2%）
+        glTranslatef(ap.x(), ap.y(), ap.z());
+        float s = m_modelSize * 0.02f / m_zoom;
         GLfloat cross[] = {
-            ap.x()-s, ap.y(),   ap.z(),   ap.x()+s, ap.y(),   ap.z(),
-            ap.x(),   ap.y()-s, ap.z(),   ap.x(),   ap.y()+s, ap.z(),
+            -s, 0, 0,  s, 0, 0,
+            0, -s, 0,  0, s, 0,
         };
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, cross);
@@ -512,6 +518,7 @@ void GLViewer::paintGL(){
         glLineWidth(2.0f);
         glDrawArrays(GL_LINES, 0, 4);
         glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
     }
 }
 
