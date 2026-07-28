@@ -15,6 +15,38 @@
 #include <QListWidget>
 #include <QScrollArea>
 
+// ── ToggleSwitch（头文件中确保MOC正确生成） ──
+class ToggleSwitch : public QWidget {
+    Q_OBJECT
+public:
+    ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_pos(0){
+        setFixedSize(40,22);setCursor(Qt::PointingHandCursor);
+    }
+    bool isChecked() const { return m_checked; }
+    void setChecked(bool c) {
+        if(c==m_checked) return;
+        m_checked=c;
+        m_pos=c?1.0:0.0;
+        update();
+        emit toggled(m_checked);
+    }
+signals:
+    void toggled(bool);
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(m_checked?QColor("#6366f1"):QColor("#d1d5db"));
+        p.setPen(Qt::NoPen);
+        p.drawRoundedRect(rect(),11,11);
+        p.setBrush(Qt::white);
+        p.drawEllipse((int)(1+m_pos*(width()-20)),1,20,20);
+    }
+    void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); }
+private:
+    bool m_checked;
+    double m_pos;
+};
+
 #include "models/TestResult.h"
 #include "core/ConfigManager.h"
 
@@ -45,6 +77,7 @@ private:
 
     QLineEdit* m_input;
     bool m_enabled = false;
+    ToggleSwitch* m_enableSwitch;
     QWidget* m_ruleWidget;
     class FlowLayout* m_ruleLayout;
     QTreeWidget* m_previewTree;
