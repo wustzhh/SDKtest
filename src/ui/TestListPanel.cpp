@@ -102,9 +102,25 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     auto* toggleLabel = new QLabel(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
     toggleLabel->setStyleSheet("background:transparent;font-size:14px;color:rgba(255,255,255,0.8);");
     titleRow->addWidget(toggleLabel);
-    m_enableSwitch = new ToggleSwitch;
-    connect(m_enableSwitch, &ToggleSwitch::toggled, this, [this](){ emit filterChanged(); });
-    titleRow->addWidget(m_enableSwitch);
+    auto* btnOn = new QPushButton(QString::fromUtf8("\xe5\xbc\x80"));
+    btnOn->setFixedSize(32,22);
+    btnOn->setCheckable(true); btnOn->setChecked(false);
+    btnOn->setStyleSheet("QPushButton:checked{background:#10b981;color:white;border:none;border-radius:3px;font-size:10px;}QPushButton{background:#374151;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+    auto* btnOff = new QPushButton(QString::fromUtf8("\xe5\x85\xb3"));
+    btnOff->setFixedSize(32,22);
+    btnOff->setCheckable(true); btnOff->setChecked(true);
+    btnOff->setStyleSheet("QPushButton:checked{background:#ef4444;color:white;border:none;border-radius:3px;font-size:10px;}QPushButton{background:#374151;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+    m_enabled = false;
+    auto toggleEnable = [this,btnOn,btnOff](bool on){
+        m_enabled=on; btnOn->setChecked(on); btnOff->setChecked(!on);
+        btnOn->setStyleSheet(on?"QPushButton{background:#10b981;color:white;border:none;border-radius:3px;font-size:10px;}":"QPushButton{background:#374151;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+        btnOff->setStyleSheet(!on?"QPushButton{background:#ef4444;color:white;border:none;border-radius:3px;font-size:10px;}":"QPushButton{background:#374151;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+        emit filterChanged();
+    };
+    connect(btnOn,&QPushButton::clicked,this,[toggleEnable](){ toggleEnable(true); });
+    connect(btnOff,&QPushButton::clicked,this,[toggleEnable](){ toggleEnable(false); });
+    titleRow->addWidget(btnOn);
+    titleRow->addWidget(btnOff);
     lay->addLayout(titleRow);
 
     auto* inputRow = new QHBoxLayout;
@@ -142,7 +158,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     updatePreview();
 }
 
-bool AdvancedFilterDialog::enabled() const { return m_enableSwitch->isChecked(); }
+bool AdvancedFilterDialog::enabled() const { return m_enabled; }
 
 void AdvancedFilterDialog::addRule() {
     QString kw = m_input->text().trimmed();
@@ -180,32 +196,49 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         const auto& r = m_rules[i];
         auto* chip = new QWidget;
         chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
+        chip->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(chip, &QWidget::customContextMenuRequested, this, [this,i](){ removeRule(i); });
         auto* hl = new QHBoxLayout(chip);
-        hl->setContentsMargins(6,2,2,2);
-        hl->setSpacing(3);
+        hl->setContentsMargins(6,2,6,2);
+        hl->setSpacing(4);
         auto* label = new QLabel(r.keyword);
         label->setStyleSheet("background:transparent;font-size:12px;color:#374151;border:none;");
-        label->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 120);
         label->setText(elided);
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
-        auto* sw = new ToggleSwitch;
-        sw->setChecked(r.include);
-        connect(sw, &ToggleSwitch::toggled, this, [this,i](bool on){ m_rules[i].include=on; rebuildRuleWidgets(); updatePreview(); emit filterChanged(); });
-        hl->addWidget(sw);
-        auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-        delBtn->setFixedSize(10,10);
-        delBtn->setStyleSheet("QPushButton{background:transparent;color:#aaa;border:none;font-size:8px;padding:0;margin:0;}");
-        connect(delBtn, &QPushButton::clicked, this, [this, i]() { removeRule(i); });
-        hl->addWidget(delBtn);
+        // 正/反：两个小按钮
+        auto* btnYes = new QPushButton(QString::fromUtf8("\xe6\xad\xa3"));
+        btnYes->setFixedSize(24,18);
+        btnYes->setCheckable(true); btnYes->setChecked(r.include);
+        btnYes->setStyleSheet(r.include
+            ? "QPushButton{background:#10b981;color:white;border:none;border-radius:3px;font-size:10px;}"
+            : "QPushButton{background:#e5e7eb;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+        auto* btnNo = new QPushButton(QString::fromUtf8("\xe5\x8f\x8d"));
+        btnNo->setFixedSize(24,18);
+        btnNo->setCheckable(true); btnNo->setChecked(!r.include);
+        btnNo->setStyleSheet(!r.include
+            ? "QPushButton{background:#ef4444;color:white;border:none;border-radius:3px;font-size:10px;}"
+            : "QPushButton{background:#e5e7eb;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+        auto toggle = [this,i,btnYes,btnNo](bool inc){
+            m_rules[i].include=inc;
+            btnYes->setChecked(inc); btnNo->setChecked(!inc);
+            btnYes->setStyleSheet(inc?"QPushButton{background:#10b981;color:white;border:none;border-radius:3px;font-size:10px;}":"QPushButton{background:#e5e7eb;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+            btnNo->setStyleSheet(!inc?"QPushButton{background:#ef4444;color:white;border:none;border-radius:3px;font-size:10px;}":"QPushButton{background:#e5e7eb;color:#9ca3af;border:none;border-radius:3px;font-size:10px;}");
+            chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(inc?"#d1fae5":"#fee2e2"));
+            rebuildRuleWidgets(); updatePreview(); emit filterChanged();
+        };
+        connect(btnYes,&QPushButton::clicked,this,[toggle](){ toggle(true); });
+        connect(btnNo,&QPushButton::clicked,this,[toggle](){ toggle(false); });
+        hl->addWidget(btnYes);
+        hl->addWidget(btnNo);
         m_ruleLayout->addWidget(chip);
     }
     m_ruleWidget->updateGeometry();
 }
 
 QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
-    if (m_rules.isEmpty() || !m_enableSwitch->isChecked()) return m_allCases;
+    if (m_rules.isEmpty() || !m_enabled) return m_allCases;
     QVector<TestCase> result;
     for (const auto& tc : m_allCases) {
         QString name = tc.fullName();

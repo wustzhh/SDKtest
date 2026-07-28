@@ -44,8 +44,7 @@ private:
     QVector<TestCase> applyFilter() const;
 
     QLineEdit* m_input;
-    QCheckBox* m_enableCheck;
-    class ToggleSwitch* m_enableSwitch;
+    bool m_enabled = false;
     QWidget* m_ruleWidget;
     class FlowLayout* m_ruleLayout;
     QTreeWidget* m_previewTree;
