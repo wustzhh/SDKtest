@@ -1438,6 +1438,8 @@ void MainWindow::onAllFinished() {
             jr["c"] = r.testCase.caseName;
             jr["st"] = r.status;
             jr["d"] = r.durationMs;
+            if (!r.rawStdout.isEmpty()) jr["out"] = r.rawStdout;
+            if (!r.rawStderr.isEmpty()) jr["err"] = r.rawStderr;
             if (!r.properties.isEmpty()) {
                 QJsonObject jp;
                 for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
@@ -1503,14 +1505,22 @@ void MainWindow::onRestoreFromFile(int index) {
     QVector<TestRunResult> restored;
     for (const auto& v : results) {
         QJsonObject r = v.toObject();
-        TestRunResult rr;
-        rr.testCase.suiteName = r["s"].toString();
-        rr.testCase.caseName  = r["c"].toString();
-        rr.status    = r["st"].toString("PASSED");
-        rr.durationMs = r["d"].toDouble();
+        TestCase tc;
+        tc.suiteName = r["s"].toString();
+        tc.caseName  = r["c"].toString();
+        QString status = r["st"].toString("PASSED");
+        double dur = r["d"].toDouble();
+        QString out = r["out"].toString();
+        QString err = r["err"].toString();
+
+        // 用 ResultParser 重建完整结果（含 modelTree）
+        TestRunResult rr = ResultParser::parse(tc, out, err, dur, status);
+
+        // 补充 XML 属性（parse 只解析 stdout 中的属性，XML 属性需额外附加）
         QJsonObject props = r["p"].toObject();
         for (auto it = props.begin(); it != props.end(); ++it)
             rr.properties[it.key()] = it.value().toString();
+
         restored.append(rr);
     }
 
