@@ -529,22 +529,29 @@ void GLViewer::paintGL(){
     // ── Ctrl锚点高亮 ──
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
         glDisable(GL_DEPTH_TEST);
-        float r = m_modelSize * 0.05f / m_zoom;  // 半径=模型尺寸5%
-        QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
-        GLfloat dotVerts[102];  // 34点 * 3
-        dotVerts[0]=ap.x(); dotVerts[1]=ap.y(); dotVerts[2]=ap.z();
-        for (int i = 0; i <= 32; i++) {
-            float a = i * 2.0f * M_PI / 32.0f;
-            dotVerts[3 + i*3] = ap.x() + cos(a)*r;
-            dotVerts[4 + i*3] = ap.y() + sin(a)*r;
-            dotVerts[5 + i*3] = ap.z();
-        }
-        glDisable(GL_LIGHTING);  // 黄色不依赖光照
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, dotVerts);
+        glDisable(GL_LIGHTING);
         glColor3f(1, 1, 0);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 34);
-        glDisableClientState(GL_VERTEX_ARRAY);
+        float r = m_modelSize * 0.02f / m_zoom;
+        // 3D球体：6个纬度圈×16经度点，用三角形条带
+        for (int lat = 0; lat < 6; lat++) {
+            float phi1 = lat * M_PI / 6.0f;
+            float phi2 = (lat + 1) * M_PI / 6.0f;
+            QVector<GLfloat> ring;
+            for (int lon = 0; lon <= 16; lon++) {
+                float theta = lon * 2.0f * M_PI / 16.0f;
+                float sinT = sin(theta), cosT = cos(theta);
+                ring.append(m_anchor.x() + r * sin(phi2) * cosT);
+                ring.append(m_anchor.y() + r * sin(phi2) * sinT);
+                ring.append(m_anchor.z() + r * cos(phi2));
+                ring.append(m_anchor.x() + r * sin(phi1) * cosT);
+                ring.append(m_anchor.y() + r * sin(phi1) * sinT);
+                ring.append(m_anchor.z() + r * cos(phi1));
+            }
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glVertexPointer(3, GL_FLOAT, 0, ring.constData());
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, ring.size() / 3);
+            glDisableClientState(GL_VERTEX_ARRAY);
+        }
         glEnable(GL_DEPTH_TEST);
     }
 }
