@@ -136,15 +136,6 @@ void StepWorker::doWork() {
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { TopoDS_Face face = TopoDS::Face(fExp.Current()); void* fp=face.TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].append(face); } } }
     // 边线使用独立顶点（不复用面网格顶点），避免哈希碰撞导致错误连线
     int edgeVertBase = r.verts.size();
-    // 构建面顶点哈希（精度0.001mm），边线优先复用面顶点确保边界对齐
-    QHash<quint64, int> vertHash;
-    for (int i = 0; i < r.verts.size(); i++) {
-        auto& v = r.verts[i];
-        quint64 key = (quint64)(v.x() * 1000 + 500000) << 42
-                    | (quint64)(v.y() * 1000 + 500000) << 21
-                    | (quint64)(v.z() * 1000 + 500000);
-        if (!vertHash.contains(key)) vertHash[key] = i;
-    }
     int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0, nonManifoldEdges = 0;
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) { filteredEdges++; continue; }
@@ -162,15 +153,8 @@ void StepWorker::doWork() {
         GCPnts_UniformAbscissa ua(acrv, ns + 1);
         int prev = -1;
         auto sampleAndAdd = [&](const gp_Pnt& pt) {
-            quint64 key = (quint64)(pt.X() * 1000 + 500000) << 42
-                        | (quint64)(pt.Y() * 1000 + 500000) << 21
-                        | (quint64)(pt.Z() * 1000 + 500000);
-            int idx = vertHash.value(key, -1);
-            if (idx < 0) {
-                idx = r.verts.size();
-                r.verts.append(QVector3D(pt.X(), pt.Y(), pt.Z()));
-                vertHash[key] = idx;
-            }
+            int idx = r.verts.size();
+            r.verts.append(QVector3D(pt.X(), pt.Y(), pt.Z()));
             if (prev >= 0) r.edges.append({prev, idx, col});
             prev = idx;
         };
