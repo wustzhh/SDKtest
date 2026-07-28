@@ -121,12 +121,15 @@ void StepWorker::doWork() {
                     | (quint64)(v.z() * 1000 + 50000);
         if (!vertHash.contains(key)) vertHash[key] = i;
     }
-    int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0;
+    int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0, nonManifoldEdges = 0;
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) { filteredEdges++; continue; }
         int nf=(int)edgeFaceMap.value(ed.TShape().get()).size();
-        if (nf < 2) { filteredEdges++; continue; }  // 只渲染两面之间的真实边
-        QVector3D col(0.15f, 0.85f, 0.15f);  // 统一绿色
+        if (nf < 2) { filteredEdges++; continue; }  // 过滤自由边/缝边
+        if (nf >= 3) nonManifoldEdges++;
+        // nf=2 正常绿色，nf>=3 非流形边用黄色标记
+        QVector3D col = (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)
+                                : QVector3D(1.0f, 0.85f, 0.1f);
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
         // 自适应采样：根据边长度动态调整点数，最少18段最多200段
         GeomAdaptor_Curve acrv(crv, f, l);
@@ -234,6 +237,8 @@ void StepWorker::doWork() {
         .arg(r.tris.size()/3).arg(r.verts.size())
         .arg(renderedEdges).arg(totalEdges).arg(filteredEdges)
         .arg(r.elapsedMs));
+    if (nonManifoldEdges > 0)
+        LOG("3D",QString("WARNING: %1 non-manifold edges (yellow)").arg(nonManifoldEdges));
     if (skippedFaces > 0)
         LOG("3D",QString("WARNING: %1 faces have no triangulation").arg(skippedFaces));
     emit finished(r);
