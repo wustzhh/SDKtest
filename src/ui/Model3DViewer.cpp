@@ -129,7 +129,8 @@ void StepWorker::doWork() {
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
         GeomAdaptor_Curve acrv(crv, f, l);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
-        int ns = qBound(18, (int)(edgeLen / 0.5), 200);
+        // 间距0.05mm，保证小模型弧边圆滑
+        int ns = qBound(50, (int)(edgeLen / 0.05), 500);
         GCPnts_UniformAbscissa ua(acrv, ns + 1);
         int prev = -1;
         auto sampleAndAdd = [&](const gp_Pnt& pt) {
