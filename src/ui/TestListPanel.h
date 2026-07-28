@@ -12,6 +12,7 @@
 #include <QDialog>
 #include <QCheckBox>
 #include <QListWidget>
+#include <QScrollArea>
 
 #include "models/TestResult.h"
 #include "core/ConfigManager.h"
@@ -33,12 +34,14 @@ private:
     void addRule();
     void removeRule(int idx);
     void toggleRule(int idx);
+    void rebuildRuleWidgets();
     void updatePreview();
     QVector<TestCase> applyFilter() const;
 
     QLineEdit* m_input;
     QCheckBox* m_enableCheck;
-    QListWidget* m_ruleList;
+    QWidget* m_ruleWidget;
+    QHBoxLayout* m_ruleLayout;
     QTreeWidget* m_previewTree;
     QVector<TestCase> m_allCases;
     QVector<FilterRule> m_rules;

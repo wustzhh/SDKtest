@@ -14,47 +14,76 @@
 AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent)
     : QDialog(parent), m_allCases(allCases)
 {
-    setWindowTitle(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
-    setMinimumSize(700, 600);
-    resize(800, 650);
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-    setModal(true);  // 遮罩，不可点击父窗口
-    setStyleSheet(
-        "QDialog{background:#ffffff;border-radius:12px;}"
-        "QLineEdit{background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:14px;}"
-        "QLineEdit:focus{border-color:#6366f1;}"
-        "QCheckBox{font-size:13px;color:#374151;}"
-        "QListWidget{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:4px;}"
-        "QTreeWidget{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;}"
-        "QPushButton{background:#6366f1;color:white;border:none;border-radius:6px;padding:6px 16px;font-size:13px;}"
-        "QPushButton:hover{background:#4f46e5;}"
-    );
-    auto* lay = new QVBoxLayout(this);
-    lay->setSpacing(10);
-    lay->setContentsMargins(16,16,16,16);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setModal(true);
+    // 全屏灰色遮罩
+    auto* overlay = new QVBoxLayout(this);
+    overlay->setContentsMargins(0,0,0,0);
+    auto* card = new QWidget;
+    card->setStyleSheet("background:#ffffff;border-radius:16px;");
+    card->setFixedSize(760, 620);
+    auto* lay = new QVBoxLayout(card);
+    lay->setSpacing(12);
+    lay->setContentsMargins(20,20,20,16);
 
-    // 顶部：输入框 + 启用开关
+    // 标题
+    auto* title = new QLabel(QString::fromUtf8("\xf0\x9f\x94\x8d \xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
+    title->setStyleSheet("font-size:18px;font-weight:700;color:#1f2937;");
+    lay->addWidget(title);
+
+    // 输入框 + 启用开关
     auto* topRow = new QHBoxLayout;
     m_input = new QLineEdit;
     m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6\xe6\xb7\xbb\xe5\x8a\xa0..."));
+    m_input->setStyleSheet("background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:14px;");
     connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
     m_enableCheck = new QCheckBox(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
-    m_enableCheck->setStyleSheet("QCheckBox{font-weight:600;color:#6366f1;}");
+    m_enableCheck->setStyleSheet("QCheckBox{font-weight:600;color:#6366f1;font-size:14px;}");
     connect(m_enableCheck, &QCheckBox::toggled, this, [this]() { emit filterChanged(); });
     topRow->addWidget(m_input, 1);
     topRow->addWidget(m_enableCheck);
     lay->addLayout(topRow);
 
-    // 规则列表
-    m_ruleList = new QListWidget;
-    lay->addWidget(m_ruleList, 1);
+    // 规则流式布局
+    m_ruleWidget = new QWidget;
+    m_ruleLayout = new QHBoxLayout(m_ruleWidget);
+    m_ruleLayout->setContentsMargins(0,0,0,0);
+    m_ruleLayout->setSpacing(8);
+    m_ruleLayout->addStretch();
+    auto* ruleScroll = new QScrollArea;
+    ruleScroll->setWidget(m_ruleWidget);
+    ruleScroll->setWidgetResizable(true);
+    ruleScroll->setStyleSheet("QScrollArea{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;}");
+    ruleScroll->setFixedHeight(60);
+    lay->addWidget(ruleScroll);
 
     // 预览树
     m_previewTree = new QTreeWidget;
     m_previewTree->setHeaderHidden(true);
     m_previewTree->setRootIsDecorated(true);
-    lay->addWidget(m_previewTree, 3);
+    m_previewTree->setStyleSheet("QTreeWidget{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;}");
+    lay->addWidget(m_previewTree, 1);
 
+    // 底部按钮
+    auto* btnRow = new QHBoxLayout;
+    btnRow->addStretch();
+    auto* btnApply = new QPushButton(QString::fromUtf8("\xe5\xba\x94\xe7\x94\xa8"));
+    btnApply->setStyleSheet("QPushButton{background:#10b981;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}QPushButton:hover{background:#059669;}");
+    auto* btnSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98"));
+    btnSave->setStyleSheet("QPushButton{background:#6366f1;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}QPushButton:hover{background:#4f46e5;}");
+    auto* btnClose = new QPushButton(QString::fromUtf8("\xe5\x85\xb3\xe9\x97\xad"));
+    btnClose->setStyleSheet("QPushButton{background:#e5e7eb;color:#374151;border-radius:8px;padding:8px 20px;font-size:14px;}QPushButton:hover{background:#d1d5db;}");
+    connect(btnSave, &QPushButton::clicked, this, &QDialog::accept);
+    connect(btnClose, &QPushButton::clicked, this, &QDialog::reject);
+    connect(btnApply, &QPushButton::clicked, this, [this]() { emit filterChanged(); });
+    btnRow->addWidget(btnApply);
+    btnRow->addWidget(btnSave);
+    btnRow->addWidget(btnClose);
+    lay->addLayout(btnRow);
+
+    overlay->addWidget(card, 0, Qt::AlignCenter);
+    setStyleSheet("AdvancedFilterDialog{background:rgba(0,0,0,0.4);}");
     updatePreview();
 }
 
@@ -63,24 +92,7 @@ void AdvancedFilterDialog::addRule() {
     if (kw.isEmpty()) return;
     m_input->clear();
     m_rules.append({kw, true});
-    // 添加列表项
-    auto* item = new QListWidgetItem;
-    m_ruleList->addItem(item);
-    auto* w = new QWidget;
-    auto* hl = new QHBoxLayout(w);
-    hl->setContentsMargins(0,0,0,0);
-    auto* incBtn = new QPushButton(kw);
-    incBtn->setStyleSheet("background:#d4edda;border:1px solid #c3e6cb;border-radius:3px;padding:2px 8px;");
-    int idx = m_rules.size() - 1;
-    connect(incBtn, &QPushButton::clicked, this, [this, idx]() { toggleRule(idx); });
-    hl->addWidget(incBtn, 1);
-    auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-    delBtn->setFixedSize(24, 24);
-    connect(delBtn, &QPushButton::clicked, this, [this, idx]() { removeRule(idx); });
-    hl->addWidget(delBtn);
-    w->setLayout(hl);
-    item->setSizeHint(w->sizeHint());
-    m_ruleList->setItemWidget(item, w);
+    rebuildRuleWidgets();
     updatePreview();
     emit filterChanged();
 }
@@ -88,7 +100,7 @@ void AdvancedFilterDialog::addRule() {
 void AdvancedFilterDialog::removeRule(int idx) {
     if (idx < 0 || idx >= m_rules.size()) return;
     m_rules.remove(idx);
-    delete m_ruleList->takeItem(idx);
+    rebuildRuleWidgets();
     updatePreview();
     emit filterChanged();
 }
@@ -96,29 +108,50 @@ void AdvancedFilterDialog::removeRule(int idx) {
 void AdvancedFilterDialog::toggleRule(int idx) {
     if (idx < 0 || idx >= m_rules.size()) return;
     m_rules[idx].include = !m_rules[idx].include;
-    // 更新按钮样式
-    auto* item = m_ruleList->item(idx);
-    if (item && item->sizeHint().isValid()) {
-        // 重建widget
-        auto* w = new QWidget;
-        auto* hl = new QHBoxLayout(w);
-        hl->setContentsMargins(0,0,0,0);
-        auto& r = m_rules[idx];
-        auto* incBtn = new QPushButton(r.keyword);
-        incBtn->setStyleSheet(r.include 
-            ? "background:#d4edda;border:1px solid #c3e6cb;border-radius:3px;padding:2px 8px;"
-            : "background:#f8d7da;border:1px solid #f5c6cb;border-radius:3px;padding:2px 8px;");
-        connect(incBtn, &QPushButton::clicked, this, [this, idx]() { toggleRule(idx); });
-        hl->addWidget(incBtn, 1);
-        auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-        delBtn->setFixedSize(24, 24);
-        connect(delBtn, &QPushButton::clicked, this, [this, idx]() { removeRule(idx); });
-        hl->addWidget(delBtn);
-        w->setLayout(hl);
-        m_ruleList->setItemWidget(item, w);
-    }
+    rebuildRuleWidgets();
     updatePreview();
     emit filterChanged();
+}
+
+void AdvancedFilterDialog::rebuildRuleWidgets() {
+    // 清除旧widget
+    QLayoutItem* child;
+    while ((child = m_ruleLayout->takeAt(0)) != nullptr) {
+        if (child->widget()) delete child->widget();
+        delete child;
+    }
+    // 重建规则widget
+    for (int i = 0; i < m_rules.size(); i++) {
+        const auto& r = m_rules[i];
+        auto* chip = new QWidget;
+        chip->setStyleSheet(QString("background:%1;border-radius:8px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
+        chip->setFixedHeight(36);
+        auto* hl = new QHBoxLayout(chip);
+        hl->setContentsMargins(8,2,4,2);
+        hl->setSpacing(6);
+        auto* label = new QLabel(r.keyword);
+        label->setStyleSheet("background:transparent;font-size:13px;color:#1f2937;");
+        label->setMaximumWidth(200);
+        label->setTextFormat(Qt::PlainText);
+        QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 200);
+        label->setText(elided);
+        if (elided != r.keyword) label->setToolTip(r.keyword);
+        hl->addWidget(label);
+        auto* toggle = new QPushButton(r.include ? QString::fromUtf8("\xe6\xad\xa3\xe9\x80\x89") : QString::fromUtf8("\xe5\x8f\x8d\xe9\x80\x89"));
+        toggle->setFixedSize(44, 24);
+        toggle->setStyleSheet(r.include
+            ? "QPushButton{background:#10b981;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;}QPushButton:hover{background:#059669;}"
+            : "QPushButton{background:#ef4444;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;}QPushButton:hover{background:#dc2626;}");
+        connect(toggle, &QPushButton::clicked, this, [this, i]() { toggleRule(i); });
+        hl->addWidget(toggle);
+        auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
+        delBtn->setFixedSize(20, 20);
+        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:14px;font-weight:700;}QPushButton:hover{color:#ef4444;}");
+        connect(delBtn, &QPushButton::clicked, this, [this, i]() { removeRule(i); });
+        hl->addWidget(delBtn);
+        chip->setLayout(hl);
+        m_ruleLayout->insertWidget(m_ruleLayout->count() - 1, chip);  // before stretch
+    }
 }
 
 QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
