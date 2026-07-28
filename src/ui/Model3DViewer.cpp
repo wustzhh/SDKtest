@@ -155,50 +155,13 @@ void StepWorker::doWork() {
                       : (nf==2) ? QVector3D(0.15f, 0.85f, 0.15f)  // 正常绿色
                                 : QVector3D(1.0f, 0.85f, 0.1f);   // 非流形黄色
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
-        // 从相邻面的pcurve取实际trim范围
-        double trimF = f, trimL = l;
-        {
-            auto& faces = edgeFaceMap[ed.TShape().get()];
-            if (faces.isEmpty()) {
-                for (TopExp_Explorer fe(shape, TopAbs_FACE); fe.More(); fe.Next()) {
-                    TopoDS_Face face = TopoDS::Face(fe.Current());
-                    double pf, pl;
-                    if (BRep_Tool::CurveOnSurface(ed, face, pf, pl)) {
-                        trimF = qMin(trimF, pf);
-                        trimL = qMax(trimL, pl);
-                    }
-                }
-            } else {
-                for (const auto& face : faces) {
-                    double pf, pl;
-                    if (BRep_Tool::CurveOnSurface(ed, face, pf, pl)) {
-                        trimF = qMin(trimF, pf);
-                        trimL = qMax(trimL, pl);
-                    }
-                }
-            }
-        }
-        LOG("EDGE",QString("nf=%1 curve=[%2,%3] pcurve=[%4,%5] len=%6")
-            .arg(nf).arg(f,0,'f',6).arg(l,0,'f',6)
-            .arg(trimF,0,'f',6).arg(trimL,0,'f',6)
-            .arg(GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(crv,f,l)),0,'f',4));
-        GeomAdaptor_Curve acrv(crv, trimF, trimL);
+        GeomAdaptor_Curve acrv(crv, f, l);
         double edgeLen = GCPnts_AbscissaPoint::Length(acrv);
         // 间距0.05mm，保证小模型弧边圆滑
         int ns = qBound(50, (int)(edgeLen / 0.05), 500);
         GCPnts_UniformAbscissa ua(acrv, ns + 1);
         int prev = -1;
-        // 检查边点是否靠近任何面顶点（裁剪面外部分）
-        auto nearFaceVert = [&](const gp_Pnt& pt, double thresh) -> bool {
-            QVector3D p(pt.X(), pt.Y(), pt.Z());
-            for (int i = 0; i < edgeVertBase; i++) {  // edgeVertBase=面顶点数
-                if ((p - r.verts[i]).lengthSquared() < thresh*thresh)
-                    return true;
-            }
-            return false;
-        };
         auto sampleAndAdd = [&](const gp_Pnt& pt) {
-            if (!nearFaceVert(pt, 0.002)) { prev = -1; return; }  // 远离面顶点则断开
             quint64 key = (quint64)(pt.X() * 1000 + 500000) << 42
                         | (quint64)(pt.Y() * 1000 + 500000) << 21
                         | (quint64)(pt.Z() * 1000 + 500000);
