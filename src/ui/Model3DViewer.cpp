@@ -54,7 +54,7 @@ void StepWorker::doWork() {
     reader.TransferRoots(); TopoDS_Shape shape = reader.OneShape();
     if (shape.IsNull()) { r.error="Shape is null"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
-    // 自适应偏差：根据模型尺寸调整，避免大模型剖分过密
+    // 自适应偏差：根据模型尺寸调整，弧面需要更密三角
     {
         Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
         double deflection = 0.1;
@@ -62,10 +62,11 @@ void StepWorker::doWork() {
             double x1,y1,z1,x2,y2,z2;
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             double diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
-            deflection = qBound(0.1, sqrt(qMax(diag, 1.0) * 2.0), 5.0);
+            // 对角线的 0.1%，最小 0.05mm，最大 0.3mm（原来 5mm 太粗）
+            deflection = qBound(0.05, diag * 0.001, 0.3);
         }
-        // 角度偏差：弧面/曲面用 0.5°（~0.0087 rad），防止平面三角偏离实际曲线
-        double angularDeflection = 0.5 * M_PI / 180.0;
+        // 角度偏差 0.3°：控制弧面上相邻三角法线最大夹角
+        double angularDeflection = 0.3 * M_PI / 180.0;
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
