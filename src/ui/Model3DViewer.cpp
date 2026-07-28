@@ -417,9 +417,9 @@ void GLViewer::paintGL(){
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
         if(m_noDepthEdges) glDisable(GL_DEPTH_TEST);
-        // 边线往前拉，确保不被面遮挡（ortho ±1e5 需要大偏移）
-        glEnable(GL_POLYGON_OFFSET_LINE);
-        glPolygonOffset(-1, -500);
+        // 用GL_LEQUAL替代polygon offset：线和面同深度时线能通过，避免弧面遮挡
+        glDepthFunc(GL_LEQUAL);
+        glDepthMask(GL_FALSE);  // 线不写深度，不污染面的深度缓冲
         glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, nullptr);
@@ -429,7 +429,8 @@ void GLViewer::paintGL(){
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDisable(GL_POLYGON_OFFSET_LINE);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
         if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
     }
     // ── 处理锚点拾取（使用当前帧刚渲染的深度缓冲） ──
