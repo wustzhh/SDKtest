@@ -41,7 +41,7 @@ private:
     QLineEdit* m_input;
     QCheckBox* m_enableCheck;
     QWidget* m_ruleWidget;
-    QHBoxLayout* m_ruleLayout;
+    class FlowLayout* m_ruleLayout;
     QTreeWidget* m_previewTree;
     QVector<TestCase> m_allCases;
     QVector<FilterRule> m_rules;

@@ -7,6 +7,38 @@
 #include <QApplication>
 #include <QStyle>
 #include <QClipboard>
+#include <QScreen>
+
+// 简易FlowLayout：自动换行的水平布局
+class FlowLayout : public QLayout {
+public:
+    FlowLayout(QWidget* parent = nullptr, int margin = 0, int hSpacing = 6, int vSpacing = 6)
+        : QLayout(parent), m_hSpace(hSpacing), m_vSpace(vSpacing) { setContentsMargins(margin,margin,margin,margin); }
+    ~FlowLayout() { while (auto* item = takeAt(0)) delete item; }
+    void addItem(QLayoutItem* item) override { m_items.append(item); }
+    int count() const override { return m_items.size(); }
+    QLayoutItem* itemAt(int idx) const override { return (idx>=0&&idx<m_items.size())?m_items.at(idx):nullptr; }
+    QLayoutItem* takeAt(int idx) override { return (idx>=0&&idx<m_items.size())?m_items.takeAt(idx):nullptr; }
+    Qt::Orientations expandingDirections() const override { return {}; }
+    bool hasHeightForWidth() const override { return true; }
+    int heightForWidth(int w) const override { return doLayout(QRect(0,0,w,0), true); }
+    QSize minimumSize() const override { QSize s; for(auto* i:m_items) s=s.expandedTo(i->minimumSize()); return s; }
+    void setGeometry(const QRect& rect) override { QLayout::setGeometry(rect); doLayout(rect, false); }
+    QSize sizeHint() const override { return minimumSize(); }
+private:
+    int doLayout(const QRect& rect, bool testOnly) const {
+        int x=rect.x(), y=rect.y(), lineH=0;
+        for(auto* item:m_items){
+            QSize sz=item->sizeHint();
+            if(x+sz.width()>rect.right()&&x>rect.x()){x=rect.x();y+=lineH+m_vSpace;lineH=0;}
+            if(!testOnly) item->setGeometry(QRect(QPoint(x,y),sz));
+            x+=sz.width()+m_hSpace; lineH=qMax(lineH,sz.height());
+        }
+        return y+lineH-rect.y();
+    }
+    QList<QLayoutItem*> m_items;
+    int m_hSpace, m_vSpace;
+};
 
 // ═══════════════════════════════════════════════════════════
 //  AdvancedFilterDialog
@@ -17,63 +49,57 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     setAttribute(Qt::WA_TranslucentBackground);
     setModal(true);
-    // 全屏灰色遮罩
+    // 全屏遮罩
+    auto* screen = QApplication::primaryScreen();
+    if (screen) resize(screen->size());
+    setStyleSheet("background:rgba(0,0,0,0.45);");
+    
     auto* overlay = new QVBoxLayout(this);
-    overlay->setContentsMargins(0,0,0,0);
+    overlay->setAlignment(Qt::AlignCenter);
     auto* card = new QWidget;
     card->setStyleSheet("background:#ffffff;border-radius:16px;");
-    card->setFixedSize(760, 620);
+    card->setMinimumSize(700, 500);
+    card->setMaximumSize(900, 700);
     auto* lay = new QVBoxLayout(card);
     lay->setSpacing(12);
-    lay->setContentsMargins(20,20,20,16);
+    lay->setContentsMargins(24,20,24,16);
 
-    // 标题
     auto* title = new QLabel(QString::fromUtf8("\xf0\x9f\x94\x8d \xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
-    title->setStyleSheet("font-size:18px;font-weight:700;color:#1f2937;");
+    title->setStyleSheet("background:transparent;font-size:18px;font-weight:700;color:#1f2937;");
     lay->addWidget(title);
 
-    // 输入框 + 启用开关
     auto* topRow = new QHBoxLayout;
     m_input = new QLineEdit;
-    m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6\xe6\xb7\xbb\xe5\x8a\xa0..."));
+    m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6..."));
     m_input->setStyleSheet("background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:14px;");
     connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
     m_enableCheck = new QCheckBox(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
-    m_enableCheck->setStyleSheet("QCheckBox{font-weight:600;color:#6366f1;font-size:14px;}");
+    m_enableCheck->setStyleSheet("QCheckBox{background:transparent;font-weight:600;color:#6366f1;font-size:14px;}");
     connect(m_enableCheck, &QCheckBox::toggled, this, [this]() { emit filterChanged(); });
     topRow->addWidget(m_input, 1);
     topRow->addWidget(m_enableCheck);
     lay->addLayout(topRow);
 
-    // 规则流式布局
+    // 规则FlowLayout（可换行）
     m_ruleWidget = new QWidget;
-    m_ruleLayout = new QHBoxLayout(m_ruleWidget);
-    m_ruleLayout->setContentsMargins(0,0,0,0);
-    m_ruleLayout->setSpacing(8);
-    m_ruleLayout->addStretch();
-    auto* ruleScroll = new QScrollArea;
-    ruleScroll->setWidget(m_ruleWidget);
-    ruleScroll->setWidgetResizable(true);
-    ruleScroll->setStyleSheet("QScrollArea{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;}");
-    ruleScroll->setFixedHeight(60);
-    lay->addWidget(ruleScroll);
+    m_ruleWidget->setStyleSheet("background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;");
+    m_ruleLayout = new FlowLayout(m_ruleWidget, 8, 8, 6);
+    lay->addWidget(m_ruleWidget);
 
-    // 预览树
     m_previewTree = new QTreeWidget;
     m_previewTree->setHeaderHidden(true);
     m_previewTree->setRootIsDecorated(true);
     m_previewTree->setStyleSheet("QTreeWidget{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;}");
     lay->addWidget(m_previewTree, 1);
 
-    // 底部按钮
     auto* btnRow = new QHBoxLayout;
     btnRow->addStretch();
     auto* btnApply = new QPushButton(QString::fromUtf8("\xe5\xba\x94\xe7\x94\xa8"));
-    btnApply->setStyleSheet("QPushButton{background:#10b981;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}QPushButton:hover{background:#059669;}");
+    btnApply->setStyleSheet("QPushButton{background:#10b981;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}");
     auto* btnSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98"));
-    btnSave->setStyleSheet("QPushButton{background:#6366f1;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}QPushButton:hover{background:#4f46e5;}");
+    btnSave->setStyleSheet("QPushButton{background:#6366f1;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}");
     auto* btnClose = new QPushButton(QString::fromUtf8("\xe5\x85\xb3\xe9\x97\xad"));
-    btnClose->setStyleSheet("QPushButton{background:#e5e7eb;color:#374151;border-radius:8px;padding:8px 20px;font-size:14px;}QPushButton:hover{background:#d1d5db;}");
+    btnClose->setStyleSheet("QPushButton{background:#e5e7eb;color:#374151;border-radius:8px;padding:8px 20px;font-size:14px;}");
     connect(btnSave, &QPushButton::clicked, this, &QDialog::accept);
     connect(btnClose, &QPushButton::clicked, this, &QDialog::reject);
     connect(btnApply, &QPushButton::clicked, this, [this]() { emit filterChanged(); });
@@ -82,8 +108,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     btnRow->addWidget(btnClose);
     lay->addLayout(btnRow);
 
-    overlay->addWidget(card, 0, Qt::AlignCenter);
-    setStyleSheet("AdvancedFilterDialog{background:rgba(0,0,0,0.4);}");
+    overlay->addWidget(card);
     updatePreview();
 }
 
@@ -114,44 +139,40 @@ void AdvancedFilterDialog::toggleRule(int idx) {
 }
 
 void AdvancedFilterDialog::rebuildRuleWidgets() {
-    // 清除旧widget
     QLayoutItem* child;
     while ((child = m_ruleLayout->takeAt(0)) != nullptr) {
         if (child->widget()) delete child->widget();
         delete child;
     }
-    // 重建规则widget
     for (int i = 0; i < m_rules.size(); i++) {
         const auto& r = m_rules[i];
         auto* chip = new QWidget;
         chip->setStyleSheet(QString("background:%1;border-radius:8px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
-        chip->setFixedHeight(36);
         auto* hl = new QHBoxLayout(chip);
         hl->setContentsMargins(8,2,4,2);
-        hl->setSpacing(6);
+        hl->setSpacing(4);
         auto* label = new QLabel(r.keyword);
         label->setStyleSheet("background:transparent;font-size:13px;color:#1f2937;");
         label->setMaximumWidth(200);
-        label->setTextFormat(Qt::PlainText);
         QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 200);
         label->setText(elided);
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
-        auto* toggle = new QPushButton(r.include ? QString::fromUtf8("\xe6\xad\xa3\xe9\x80\x89") : QString::fromUtf8("\xe5\x8f\x8d\xe9\x80\x89"));
-        toggle->setFixedSize(44, 24);
+        auto* toggle = new QPushButton(r.include ? QString::fromUtf8("\xe6\xad\xa3") : QString::fromUtf8("\xe5\x8f\x8d"));
+        toggle->setFixedSize(28, 22);
         toggle->setStyleSheet(r.include
-            ? "QPushButton{background:#10b981;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;}QPushButton:hover{background:#059669;}"
-            : "QPushButton{background:#ef4444;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;}QPushButton:hover{background:#dc2626;}");
+            ? "QPushButton{background:#10b981;color:white;border:none;border-radius:5px;font-size:10px;font-weight:700;}"
+            : "QPushButton{background:#ef4444;color:white;border:none;border-radius:5px;font-size:10px;font-weight:700;}");
         connect(toggle, &QPushButton::clicked, this, [this, i]() { toggleRule(i); });
         hl->addWidget(toggle);
         auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-        delBtn->setFixedSize(20, 20);
-        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:14px;font-weight:700;}QPushButton:hover{color:#ef4444;}");
+        delBtn->setFixedSize(18, 18);
+        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:13px;font-weight:700;}");
         connect(delBtn, &QPushButton::clicked, this, [this, i]() { removeRule(i); });
         hl->addWidget(delBtn);
-        chip->setLayout(hl);
-        m_ruleLayout->insertWidget(m_ruleLayout->count() - 1, chip);  // before stretch
+        m_ruleLayout->addWidget(chip);
     }
+    m_ruleWidget->updateGeometry();
 }
 
 QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
