@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QVector3D>
 #include <QQuaternion>
+#include <QMatrix4x4>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -111,6 +112,8 @@ private:
     bool m_dragging=false;
     QVector3D m_arcballFrom, m_arcballTo;
     QVector3D screenToArcball(const QPointF& screenPos) const;
+    QMatrix4x4 m_mvMat, m_pjMat;
+    GLint m_viewport[4] = {};
 };
 
 class Model3DViewer : public QWidget {

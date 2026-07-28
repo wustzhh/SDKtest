@@ -370,7 +370,10 @@ void GLViewer::paintGL(){
     GLfloat lp1[]={-1,-1,-.5f,0};glLightfv(GL_LIGHT1,GL_POSITION,lp1);
     GLfloat mv[16],pj[16];GLint vp[4];
     glGetFloatv(GL_MODELVIEW_MATRIX,mv);glGetFloatv(GL_PROJECTION_MATRIX,pj);glGetIntegerv(GL_VIEWPORT,vp);
-    QMatrix4x4 mvMat((const float*)mv), pjMat((const float*)pj);
+    m_mvMat = QMatrix4x4((const float*)mv);
+    m_pjMat = QMatrix4x4((const float*)pj);
+    m_viewport[0] = vp[0]; m_viewport[1] = vp[1];
+    m_viewport[2] = vp[2]; m_viewport[3] = vp[3];
     glEnable(GL_LIGHTING);
     if(!m_tri.isEmpty()){
         // 首次或数据变更时上传 VBO
@@ -425,7 +428,19 @@ void GLViewer::paintGL(){
 }
 
 
-void GLViewer::mousePressEvent(QMouseEvent* e){m_lastPos=e->pos();m_dragging=true;m_arcballFrom=screenToArcball(e->pos());}
+void GLViewer::mousePressEvent(QMouseEvent* e){
+    m_lastPos=e->pos();m_dragging=true;
+    // 读取点击处的深度，unproject 获取3D位置作为新锚点
+    makeCurrent();
+    float depth = 1.0f;
+    int y = m_viewport[3] - e->pos().y() - 1;
+    glReadPixels(e->pos().x(), y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    if (depth < 1.0f) {
+        QVector3D wp = QVector3D(e->pos().x(), y, depth).unproject(m_mvMat, m_pjMat, QRect(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]));
+        if (!wp.isNull()) m_anchor = wp;
+    }
+    m_arcballFrom = screenToArcball(e->pos());
+}
 void GLViewer::mouseMoveEvent(QMouseEvent* e){
     if(!m_dragging)return;
     if(e->buttons()&Qt::LeftButton){
