@@ -369,14 +369,17 @@ void GLViewer::paintGL(){
     else     glOrtho(-sz,sz,-sz/as,sz/as,-depthRange,depthRange);
     glMatrixMode(GL_MODELVIEW);glLoadIdentity();glTranslatef(m_panX,m_panY,0);glTranslatef(m_anchor.x(),m_anchor.y(),m_anchor.z());
     QMatrix4x4 rmat;rmat.rotate(m_rot);glMultMatrixf(rmat.constData());glTranslatef(-m_anchor.x(),-m_anchor.y(),-m_anchor.z());
+    // 构建Qt矩阵用于unproject（不用glGetFloatv避免列/行主序混乱）
+    m_mvMat.setToIdentity();
+    m_mvMat.translate(m_panX, m_panY, 0);
+    m_mvMat.translate(m_anchor);
+    m_mvMat.rotate(m_rot);
+    m_mvMat.translate(-m_anchor);
+    m_pjMat.setToIdentity();
+    if (as > 1) m_pjMat.ortho(-sz*as, sz*as, -sz, sz, -depthRange, depthRange);
+    else        m_pjMat.ortho(-sz, sz, -sz/as, sz/as, -depthRange, depthRange);
     GLfloat lp0[]={1,1,1,0};glLightfv(GL_LIGHT0,GL_POSITION,lp0);
     GLfloat lp1[]={-1,-1,-.5f,0};glLightfv(GL_LIGHT1,GL_POSITION,lp1);
-    GLfloat mv[16],pj[16];GLint vp[4];
-    glGetFloatv(GL_MODELVIEW_MATRIX,mv);glGetFloatv(GL_PROJECTION_MATRIX,pj);glGetIntegerv(GL_VIEWPORT,vp);
-    m_mvMat = QMatrix4x4((const float*)mv);
-    m_pjMat = QMatrix4x4((const float*)pj);
-    m_viewport[0] = vp[0]; m_viewport[1] = vp[1];
-    m_viewport[2] = vp[2]; m_viewport[3] = vp[3];
     glEnable(GL_LIGHTING);
     if(!m_tri.isEmpty()){
         // 首次或数据变更时上传 VBO
@@ -438,6 +441,11 @@ void GLViewer::paintGL(){
             int devW = width(), devH = height();
             int glY = devH - devY - 1;
             // 用缓存的MV/P矩阵在近远平面unproject → 模型空间射线
+            // 检查缓存的MV/P矩阵
+            float mvDet = m_mvMat.determinant();
+            float pjDet = m_pjMat.determinant();
+            LOG("PICK",QString("mvDet=%1 pjDet=%2")
+                .arg(mvDet,0,'f',4).arg(pjDet,0,'f',4));
             QVector3D pNear = QVector3D(devX, glY, 0).unproject(m_mvMat, m_pjMat, QRect(0,0,devW,devH));
             QVector3D pFar  = QVector3D(devX, glY, 1).unproject(m_mvMat, m_pjMat, QRect(0,0,devW,devH));
             QVector3D mOrg = pNear;
