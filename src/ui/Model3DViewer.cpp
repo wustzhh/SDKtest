@@ -71,7 +71,9 @@ void StepWorker::doWork() {
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
         }
-        double deflPct = qBound(0.001, diag * 0.005 * faceScale, 5.0);
+        // 尺寸分级：小模型用更粗比例避免过度剖分
+        double diagScale = (diag < 5.0) ? 0.03 : (diag < 50.0) ? 0.01 : 0.005;
+        double deflPct = qBound(0.001, diag * diagScale * faceScale, 5.0);
         double deflection = qMax(0.001, deflPct);
         double angularDeflection = (totalFaces > 1000) ? 1.0 * M_PI / 180.0
                                 : (diag < 1.0 || totalFaces < 5) ? 0.1 * M_PI / 180.0
@@ -532,10 +534,15 @@ void GLViewer::paintGL(){
         glLoadIdentity();
         QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
         glTranslatef(ap.x(), ap.y(), ap.z());
-        float s = width() * 0.01f;  // 屏幕2%直径
-        glPointSize(s);
+        float r = m_modelSize * 0.02f / m_zoom;  // 半径=模型尺寸2%
         glColor3f(1, 1, 0);
-        glBegin(GL_POINTS); glVertex3f(0,0,0); glEnd();
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(0,0,0);
+        for (int i = 0; i <= 32; i++) {
+            float a = i * 2.0f * M_PI / 32.0f;
+            glVertex3f(cos(a)*r, sin(a)*r, 0);
+        }
+        glEnd();
         glPopMatrix();
         glEnable(GL_DEPTH_TEST);
     }
