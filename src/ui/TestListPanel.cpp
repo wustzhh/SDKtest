@@ -78,64 +78,55 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     pal.setColor(QPalette::Window, QColor(0,0,0,115));
     setPalette(pal);
     
-    auto* overlay = new QVBoxLayout(this);
-    overlay->setAlignment(Qt::AlignCenter);
-    auto* card = new QWidget;
-    card->setStyleSheet("background:#ffffff;border-radius:16px;");
-    card->setFixedSize(660, 560);
-    auto* lay = new QVBoxLayout(card);
+    auto* lay = new QVBoxLayout(this);
+    lay->setContentsMargins(80, 60, 80, 60);
     lay->setSpacing(14);
-    lay->setContentsMargins(24,20,24,18);
 
     auto* titleRow = new QHBoxLayout;
     auto* title = new QLabel(QString::fromUtf8("\xf0\x9f\x94\x8d \xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
-    title->setStyleSheet("background:transparent;font-size:18px;font-weight:700;color:#1f2937;");
+    title->setStyleSheet("background:transparent;font-size:20px;font-weight:700;color:white;");
     titleRow->addWidget(title);
     titleRow->addStretch();
-    auto* toggleRow = new QHBoxLayout;
     auto* toggleLabel = new QLabel(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
-    toggleLabel->setStyleSheet("background:transparent;font-size:13px;color:#6b7280;margin-right:4px;");
-    toggleRow->addWidget(toggleLabel);
+    toggleLabel->setStyleSheet("background:transparent;font-size:14px;color:rgba(255,255,255,0.8);");
+    titleRow->addWidget(toggleLabel);
     m_enableSwitch = new ToggleSwitch;
     connect(m_enableSwitch, &QCheckBox::toggled, this, [this](){ emit filterChanged(); });
-    toggleRow->addWidget(m_enableSwitch);
-    titleRow->addLayout(toggleRow);
+    titleRow->addWidget(m_enableSwitch);
     lay->addLayout(titleRow);
 
     auto* inputRow = new QHBoxLayout;
     m_input = new QLineEdit;
     m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6..."));
-    m_input->setStyleSheet("background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:14px;");
+    m_input->setStyleSheet("background:rgba(255,255,255,0.95);border:none;border-radius:10px;padding:12px 16px;font-size:15px;");
     connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
     inputRow->addWidget(m_input, 1);
     lay->addLayout(inputRow);
 
     m_ruleWidget = new QWidget;
-    m_ruleWidget->setStyleSheet("background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;");
-    m_ruleLayout = new FlowLayout(m_ruleWidget, 8, 8, 6);
+    m_ruleWidget->setStyleSheet("background:rgba(255,255,255,0.08);border-radius:10px;");
+    m_ruleLayout = new FlowLayout(m_ruleWidget, 12, 10, 8);
     lay->addWidget(m_ruleWidget);
 
     m_previewTree = new QTreeWidget;
     m_previewTree->setHeaderHidden(true);
     m_previewTree->setRootIsDecorated(true);
-    m_previewTree->setStyleSheet("QTreeWidget{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;}");
+    m_previewTree->setStyleSheet("QTreeWidget{background:rgba(255,255,255,0.95);border-radius:10px;font-size:14px;padding:4px;}");
     lay->addWidget(m_previewTree, 1);
 
     auto* btnRow = new QHBoxLayout;
     btnRow->addStretch();
     auto* btnApply = new QPushButton(QString::fromUtf8("\xe5\xba\x94\xe7\x94\xa8"));
-    btnApply->setStyleSheet("QPushButton{background:#10b981;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}");
+    btnApply->setStyleSheet("QPushButton{background:#10b981;color:white;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;}");
     auto* btnSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98"));
-    btnSave->setStyleSheet("QPushButton{background:#6366f1;color:white;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;}");
+    btnSave->setStyleSheet("QPushButton{background:#6366f1;color:white;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;}");
     auto* btnClose = new QPushButton(QString::fromUtf8("\xe5\x85\xb3\xe9\x97\xad"));
-    btnClose->setStyleSheet("QPushButton{background:#e5e7eb;color:#374151;border-radius:8px;padding:8px 20px;font-size:14px;}");
+    btnClose->setStyleSheet("QPushButton{background:rgba(255,255,255,0.2);color:white;border-radius:8px;padding:10px 24px;font-size:15px;}");
     connect(btnSave, &QPushButton::clicked, this, &QDialog::accept);
     connect(btnClose, &QPushButton::clicked, this, &QDialog::reject);
     connect(btnApply, &QPushButton::clicked, this, [this](){ emit filterChanged(); });
     btnRow->addWidget(btnApply); btnRow->addWidget(btnSave); btnRow->addWidget(btnClose);
     lay->addLayout(btnRow);
-
-    overlay->addWidget(card);
     updatePreview();
 }
 
