@@ -43,33 +43,36 @@ private:
 };
 
 // 网页风格Toggle开关
-class ToggleSwitch : public QCheckBox {
+class ToggleSwitch : public QWidget {
+    Q_OBJECT
+    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY toggled)
 public:
-    ToggleSwitch(QWidget* p=nullptr):QCheckBox(p),m_animPos(isChecked()?1.0:0.0){
-        setFixedSize(44,24);setCursor(Qt::PointingHandCursor);
-        m_anim = new QPropertyAnimation(this,"animPos");
-        m_anim->setDuration(150);
-        connect(this,&QCheckBox::toggled,this,[this](bool on){
-            m_anim->stop();
-            m_anim->setStartValue(m_animPos);
-            m_anim->setEndValue(on?1.0:0.0);
-            m_anim->start();
-        });
+    ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_animPos(0){
+        setFixedSize(40,22);setCursor(Qt::PointingHandCursor);
+        m_anim=new QPropertyAnimation(this,"animPos");m_anim->setDuration(150);
     }
-    Q_PROPERTY(double animPos MEMBER m_animPos)
-    void mousePressEvent(QMouseEvent* e) override { setChecked(!isChecked()); }
+    bool isChecked() const { return m_checked; }
+    void setChecked(bool c) {
+        if(c==m_checked) return;
+        m_checked=c;
+        m_anim->stop();m_anim->setStartValue(m_animPos);m_anim->setEndValue(c?1.0:0.0);m_anim->start();
+        emit toggled(m_checked);
+    }
+signals:
+    void toggled(bool);
 protected:
     void paintEvent(QPaintEvent*) override {
-        QPainter p(this); p.setRenderHint(QPainter::Antialiasing);
-        double t = m_animPos;
+        QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
+        double t=m_animPos;
         p.setBrush(QColor(t>0.5?QString("#6366f1"):QString("#d1d5db")));
         p.setPen(Qt::NoPen);
-        p.drawRoundedRect(rect(),12,12);
+        p.drawRoundedRect(rect(),11,11);
         p.setBrush(Qt::white);
-        int x = (int)(2 + t*(width()-21));
-        p.drawEllipse(x,2,20,20);
+        p.drawEllipse((int)(1+t*(width()-20)),1,20,20);
     }
+    void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); update(); }
 private:
+    bool m_checked;
     double m_animPos;
     QPropertyAnimation* m_anim;
 };
@@ -100,7 +103,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     toggleLabel->setStyleSheet("background:transparent;font-size:14px;color:rgba(255,255,255,0.8);");
     titleRow->addWidget(toggleLabel);
     m_enableSwitch = new ToggleSwitch;
-    connect(m_enableSwitch, &QCheckBox::toggled, this, [this](){ emit filterChanged(); });
+    connect(m_enableSwitch, &ToggleSwitch::toggled, this, [this](){ emit filterChanged(); });
     titleRow->addWidget(m_enableSwitch);
     lay->addLayout(titleRow);
 
@@ -178,24 +181,22 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         auto* chip = new QWidget;
         chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
         auto* hl = new QHBoxLayout(chip);
-        hl->setContentsMargins(8,3,4,3);
-        hl->setSpacing(6);
+        hl->setContentsMargins(6,2,2,2);
+        hl->setSpacing(3);
         auto* label = new QLabel(r.keyword);
         label->setStyleSheet("background:transparent;font-size:12px;color:#374151;border:none;");
-        label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-        label->setMaximumWidth(180);
-        QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 180);
+        label->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 120);
         label->setText(elided);
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
-        // 正/反ToggleSwitch
         auto* sw = new ToggleSwitch;
         sw->setChecked(r.include);
-        connect(sw, &QCheckBox::toggled, this, [this,i](bool on){ m_rules[i].include=on; rebuildRuleWidgets(); updatePreview(); emit filterChanged(); });
+        connect(sw, &ToggleSwitch::toggled, this, [this,i](bool on){ m_rules[i].include=on; rebuildRuleWidgets(); updatePreview(); emit filterChanged(); });
         hl->addWidget(sw);
         auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-        delBtn->setFixedSize(14,14);
-        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:10px;}");
+        delBtn->setFixedSize(10,10);
+        delBtn->setStyleSheet("QPushButton{background:transparent;color:#aaa;border:none;font-size:8px;padding:0;margin:0;}");
         connect(delBtn, &QPushButton::clicked, this, [this, i]() { removeRule(i); });
         hl->addWidget(delBtn);
         m_ruleLayout->addWidget(chip);
