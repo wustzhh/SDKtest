@@ -57,6 +57,7 @@ public:
         });
     }
     Q_PROPERTY(double animPos MEMBER m_animPos)
+    void mousePressEvent(QMouseEvent* e) override { setChecked(!isChecked()); }
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter p(this); p.setRenderHint(QPainter::Antialiasing);
@@ -187,17 +188,14 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
         label->setText(elided);
         if (elided != r.keyword) label->setToolTip(r.keyword);
         hl->addWidget(label);
-        hl->addWidget(label);
         // 正/反ToggleSwitch
         auto* sw = new ToggleSwitch;
         sw->setChecked(r.include);
-        sw->setFixedSize(36,20);
         connect(sw, &QCheckBox::toggled, this, [this,i](bool on){ m_rules[i].include=on; rebuildRuleWidgets(); updatePreview(); emit filterChanged(); });
         hl->addWidget(sw);
-        // ×删除
         auto* delBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-        delBtn->setFixedSize(16,16);
-        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:11px;font-weight:700;}QPushButton:hover{color:#ef4444;}");
+        delBtn->setFixedSize(14,14);
+        delBtn->setStyleSheet("QPushButton{background:transparent;color:#9ca3af;border:none;font-size:10px;}");
         connect(delBtn, &QPushButton::clicked, this, [this, i]() { removeRule(i); });
         hl->addWidget(delBtn);
         m_ruleLayout->addWidget(chip);
