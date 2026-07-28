@@ -68,7 +68,7 @@ void StepWorker::doWork() {
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
         }
-        double deflection = qBound(0.001, diag * 0.01, 2.0);
+        double deflection = qBound(0.001, diag * 0.01, 3.0);
         double angularDeflection = (diag < 1.0) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
         LOG("MESH",QString("diag=%1 deflection=%2 angular=%3°")
             .arg(diag,0,'f',3).arg(deflection,0,'f',4).arg(angularDeflection*180.0/M_PI,0,'f',3));
