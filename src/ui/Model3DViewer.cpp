@@ -65,11 +65,11 @@ void StepWorker::doWork() {
             double x1,y1,z1,x2,y2,z2;
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             double diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
-            // 线性偏差：对角线0.2%，最小0.01mm，最大0.5mm
-            deflection = qBound(0.01, diag * 0.002, 0.5);
+            // 线性偏差：对角线0.1%，最小0.001mm，最大0.5mm
+            deflection = qBound(0.001, diag * 0.001, 0.5);
         }
-        // 角度偏差 0.2°：更密的弧面剖分
-        double angularDeflection = 0.2 * M_PI / 180.0;
+        // 角度偏差 0.1°：极端弧面也能密
+        double angularDeflection = 0.1 * M_PI / 180.0;
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
