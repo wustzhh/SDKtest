@@ -498,28 +498,6 @@ void GLViewer::paintGL(){
             } // end if rayLen ok
         }
     }
-    // ── 锚点标记：红色十字 ──
-    {
-        // 保存当前MV，用新anchor/pan构建独立MV避免和模型变换冲突
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        // 红x在世界空间位置 = m_anchor + pan
-        QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
-        glTranslatef(ap.x(), ap.y(), ap.z());
-        float s = m_modelSize * 0.02f / m_zoom;
-        GLfloat cross[] = {
-            -s, 0, 0,  s, 0, 0,
-            0, -s, 0,  0, s, 0,
-        };
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, cross);
-        glColor3f(1, 0.2f, 0.2f);
-        glLineWidth(2.0f);
-        glDrawArrays(GL_LINES, 0, 4);
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glPopMatrix();
-    }
 }
 
 
