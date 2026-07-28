@@ -56,6 +56,10 @@ protected:
         int x=on?width()-19:2;
         p.drawEllipse(x,2,18,18);
     }
+    void mousePressEvent(QMouseEvent* e) override {
+        setChecked(!isChecked());
+        QCheckBox::mousePressEvent(e);
+    }
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -69,13 +73,16 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     setModal(true);
     auto* screen = QApplication::primaryScreen();
     if (screen) setGeometry(screen->geometry());
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(0,0,0,115));
+    setPalette(pal);
     
     auto* overlay = new QVBoxLayout(this);
     overlay->setAlignment(Qt::AlignCenter);
-    overlay->setContentsMargins(60,40,60,40);
     auto* card = new QWidget;
     card->setStyleSheet("background:#ffffff;border-radius:16px;");
-    card->setMinimumSize(640,480);
+    card->setFixedSize(660, 560);
     auto* lay = new QVBoxLayout(card);
     lay->setSpacing(14);
     lay->setContentsMargins(24,20,24,18);
@@ -129,9 +136,10 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     lay->addLayout(btnRow);
 
     overlay->addWidget(card);
-    setStyleSheet("AdvancedFilterDialog{background:rgba(0,0,0,0.45);}");
     updatePreview();
 }
+
+bool AdvancedFilterDialog::enabled() const { return m_enableSwitch->isChecked(); }
 
 void AdvancedFilterDialog::addRule() {
     QString kw = m_input->text().trimmed();
@@ -201,7 +209,7 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
 }
 
 QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
-    if (m_rules.isEmpty() || !m_enableCheck->isChecked()) return m_allCases;
+    if (m_rules.isEmpty() || !m_enableSwitch->isChecked()) return m_allCases;
     QVector<TestCase> result;
     for (const auto& tc : m_allCases) {
         QString name = tc.fullName();

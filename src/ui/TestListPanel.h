@@ -27,7 +27,7 @@ class AdvancedFilterDialog : public QDialog {
 public:
     AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent = nullptr);
     QVector<FilterRule> rules() const { return m_rules; }
-    bool enabled() const { return m_enableCheck->isChecked(); }
+    bool enabled() const;
 signals:
     void filterChanged();
 private:
