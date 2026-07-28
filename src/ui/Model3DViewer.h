@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QThread>
 #include <QTimer>
+#include <TopoDS_Shape.hxx>
 
 struct EdgeLine {
     int v0, v1;
@@ -37,6 +38,7 @@ struct StepLoadResult {
     QVector<int> faceCenterIds; // 与 faceCenters 一一对应的面 ID
     QVector<FaceBBox> faceBBoxes; // 每个面的包围盒（与 faceCenterIds 一一对应）
     int elapsedMs = 0;
+    TopoDS_Shape shape;
 };
 
 class StepWorker : public QObject {
@@ -73,6 +75,7 @@ public:
     int faceBBoxCount() const { return m_faceBBoxes.size(); }
     float edgeWidthPct() const { return m_edgeWidthPct; }
     void clear();
+    void setShape(const TopoDS_Shape& s) { m_shape = s; }
     GLViewer* glViewer() { return this; }
     // 截图当前 OpenGL 视图
     QImage grabScreenshot() const;
@@ -108,6 +111,7 @@ private:
     QVector3D m_anchor;
     bool m_hasAnchor=false,m_pendingPick=false;
     QPointF m_pickPos;
+    TopoDS_Shape m_shape;  // 用于射线拾取
     QPoint m_lastPos;
     bool m_dragging=false;
     QVector3D m_arcballFrom, m_arcballTo;

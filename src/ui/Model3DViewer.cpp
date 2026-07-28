@@ -44,6 +44,8 @@
 #include <GeomAdaptor_Curve.hxx>
 #include <GCPnts_UniformAbscissa.hxx>
 #include <GCPnts_AbscissaPoint.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepExtrema_DistShapeShape.hxx>
 
 void StepWorker::doWork() {
     StepLoadResult r; QElapsedTimer t; t.start();
@@ -52,6 +54,7 @@ void StepWorker::doWork() {
     if (reader.ReadFile(m_path.toUtf8().constData()) != IFSelect_RetDone) { r.error="ReadFile failed"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE8\xBD\xAC\xE6\x8D\xA2\xE5\xBD\xA2\xE7\x8A\xB6..."));
     reader.TransferRoots(); TopoDS_Shape shape = reader.OneShape();
+    r.shape = shape;  // 保存用于射线拾取
     if (shape.IsNull()) { r.error="Shape is null"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
     // 自适应偏差：根据模型尺寸调整，弧面需要更密三角
@@ -428,18 +431,12 @@ void GLViewer::paintGL(){
     // ── 处理锚点拾取（使用当前帧刚渲染的深度缓冲） ──
     if (m_pendingPick) {
         m_pendingPick = false;
-        float depth = 1.0f;
-        float dpr = devicePixelRatioF();
-        int devX = qRound(m_pickPos.x() * dpr);
-        int devY = qRound(m_pickPos.y() * dpr);
-        int devW = width(), devH = height();
-        int glY = devH - devY - 1;  // OpenGL原点在左下
-        glReadPixels(devX, glY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-        // 诊断日志
-        LOG("PICK", QString("screen=(%1,%2) depth=%3 dpr=%4 devWH=(%5,%6)")
-            .arg(m_pickPos.x()).arg(m_pickPos.y()).arg(depth).arg(dpr).arg(devW).arg(devH));
-        if (depth < 1.0f) {
-            // 直接用 ortho 参数反算世界坐标
+        if (!m_shape.IsNull()) {
+            float dpr = devicePixelRatioF();
+            int devX = qRound(m_pickPos.x() * dpr);
+            int devY = qRound(m_pickPos.y() * dpr);
+            int devW = width(), devH = height();
+            int glY = devH - devY - 1;
             float as = float(devW) / float(devH);
             float sz = m_modelSize * 0.6f / qMax(m_zoom, 0.01f);
             double dr = sz * 100.0;
@@ -448,21 +445,36 @@ void GLViewer::paintGL(){
             else        { left = -sz; right = sz; bottom = -sz/as; top = sz/as; }
             double wx = left   + (double)devX / devW * (right - left);
             double wy = bottom + (double)glY  / devH * (top - bottom);
-            double wz = -dr    + depth * (dr + dr);
-            QVector3D wp(wx, wy, wz);
-            LOG("PICK", QString("world=(%1,%2,%3) anchor_before=(%4,%5,%6) pan=(%7,%8)")
-                .arg(wx,0,'f',3).arg(wy,0,'f',3).arg(wz,0,'f',3)
-                .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3)
-                .arg(m_panX,0,'f',3).arg(m_panY,0,'f',3));
+            // 射线从 near 到 far
+            gp_Pnt pNear(wx, wy, -dr);
+            gp_Pnt pFar(wx, wy, dr);
+            // 变换到模型空间：应用 MV 的逆
             QVector3D pan3(m_panX, m_panY, 0);
-            QVector3D modelPt = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
-            // 调整pan使点击点在屏幕上不动
-            m_panX = wp.x() - modelPt.x();
-            m_panY = wp.y() - modelPt.y();
-            m_anchor = modelPt;
-            LOG("PICK", QString("anchor_after=(%1,%2,%3) pan_after=(%4,%5)")
-                .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3)
-                .arg(m_panX,0,'f',3).arg(m_panY,0,'f',3));
+            auto toModel = [&](const gp_Pnt& worldPt) -> gp_Pnt {
+                QVector3D v(worldPt.X(), worldPt.Y(), worldPt.Z());
+                QVector3D m = m_rot.inverted().rotatedVector(v - m_anchor - pan3) + m_anchor;
+                return gp_Pnt(m.x(), m.y(), m.z());
+            };
+            gp_Pnt mpNear = toModel(pNear);
+            gp_Pnt mpFar  = toModel(pFar);
+            // 构造射线边
+            BRepBuilderAPI_MakeEdge rayMaker(mpNear, mpFar);
+            if (rayMaker.IsDone()) {
+                TopoDS_Edge rayEdge = rayMaker.Edge();
+                BRepExtrema_DistShapeShape ext(rayEdge, m_shape);
+                ext.Perform();
+                if (ext.IsDone() && ext.NbSolution() > 0) {
+                    // 取第1个交点（射线穿入点）
+                    gp_Pnt pt1 = ext.PointOnShape1(1); // 射线上的点
+                    gp_Pnt pt2 = ext.PointOnShape2(1); // 模型上的点
+                    double dist = pt1.Distance(pt2);
+                    if (dist < 1.0) {
+                        m_anchor = QVector3D(pt2.X(), pt2.Y(), pt2.Z());
+                        m_panX = wx - m_anchor.x();
+                        m_panY = wy - m_anchor.y();
+                    }
+                }
+            }
         }
     }
     // ── 锚点标记：红色十字 ──
@@ -1045,6 +1057,7 @@ void Model3DViewer::loadFile(const QString& fp){
         m_countdownTimer->stop();m_timeoutTimer->stop();
         if(r.ok){LOG("3D",QString("OK %1v %2t %3e %4ms").arg(r.verts.size()).arg(r.tris.size()/3).arg(r.edges.size()).arg(r.elapsedMs));
             m_gl->loadMesh(r.verts,r.tris,r.normals,r.edges,r.faceIds,r.faceCenters,r.faceCenterIds,r.faceBBoxes);
+            m_gl->setShape(r.shape);
             applyPendingBoxes();
             m_status->setText(QString("OCCT: %1v %2t %3e").arg(r.verts.size()).arg(r.tris.size()/3).arg(r.edges.size()));
             m_status->setStyleSheet("color:#10b981;font-size:12px;padding:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:6px;");
