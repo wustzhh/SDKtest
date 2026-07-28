@@ -436,15 +436,20 @@ void GLViewer::paintGL(){
         int glY = devH - devY - 1;  // OpenGL原点在左下
         glReadPixels(devX, glY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
         if (depth < 1.0f) {
-            QVector3D wp = QVector3D(devX, glY, depth)
-                .unproject(m_mvMat, m_pjMat, QRect(0, 0, devW, devH));
-            if (!wp.isNull()) {
-                QVector3D pan3(m_panX, m_panY, 0);
-                QVector3D modelPt = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
-                m_anchor = modelPt;
-                m_panX = wp.x() - m_anchor.x();
-                m_panY = wp.y() - m_anchor.y();
-            }
+            // 直接用 ortho 参数反算世界坐标
+            float as = float(devW) / float(devH);
+            float sz = m_modelSize * 0.6f / qMax(m_zoom, 0.01f);
+            double dr = sz * 100.0;
+            double left, right, bottom, top;
+            if (as > 1) { left = -sz*as; right = sz*as; bottom = -sz; top = sz; }
+            else        { left = -sz; right = sz; bottom = -sz/as; top = sz/as; }
+            double wx = left   + (double)devX / devW * (right - left);
+            double wy = bottom + (double)glY  / devH * (top - bottom);
+            double wz = -dr    + depth * (dr + dr);
+            QVector3D wp(wx, wy, wz);
+            // 逆 MODELVIEW → 模型空间（暂不补偿平移，先看位置对不对）
+            QVector3D pan3(m_panX, m_panY, 0);
+            m_anchor = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
         }
     }
     // ── 锚点标记：红色十字 ──
