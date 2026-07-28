@@ -121,8 +121,9 @@ void StepWorker::doWork() {
     }
     for (const auto& ed : allEdges) {
         if (BRep_Tool::Degenerated(ed)) continue;
-        int nf=(int)edgeFaceMap.value(ed.TShape().get()).size(); if (nf==0) continue;
-        QVector3D col=(nf==1)?QVector3D(1,0.15f,0.15f):((nf==2)?QVector3D(0.15f,0.85f,0.15f):QVector3D(1,0.85f,0.1f));
+        int nf=(int)edgeFaceMap.value(ed.TShape().get()).size();
+        if (nf < 2) continue;  // 只渲染两面之间的真实边，过滤自由边/缝边
+        QVector3D col(0.15f, 0.85f, 0.15f);  // 统一绿色
         double f,l; Handle(Geom_Curve) crv=BRep_Tool::Curve(ed,f,l); if (crv.IsNull()) continue;
         // 自适应采样：根据边长度动态调整点数，最少18段最多200段
         GeomAdaptor_Curve acrv(crv, f, l);
