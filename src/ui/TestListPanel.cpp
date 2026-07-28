@@ -15,8 +15,23 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     : QDialog(parent), m_allCases(allCases)
 {
     setWindowTitle(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
-    setMinimumSize(500, 500);
+    setMinimumSize(700, 600);
+    resize(800, 650);
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    setModal(true);  // 遮罩，不可点击父窗口
+    setStyleSheet(
+        "QDialog{background:#ffffff;border-radius:12px;}"
+        "QLineEdit{background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:14px;}"
+        "QLineEdit:focus{border-color:#6366f1;}"
+        "QCheckBox{font-size:13px;color:#374151;}"
+        "QListWidget{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:4px;}"
+        "QTreeWidget{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;}"
+        "QPushButton{background:#6366f1;color:white;border:none;border-radius:6px;padding:6px 16px;font-size:13px;}"
+        "QPushButton:hover{background:#4f46e5;}"
+    );
     auto* lay = new QVBoxLayout(this);
+    lay->setSpacing(10);
+    lay->setContentsMargins(16,16,16,16);
 
     // 顶部：输入框 + 启用开关
     auto* topRow = new QHBoxLayout;
@@ -24,6 +39,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6\xe6\xb7\xbb\xe5\x8a\xa0..."));
     connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
     m_enableCheck = new QCheckBox(QString::fromUtf8("\xe5\x90\xaf\xe7\x94\xa8"));
+    m_enableCheck->setStyleSheet("QCheckBox{font-weight:600;color:#6366f1;}");
     connect(m_enableCheck, &QCheckBox::toggled, this, [this]() { emit filterChanged(); });
     topRow->addWidget(m_input, 1);
     topRow->addWidget(m_enableCheck);
@@ -36,6 +52,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     // 预览树
     m_previewTree = new QTreeWidget;
     m_previewTree->setHeaderHidden(true);
+    m_previewTree->setRootIsDecorated(true);
     lay->addWidget(m_previewTree, 3);
 
     updatePreview();
@@ -48,6 +65,7 @@ void AdvancedFilterDialog::addRule() {
     m_rules.append({kw, true});
     // 添加列表项
     auto* item = new QListWidgetItem;
+    m_ruleList->addItem(item);
     auto* w = new QWidget;
     auto* hl = new QHBoxLayout(w);
     hl->setContentsMargins(0,0,0,0);
