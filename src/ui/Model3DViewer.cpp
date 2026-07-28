@@ -255,7 +255,7 @@ void StepWorker::doWork() {
 // ═══════════════════════════════════════════════════════════════
 //  GLViewer
 // ═══════════════════════════════════════════════════════════════
-GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouseTracking(true);
+GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouseTracking(true);setFocusPolicy(Qt::StrongFocus);
     // 默认等角视角：让平面模型也能看清
     m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
           * QQuaternion::fromAxisAndAngle(QVector3D(1,0,0), -25);
@@ -527,7 +527,7 @@ void GLViewer::paintGL(){
         }
     }
     // ── Ctrl锚点高亮 ──
-    if (m_ctrlHeld) {
+    if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
         glDisable(GL_DEPTH_TEST);
         float r = m_modelSize * 0.05f / m_zoom;  // 半径=模型尺寸5%
         QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
