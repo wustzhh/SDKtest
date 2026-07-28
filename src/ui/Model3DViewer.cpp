@@ -435,6 +435,9 @@ void GLViewer::paintGL(){
         int devW = width(), devH = height();
         int glY = devH - devY - 1;  // OpenGL原点在左下
         glReadPixels(devX, glY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+        // 诊断日志
+        LOG("PICK", QString("screen=(%1,%2) depth=%3 dpr=%4 devWH=(%5,%6)")
+            .arg(m_pickPos.x()).arg(m_pickPos.y()).arg(depth).arg(dpr).arg(devW).arg(devH));
         if (depth < 1.0f) {
             // 直接用 ortho 参数反算世界坐标
             float as = float(devW) / float(devH);
@@ -447,9 +450,15 @@ void GLViewer::paintGL(){
             double wy = bottom + (double)glY  / devH * (top - bottom);
             double wz = -dr    + depth * (dr + dr);
             QVector3D wp(wx, wy, wz);
-            // 逆 MODELVIEW → 模型空间（暂不补偿平移，先看位置对不对）
+            LOG("PICK", QString("world=(%1,%2,%3) anchor_before=(%4,%5,%6) pan=(%7,%8)")
+                .arg(wx,0,'f',3).arg(wy,0,'f',3).arg(wz,0,'f',3)
+                .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3)
+                .arg(m_panX,0,'f',3).arg(m_panY,0,'f',3));
+            // 逆 MODELVIEW → 模型空间
             QVector3D pan3(m_panX, m_panY, 0);
             m_anchor = m_rot.inverted().rotatedVector(wp - m_anchor - pan3) + m_anchor;
+            LOG("PICK", QString("anchor_after=(%1,%2,%3)")
+                .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3));
         }
     }
     // ── 锚点标记：红色十字 ──
