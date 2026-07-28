@@ -188,7 +188,17 @@ void StepWorker::doWork() {
         int ns = qBound(50, (int)(edgeLen / 0.05), 500);
         GCPnts_UniformAbscissa ua(acrv, ns + 1);
         int prev = -1;
+        // 检查边点是否靠近任何面顶点（裁剪面外部分）
+        auto nearFaceVert = [&](const gp_Pnt& pt, double thresh) -> bool {
+            QVector3D p(pt.X(), pt.Y(), pt.Z());
+            for (int i = 0; i < edgeVertBase; i++) {  // edgeVertBase=面顶点数
+                if ((p - r.verts[i]).lengthSquared() < thresh*thresh)
+                    return true;
+            }
+            return false;
+        };
         auto sampleAndAdd = [&](const gp_Pnt& pt) {
+            if (!nearFaceVert(pt, 0.002)) { prev = -1; return; }  // 远离面顶点则断开
             quint64 key = (quint64)(pt.X() * 1000 + 500000) << 42
                         | (quint64)(pt.Y() * 1000 + 500000) << 21
                         | (quint64)(pt.Z() * 1000 + 500000);
