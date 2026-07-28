@@ -61,7 +61,9 @@ void StepWorker::doWork() {
             double diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
             deflection = qBound(0.1, sqrt(qMax(diag, 1.0) * 2.0), 5.0);
         }
-        BRepMesh_IncrementalMesh(shape, deflection).Perform();
+        // 角度偏差：弧面/曲面用 0.5°（~0.0087 rad），防止平面三角偏离实际曲线
+        double angularDeflection = 0.5 * M_PI / 180.0;
+        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
     }
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int voff=0, faceIdx=0;
