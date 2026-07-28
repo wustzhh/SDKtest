@@ -59,8 +59,11 @@ void StepWorker::doWork() {
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
     qint64 tMesh=0, tFaces=0, tEdges=0;
     QElapsedTimer stage;
-    // 根据模型尺寸自适应调整参数
+    // 根据模型尺寸和面数自适应调整参数
     double diag = 1.0;
+    int totalFaces = 0;
+    { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
+    double faceScale = (totalFaces > 2000) ? 3.0 : (totalFaces > 500) ? 2.0 : 1.0;
     {
         Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
         if (!shapeBox.IsVoid()) {
@@ -68,19 +71,21 @@ void StepWorker::doWork() {
             shapeBox.Get(x1,y1,z1,x2,y2,z2);
             diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
         }
-        double deflection = qBound(0.001, diag * 0.01, 3.0);
-        double angularDeflection = (diag < 1.0) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
-        LOG("MESH",QString("diag=%1 deflection=%2 angular=%3°")
-            .arg(diag,0,'f',3).arg(deflection,0,'f',4).arg(angularDeflection*180.0/M_PI,0,'f',3));
+        double deflPct = qBound(0.001, diag * 0.005 * faceScale, 5.0);
+        double deflection = qMax(0.001, deflPct);
+        double angularDeflection = (diag < 1.0 || totalFaces < 5) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
+        LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
+            .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
+            .arg(angularDeflection*180.0/M_PI,0,'f',2));
         BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection).Perform();
         tMesh = stage.elapsed();
     }
     // 边线采样间距：模型尺寸自适应
-    double edgeSpacing = qBound(0.001, diag * 0.0005, 2.0);
+    double edgeSpacing = qBound(0.001, diag * 0.0005 * faceScale, 2.0);
     stage.start();
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
-    int totalFaces = 0, skippedFaces = 0;
-    { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
+    int skippedFaces = 0;
+    { } // totalFaces already counted above
     int voff=0, faceIdx=0;
     TopExp_Explorer fExp(shape, TopAbs_FACE);
     for (; fExp.More(); fExp.Next()) {
