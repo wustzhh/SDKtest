@@ -20,7 +20,7 @@ public:
 
     void loadTests(const QVector<TestCase>& cases,
                    const QVector<TestCategory>& categories = {});
-    void loadFromXml(const QString& xmlPath);
+    void loadFromRestore(const QString& jsonPath);
 
     QVector<TestCase> selectedTests() const;
     QStringList selectedTestNames() const;

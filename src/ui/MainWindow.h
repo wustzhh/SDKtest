@@ -54,7 +54,7 @@ private:
     void refreshProfileCombo();
     void refreshScenarioCombo();
     void refreshRestoreCombo();
-    void onRestoreFromXml(int index);
+    void onRestoreFromFile(int index);
     void saveLayout();
     // 模型截图
     void captureAllModelScreenshots(const QString& screenshotDir);

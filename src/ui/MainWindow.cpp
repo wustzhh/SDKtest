@@ -237,7 +237,7 @@ void MainWindow::setupUi() {
     m_restoreCombo->setStyleSheet("QComboBox{background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 8px;height:26px;font-size:12px}");
     m_restoreCombo->setToolTip(QString::fromUtf8("\xe4\xbb\x8e\xe5\x8e\x86\xe5\x8f\xb2\xe8\xbf\x90\xe8\xa1\x8c\xe8\xae\xb0\xe5\xbd\x95\xe6\x81\xa2\xe5\xa4\x8d\xe7\x94\xa8\xe4\xbe\x8b\xe5\x88\x97\xe8\xa1\xa8"));
     refreshRestoreCombo();
-    QObject::connect(m_restoreCombo, QOverload<int>::of(&QComboBox::activated), this, &MainWindow::onRestoreFromXml);
+    QObject::connect(m_restoreCombo, QOverload<int>::of(&QComboBox::activated), this, &MainWindow::onRestoreFromFile);
     bl->addWidget(m_restoreCombo);
     bl->addWidget(bExp);
     bl->addWidget(bRun);
@@ -1415,48 +1415,39 @@ void MainWindow::onAllFinished() {
         m_config.save();
         refreshScenarioCombo();
     }
-    // ── 持久化 XML（按配置保存，只保留最后一次） ──
-    if (m_runner) {
-        QStringList xmls = m_runner->xmlPaths();
-        if (!xmls.isEmpty()) {
-            QString xmlDir = QFileInfo(m_config.configPath()).absolutePath() + "/xml";
-            QDir().mkpath(xmlDir);
-            QString profName = m_config.profiles().value(m_config.activeProfile()).name;
-            if (profName.isEmpty()) profName = "default";
-            // 清理非法文件名字符
-            profName.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
-            QString outPath = xmlDir + "/" + profName + ".xml";
+    // ── 持久化用例数据（按配置保存，只保留最后一次） ──
+    if (!m_report.results.isEmpty()) {
+        QString restoreDir = QFileInfo(m_config.configPath()).absolutePath() + "/restore";
+        QDir().mkpath(restoreDir);
+        QString profName = m_config.profiles().value(m_config.activeProfile()).name;
+        if (profName.isEmpty()) profName = "default";
+        profName.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
+        QString outPath = restoreDir + "/" + profName + ".json";
 
-            // 合并所有批次 XML：保留第一个的头部，后续只提取 <testcase> 元素
-            QRegularExpression tcBodyRe(
-                R"(<testcase\s[^>]*>.*?</testcase>)",
-                QRegularExpression::DotMatchesEverythingOption);
-            QString merged;
-            for (int i = 0; i < xmls.size(); ++i) {
-                QFile xf(xmls[i]);
-                if (!xf.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
-                QString content = QString::fromUtf8(xf.readAll());
-                xf.close();
-                if (i == 0) {
-                    merged = content;
-                } else {
-                    auto it = tcBodyRe.globalMatch(content);
-                    while (it.hasNext()) {
-                        auto m = it.next();
-                        // 插入到第一个 </testsuite> 之前
-                        int pos = merged.lastIndexOf("</testsuite>");
-                        if (pos > 0)
-                            merged.insert(pos, "  " + m.captured(0) + "\n");
-                    }
-                }
-            }
-            QFile out(outPath);
-            if (out.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                out.write(merged.toUtf8());
-                out.close();
-                LOG("XML", "Saved merged XML: " + outPath);
-                refreshRestoreCombo();
-            }
+        QJsonObject root;
+        root["name"] = profName;
+        root["time"] = m_report.startTime.toString("yyyy-MM-dd HH:mm:ss");
+        root["total"] = m_report.total();
+        root["passed"] = m_report.passed();
+        root["failed"] = m_report.failed();
+        root["skipped"] = m_report.skipped();
+        QJsonArray arr;
+        for (const auto& r : m_report.results) {
+            QJsonObject jr;
+            jr["s"] = r.testCase.suiteName;
+            jr["c"] = r.testCase.caseName;
+            jr["st"] = r.status;
+            jr["d"] = r.durationMs;
+            arr.append(jr);
+        }
+        root["results"] = arr;
+
+        QFile out(outPath);
+        if (out.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            out.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
+            out.close();
+            LOG("RESTORE", "Saved: " + outPath);
+            refreshRestoreCombo();
         }
     }
     if (f > 0) m_progress->appendLog(QString("\n%1 tests failed.").arg(f));
@@ -1468,36 +1459,34 @@ void MainWindow::refreshRestoreCombo() {
     m_restoreCombo->clear();
     m_restoreCombo->addItem(QString::fromUtf8("\xe2\x86\xa9 \xe6\x81\xa2\xe5\xa4\x8d...")); // ↩ 恢复...
 
-    QString xmlDir = QFileInfo(m_config.configPath()).absolutePath() + "/xml";
-    QDir dir(xmlDir);
+    QString restoreDir = QFileInfo(m_config.configPath()).absolutePath() + "/restore";
+    QDir dir(restoreDir);
     if (!dir.exists()) { m_restoreCombo->blockSignals(false); return; }
 
-    QStringList xmls = dir.entryList({"*.xml"}, QDir::Files, QDir::Time);
-    for (const auto& fn : xmls) {
-        QString name = fn; name.chop(4); // 去掉 .xml
-        // 读取统计：解析 XML 获取 testcase 数量
+    QStringList files = dir.entryList({"*.json"}, QDir::Files, QDir::Time);
+    for (const auto& fn : files) {
         QFile f(dir.absoluteFilePath(fn));
         if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
-        QString content = QString::fromUtf8(f.readAll());
+        QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
         f.close();
-        int total = content.count("<testcase ");
-        int failed = content.count("<failure");
-        int skipped = content.count("<skipped");
-        int passed = total - failed - skipped;
+        if (!doc.isObject()) continue;
+        QJsonObject root = doc.object();
+        QString name = root["name"].toString();
+        int passed = root["passed"].toInt();
+        int failed = root["failed"].toInt();
+        int skipped = root["skipped"].toInt();
         QString label = QString("%1  [%2/%3/%4]")
-            .arg(name)
-            .arg(passed).arg(failed).arg(skipped);
+            .arg(name).arg(passed).arg(failed).arg(skipped);
         m_restoreCombo->addItem(label, dir.absoluteFilePath(fn));
     }
     m_restoreCombo->blockSignals(false);
 }
 
-void MainWindow::onRestoreFromXml(int index) {
-    if (!m_restoreCombo || index <= 0) return; // index 0 是占位
+void MainWindow::onRestoreFromFile(int index) {
+    if (!m_restoreCombo || index <= 0) return;
     QString path = m_restoreCombo->itemData(index).toString();
     if (path.isEmpty() || !QFile::exists(path)) return;
-    m_testList->loadFromXml(path);
-    // 重置下拉到占位
+    m_testList->loadFromRestore(path);
     m_restoreCombo->setCurrentIndex(0);
 }
 
