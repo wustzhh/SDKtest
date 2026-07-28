@@ -437,24 +437,14 @@ void GLViewer::paintGL(){
             int devY = qRound(m_pickPos.y() * dpr);
             int devW = width(), devH = height();
             int glY = devH - devY - 1;
-            float as = float(devW) / float(devH);
-            float sz = m_modelSize * 0.6f / qMax(m_zoom, 0.01f);
-            double dr = sz * 100.0;
-            double left, right, bottom, top;
-            if (as > 1) { left = -sz*as; right = sz*as; bottom = -sz; top = sz; }
-            else        { left = -sz; right = sz; bottom = -sz/as; top = sz/as; }
-            // 眼空间射线起点和方向
-            QVector3D eyeOrg(left + (double)devX/devW*(right-left),
-                             bottom + (double)glY/devH*(top-bottom), 0);
-            QVector3D eyeDir(0, 0, 1);
-            // 变换到模型空间
-            QVector3D pan3(m_panX, m_panY, 0);
-            QVector3D mOrg = m_rot.inverted().rotatedVector(eyeOrg - m_anchor - pan3) + m_anchor;
-            QVector3D mDir = m_rot.inverted().rotatedVector(eyeDir);
-            // 射线-三角求交 (Möller–Trumbore)
+            // 用缓存的MV/P矩阵在近远平面unproject → 模型空间射线
+            QVector3D pNear = QVector3D(devX, glY, 0).unproject(m_mvMat, m_pjMat, QRect(0,0,devW,devH));
+            QVector3D pFar  = QVector3D(devX, glY, 1).unproject(m_mvMat, m_pjMat, QRect(0,0,devW,devH));
+            QVector3D mOrg = pNear;
+            QVector3D mDir = (pFar - pNear).normalized();
+            // 射线-三角求交
             float bestT = 1e30f;
             QVector3D bestPt;
-            int tested = 0, hit = 0;
             for (int ti = 0; ti < m_tri.size(); ti += 3) {
                 QVector3D v0 = m_verts[m_tri[ti]];
                 QVector3D v1 = m_verts[m_tri[ti+1]];
@@ -471,22 +461,22 @@ void GLViewer::paintGL(){
                 float v = f * QVector3D::dotProduct(mDir, q);
                 if (v < 0 || u + v > 1) continue;
                 float t = f * QVector3D::dotProduct(e2, q);
-                tested++;
                 if (t > 0 && t < bestT) {
                     bestT = t;
                     bestPt = mOrg + mDir * t;
-                    hit++;
                 }
             }
-            LOG("PICK", QString("ray mOrg=(%1,%2,%3) mDir=(%4,%5,%6) tested=%7 hits=%8 bestT=%9")
-                .arg(mOrg.x(),0,'f',2).arg(mOrg.y(),0,'f',2).arg(mOrg.z(),0,'f',2)
-                .arg(mDir.x(),0,'f',3).arg(mDir.y(),0,'f',3).arg(mDir.z(),0,'f',3)
-                .arg(tested).arg(hit).arg(bestT < 1e29f ? QString::number(bestT,'f',2) : "none"));
             if (bestT < 1e30f) {
-                // 新锚点在模型空间的眼坐标 = bestPt + pan（绕自身旋转不变）
-                m_panX = eyeOrg.x() - bestPt.x();
-                m_panY = eyeOrg.y() - bestPt.y();
+                // 保存旧值用于补偿
+                QVector3D oldAnchor = m_anchor;
+                QVector3D oldPan(m_panX, m_panY, 0);
+                // 点击点在旧世界空间的位置
+                QVector3D oldWorld = m_rot.rotatedVector(bestPt - oldAnchor) + oldAnchor + oldPan;
+                // 设新锚点，调整pan使该点世界位置不变
                 m_anchor = bestPt;
+                // newWorld(bestPt) = bestPt + newPan, 令其 = oldWorld
+                m_panX = oldWorld.x() - bestPt.x();
+                m_panY = oldWorld.y() - bestPt.y();
             }
         }
     }
