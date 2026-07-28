@@ -366,7 +366,9 @@ void GLViewer::paintGL(){
     if(m_verts.isEmpty())return;
     float as=float(width())/float(height()),sz=m_modelSize*.6f/qMax(m_zoom,.01f);
     glMatrixMode(GL_PROJECTION);glLoadIdentity();
-    if(as>1)glOrtho(-sz*as,sz*as,-sz,sz,-1e5,1e5);else glOrtho(-sz,sz,-sz/as,sz/as,-1e5,1e5);
+    double depthRange = sz * 100.0;  // 合理深度范围，确保polygon offset生效
+    if(as>1)glOrtho(-sz*as,sz*as,-sz,sz,-depthRange,depthRange);
+    else     glOrtho(-sz,sz,-sz/as,sz/as,-depthRange,depthRange);
     glMatrixMode(GL_MODELVIEW);glLoadIdentity();glTranslatef(m_panX,m_panY,0);glTranslatef(m_anchor.x(),m_anchor.y(),m_anchor.z());
     QMatrix4x4 rmat;rmat.rotate(m_rot);glMultMatrixf(rmat.constData());glTranslatef(-m_anchor.x(),-m_anchor.y(),-m_anchor.z());
     GLfloat lp0[]={1,1,1,0};glLightfv(GL_LIGHT0,GL_POSITION,lp0);
