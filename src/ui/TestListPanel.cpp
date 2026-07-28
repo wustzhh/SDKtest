@@ -173,7 +173,7 @@ TestListPanel::TestListPanel(QWidget* parent)
     m_btnSelectAll->setFixedHeight(28);m_btnSelectAll->setStyleSheet(tbBtn);
     m_btnDeselectAll = new QPushButton("全消", this);
     m_btnDeselectAll->setFixedHeight(28);m_btnDeselectAll->setStyleSheet(tbBtn);
-    m_btnReverseFilter = new QPushButton(QString::fromUtf8("\xE2\x87\x84 \xE5\x8F\x8D\xE9\x80\x89"), this);
+    m_btnReverseFilter = new QPushButton(QString::fromUtf8("\xf0\x9f\x94\x8d \xe7\xad\x9b\xe9\x80\x89"), this);
     m_btnReverseFilter->setFixedHeight(28);m_btnReverseFilter->setStyleSheet(tbBtn);
     m_btnReverseFilter->setToolTip(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
     m_lblStats = new QLabel("0", this);
