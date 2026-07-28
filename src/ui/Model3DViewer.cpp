@@ -131,9 +131,9 @@ void StepWorker::doWork() {
     }
     if (r.verts.isEmpty()||r.tris.isEmpty()) { r.error="No triangles"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE7\x94\x9F\xE6\x88\x90\xE8\xBE\xB9\xE7\xBA\xBF..."));
-    QVector<TopoDS_Edge> allEdges; QMap<void*,QVector<TopoDS_Face>> edgeFaceMap;
+    QVector<TopoDS_Edge> allEdges; QMap<void*,QSet<void*>> edgeFaceMap;
     { TopExp_Explorer eExp(shape, TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* p=eExp.Current().TShape().get(); if (!edgeFaceMap.contains(p)) { edgeFaceMap[p]={}; allEdges.append(TopoDS::Edge(eExp.Current())); } } }
-    { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { TopoDS_Face face = TopoDS::Face(fExp.Current()); void* fp=face.TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].append(face); } } }
+    { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) { void* fp=fExp.Current().TShape().get(); TopExp_Explorer eExp(fExp.Current(), TopAbs_EDGE); for (; eExp.More(); eExp.Next()) { void* ep=eExp.Current().TShape().get(); if (edgeFaceMap.contains(ep)) edgeFaceMap[ep].insert(fp); } } }
     // 边线使用独立顶点（不复用面网格顶点），避免哈希碰撞导致错误连线
     int edgeVertBase = r.verts.size();
     int totalEdges = allEdges.size(), renderedEdges = 0, filteredEdges = 0, nonManifoldEdges = 0;
