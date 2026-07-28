@@ -4,6 +4,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QMouseEvent>
+#include <QKeyEvent>
 #include <QWheelEvent>
 #include <QVector>
 #include <QVector3D>
@@ -85,6 +86,9 @@ protected:
     void paintGL() override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseMoveEvent(QMouseEvent* e) override;
+    void mouseReleaseEvent(QMouseEvent* e) override {}
+    void keyPressEvent(QKeyEvent* e) override;
+    void keyReleaseEvent(QKeyEvent* e) override;
     void wheelEvent(QWheelEvent* e) override;
 private:
     QVector<QVector3D> m_verts;
@@ -109,9 +113,11 @@ private:
     float m_zoom=1,m_modelSize=1;
     float m_panX=0,m_panY=0;
     QVector3D m_anchor;
+    QVector3D m_defaultAnchor;  // 初始锚点（模型中心），复位用
     bool m_hasAnchor=false,m_pendingPick=false;
     QPointF m_pickPos;
-    TopoDS_Shape m_shape;  // 用于射线拾取
+    TopoDS_Shape m_shape;
+    bool m_ctrlHeld = false;  // 用于射线拾取
     QPoint m_lastPos;
     bool m_dragging=false;
     QVector3D m_arcballFrom, m_arcballTo;

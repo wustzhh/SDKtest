@@ -63,7 +63,7 @@ void StepWorker::doWork() {
     double diag = 1.0;
     int totalFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
-    double faceScale = (totalFaces > 2000) ? 3.0 : (totalFaces > 500) ? 2.0 : 1.0;
+    double faceScale = (totalFaces > 1000) ? 4.0 : (totalFaces > 500) ? 2.0 : 1.0;
     {
         Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
         if (!shapeBox.IsVoid()) {
@@ -73,7 +73,9 @@ void StepWorker::doWork() {
         }
         double deflPct = qBound(0.001, diag * 0.005 * faceScale, 5.0);
         double deflection = qMax(0.001, deflPct);
-        double angularDeflection = (diag < 1.0 || totalFaces < 5) ? 0.1 * M_PI / 180.0 : 0.5 * M_PI / 180.0;
+        double angularDeflection = (totalFaces > 1000) ? 1.0 * M_PI / 180.0
+                                : (diag < 1.0 || totalFaces < 5) ? 0.1 * M_PI / 180.0
+                                : 0.5 * M_PI / 180.0;
         LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
             .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
             .arg(angularDeflection*180.0/M_PI,0,'f',2));
@@ -289,10 +291,14 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
         m_naCache[i*3] = m_normals[i].x(); m_naCache[i*3+1] = m_normals[i].y(); m_naCache[i*3+2] = m_normals[i].z();
     }
     m_vboDirty = true;
+    m_defaultAnchor = m_anchor;  // 保存初始锚点用于复位
 }
 void GLViewer::resetView(){
     m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
           * QQuaternion::fromAxisAndAngle(QVector3D(1,0,0), -25);
+    m_zoom=1; m_panX=0; m_panY=0;
+    m_anchor = m_defaultAnchor;  // 复位锚点到模型中心
+    update();
     if(!m_verts.isEmpty()){
         QMatrix4x4 rmat;rmat.rotate(m_rot);
         float minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -518,15 +524,31 @@ void GLViewer::paintGL(){
             } // end if rayLen ok
         }
     }
+    // ── Ctrl锚点高亮 ──
+    if (m_ctrlHeld) {
+        glDisable(GL_DEPTH_TEST);
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        QVector3D ap = m_anchor + QVector3D(m_panX, m_panY, 0);
+        glTranslatef(ap.x(), ap.y(), ap.z());
+        float s = width() * 0.01f;  // 屏幕2%直径
+        glPointSize(s);
+        glColor3f(1, 1, 0);
+        glBegin(GL_POINTS); glVertex3f(0,0,0); glEnd();
+        glPopMatrix();
+        glEnable(GL_DEPTH_TEST);
+    }
 }
 
 
 void GLViewer::mousePressEvent(QMouseEvent* e){
     m_lastPos=e->pos();m_dragging=true;
     m_pickPos = e->pos();
-    m_pendingPick = true;
+    // 仅Ctrl+左键时设置锚点
+    m_pendingPick = (e->modifiers() & Qt::ControlModifier) && (e->buttons() & Qt::LeftButton);
     m_arcballFrom = screenToArcball(e->pos());
-    update(); // 触发paintGL处理pick
+    update();
 }
 void GLViewer::mouseMoveEvent(QMouseEvent* e){
     if(!m_dragging)return;
@@ -547,6 +569,14 @@ void GLViewer::mouseMoveEvent(QMouseEvent* e){
         m_panX+=dx*.002f*m_modelSize/m_zoom; m_panY-=dy*.002f*m_modelSize/m_zoom;
     }
     m_lastPos=e->pos();update();
+}
+void GLViewer::keyPressEvent(QKeyEvent* e){
+    if (e->key() == Qt::Key_Control) { m_ctrlHeld = true; update(); }
+    QOpenGLWidget::keyPressEvent(e);
+}
+void GLViewer::keyReleaseEvent(QKeyEvent* e){
+    if (e->key() == Qt::Key_Control) { m_ctrlHeld = false; update(); }
+    QOpenGLWidget::keyReleaseEvent(e);
 }
 void GLViewer::wheelEvent(QWheelEvent* e){if(e->angleDelta().y()>0)m_zoom=qMin(m_zoom*1.15f,100.f);else m_zoom=qMax(m_zoom*.85f,.01f);update();}
 
