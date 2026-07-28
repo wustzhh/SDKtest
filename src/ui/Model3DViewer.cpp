@@ -443,7 +443,8 @@ void GLViewer::paintGL(){
             QVector3D mOrg = pNear;
             QVector3D mDir = (pFar - pNear);
             float rayLen = mDir.length();
-            if (rayLen < 0.001f) { LOG("PICK","ray too short"); return; }
+            if (rayLen < 0.001f) { LOG("PICK","ray too short"); }
+            else {
             mDir /= rayLen;
             LOG("PICK",QString("pNear=(%1,%2,%3) pFar=(%4,%5,%6) len=%7")
                 .arg(pNear.x(),0,'f',1).arg(pNear.y(),0,'f',1).arg(pNear.z(),0,'f',1)
@@ -486,6 +487,7 @@ void GLViewer::paintGL(){
             } else {
                 LOG("PICK","ray miss (no triangle hit)");
             }
+            } // end if rayLen ok
         }
     }
     // ── 锚点标记：红色十字 ──
