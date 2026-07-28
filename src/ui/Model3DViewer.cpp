@@ -445,7 +445,7 @@ void GLViewer::paintGL(){
             else        { left = -sz; right = sz; bottom = -sz/as; top = sz/as; }
             // 眼空间射线起点和方向
             QVector3D eyeOrg(left + (double)devX/devW*(right-left),
-                             bottom + (double)glY/devH*(top-bottom), -dr);
+                             bottom + (double)glY/devH*(top-bottom), 0);
             QVector3D eyeDir(0, 0, 1);
             // 变换到模型空间
             QVector3D pan3(m_panX, m_panY, 0);
