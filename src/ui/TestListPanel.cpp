@@ -902,3 +902,4 @@ void TestListPanel::updatePathLabel(QTreeWidgetItem* item) {
     }
     m_pathLabel->setText(html);
 }
+#include "TestListPanel.moc"
