@@ -384,6 +384,9 @@ void GLViewer::paintGL(){
     if(!m_tri.isEmpty()){
         // 首次或数据变更时上传 VBO
         if (m_vboDirty) uploadVBO();
+        // 面往后推，让边线不被面遮挡
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1, 2);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
         glVertexPointer(3, GL_FLOAT, 0, nullptr);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboNorms);
@@ -396,6 +399,7 @@ void GLViewer::paintGL(){
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         if (m_showFaceIds) glDisable(GL_BLEND);
         glDisableClientState(GL_NORMAL_ARRAY); glDisableClientState(GL_VERTEX_ARRAY);
+        glDisable(GL_POLYGON_OFFSET_FILL);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     // 高亮面（半透明黄色填充，用于属性高亮）
@@ -417,9 +421,6 @@ void GLViewer::paintGL(){
     glDisable(GL_LIGHTING);
     if(!m_edges.isEmpty()){
         if(m_noDepthEdges) glDisable(GL_DEPTH_TEST);
-        // 用GL_LEQUAL替代polygon offset：线和面同深度时线能通过，避免弧面遮挡
-        glDepthFunc(GL_LEQUAL);
-        glDepthMask(GL_FALSE);  // 线不写深度，不污染面的深度缓冲
         glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, nullptr);
@@ -429,8 +430,6 @@ void GLViewer::paintGL(){
         for(const auto& e:m_edges){int idx[2]={e.v0,e.v1};glColor3f(e.color.x(),e.color.y(),e.color.z());glDrawElements(GL_LINES,2,GL_UNSIGNED_INT,idx);}
         glDisableClientState(GL_VERTEX_ARRAY);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
         if(m_noDepthEdges) glEnable(GL_DEPTH_TEST);
     }
     // ── 处理锚点拾取（使用当前帧刚渲染的深度缓冲） ──
