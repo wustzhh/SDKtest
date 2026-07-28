@@ -476,11 +476,10 @@ void GLViewer::paintGL(){
                 }
             }
             if (bestT < 1e30f) {
+                // 新锚点在模型空间的眼坐标 = bestPt + pan（绕自身旋转不变）
+                m_panX = eyeOrg.x() - bestPt.x();
+                m_panY = eyeOrg.y() - bestPt.y();
                 m_anchor = bestPt;
-                // 调整pan使锚点在屏幕位置不变
-                QVector3D newEye = m_rot.rotatedVector(bestPt - m_anchor) + m_anchor + pan3;
-                m_panX = eyeOrg.x() - newEye.x();
-                m_panY = eyeOrg.y() - newEye.y();
             }
         }
     }
