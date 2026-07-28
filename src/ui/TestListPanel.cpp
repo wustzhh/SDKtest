@@ -43,39 +43,6 @@ private:
 };
 
 // 网页风格Toggle开关
-class ToggleSwitch : public QWidget {
-    Q_OBJECT
-    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY toggled)
-public:
-    ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_animPos(0){
-        setFixedSize(40,22);setCursor(Qt::PointingHandCursor);
-        m_anim=new QPropertyAnimation(this,"animPos");m_anim->setDuration(150);
-    }
-    bool isChecked() const { return m_checked; }
-    void setChecked(bool c) {
-        if(c==m_checked) return;
-        m_checked=c;
-        m_anim->stop();m_anim->setStartValue(m_animPos);m_anim->setEndValue(c?1.0:0.0);m_anim->start();
-        emit toggled(m_checked);
-    }
-signals:
-    void toggled(bool);
-protected:
-    void paintEvent(QPaintEvent*) override {
-        QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
-        double t=m_animPos;
-        p.setBrush(QColor(t>0.5?QString("#6366f1"):QString("#d1d5db")));
-        p.setPen(Qt::NoPen);
-        p.drawRoundedRect(rect(),11,11);
-        p.setBrush(Qt::white);
-        p.drawEllipse((int)(1+t*(width()-20)),1,20,20);
-    }
-    void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); update(); }
-private:
-    bool m_checked;
-    double m_animPos;
-    QPropertyAnimation* m_anim;
-};
 
 // ═══════════════════════════════════════════════════════════
 //  AdvancedFilterDialog
