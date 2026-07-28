@@ -441,7 +441,13 @@ void GLViewer::paintGL(){
             QVector3D pNear = QVector3D(devX, glY, 0).unproject(m_mvMat, m_pjMat, QRect(0,0,devW,devH));
             QVector3D pFar  = QVector3D(devX, glY, 1).unproject(m_mvMat, m_pjMat, QRect(0,0,devW,devH));
             QVector3D mOrg = pNear;
-            QVector3D mDir = (pFar - pNear).normalized();
+            QVector3D mDir = (pFar - pNear);
+            float rayLen = mDir.length();
+            if (rayLen < 0.001f) { LOG("PICK","ray too short"); return; }
+            mDir /= rayLen;
+            LOG("PICK",QString("pNear=(%1,%2,%3) pFar=(%4,%5,%6) len=%7")
+                .arg(pNear.x(),0,'f',1).arg(pNear.y(),0,'f',1).arg(pNear.z(),0,'f',1)
+                .arg(pFar.x(),0,'f',1).arg(pFar.y(),0,'f',1).arg(pFar.z(),0,'f',1).arg(rayLen,0,'f',1));
             // 射线-三角求交
             float bestT = 1e30f;
             QVector3D bestPt;
@@ -467,7 +473,7 @@ void GLViewer::paintGL(){
                 }
             }
             if (bestT < 1e30f) {
-                // 保存旧值用于补偿
+                LOG("PICK",QString("hit bestT=%.2f bestPt=(%.1f,%.1f,%.1f)").arg(bestT).arg(bestPt.x(),0,'f',1).arg(bestPt.y(),0,'f',1).arg(bestPt.z(),0,'f',1));
                 QVector3D oldAnchor = m_anchor;
                 QVector3D oldPan(m_panX, m_panY, 0);
                 // 点击点在旧世界空间的位置
@@ -477,6 +483,8 @@ void GLViewer::paintGL(){
                 // newWorld(bestPt) = bestPt + newPan, 令其 = oldWorld
                 m_panX = oldWorld.x() - bestPt.x();
                 m_panY = oldWorld.y() - bestPt.y();
+            } else {
+                LOG("PICK","ray miss (no triangle hit)");
             }
         }
     }
@@ -521,7 +529,7 @@ void GLViewer::mouseMoveEvent(QMouseEvent* e){
         }
     }else if(e->buttons()&Qt::MiddleButton){
         float dx=e->position().x()-m_lastPos.x(), dy=e->position().y()-m_lastPos.y();
-        m_panX+=dx*.005f*m_modelSize/m_zoom; m_panY-=dy*.005f*m_modelSize/m_zoom;
+        m_panX+=dx*.002f*m_modelSize/m_zoom; m_panY-=dy*.002f*m_modelSize/m_zoom;
     }
     m_lastPos=e->pos();update();
 }
