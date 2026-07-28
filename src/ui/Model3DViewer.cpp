@@ -454,6 +454,7 @@ void GLViewer::paintGL(){
             // 射线-三角求交 (Möller–Trumbore)
             float bestT = 1e30f;
             QVector3D bestPt;
+            int tested = 0, hit = 0;
             for (int ti = 0; ti < m_tri.size(); ti += 3) {
                 QVector3D v0 = m_verts[m_tri[ti]];
                 QVector3D v1 = m_verts[m_tri[ti+1]];
@@ -470,11 +471,17 @@ void GLViewer::paintGL(){
                 float v = f * QVector3D::dotProduct(mDir, q);
                 if (v < 0 || u + v > 1) continue;
                 float t = f * QVector3D::dotProduct(e2, q);
+                tested++;
                 if (t > 0 && t < bestT) {
                     bestT = t;
                     bestPt = mOrg + mDir * t;
+                    hit++;
                 }
             }
+            LOG("PICK", QString("ray mOrg=(%1,%2,%3) mDir=(%4,%5,%6) tested=%7 hits=%8 bestT=%9")
+                .arg(mOrg.x(),0,'f',2).arg(mOrg.y(),0,'f',2).arg(mOrg.z(),0,'f',2)
+                .arg(mDir.x(),0,'f',3).arg(mDir.y(),0,'f',3).arg(mDir.z(),0,'f',3)
+                .arg(tested).arg(hit).arg(bestT < 1e29f ? QString::number(bestT,'f',2) : "none"));
             if (bestT < 1e30f) {
                 // 新锚点在模型空间的眼坐标 = bestPt + pan（绕自身旋转不变）
                 m_panX = eyeOrg.x() - bestPt.x();
