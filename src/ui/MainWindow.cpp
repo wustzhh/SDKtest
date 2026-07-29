@@ -56,6 +56,18 @@ MainWindow::MainWindow(QWidget* parent)
     if (m_config.load()) {
         refreshProfileCombo();
         refreshScenarioCombo();
+        // 启动时手动加载当前方案的筛选条件（不依赖combo信号）
+        {
+            auto& prof = m_config.currentProfile();
+            int idx = m_scenarioCombo->currentIndex() - 1;
+            if (idx >= 0 && idx < prof.scenarios.size()) {
+                const auto& sc = prof.scenarios[idx];
+                QVector<FilterRule> rules;
+                for (const auto& af : sc.advancedFilters)
+                    rules.append({af.first, af.second});
+                m_testList->setAdvFilters(rules, !sc.advancedFilters.isEmpty());
+            }
+        }
         // 恢复线宽设置
         m_model3D->glViewer()->setEdgeWidthPct(m_config.uiState.edgeWidthPct);
         // 更新菜单选中状态
