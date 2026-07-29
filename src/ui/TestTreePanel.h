@@ -50,13 +50,15 @@ signals:
     void toggled(bool);
 protected:
     void paintEvent(QPaintEvent*) override {
-        QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
+        QPainter p(this);p.save();
+        p.setRenderHint(QPainter::Antialiasing);
         double t=m_animPos;
-        p.setBrush(QColor(t>0.5?QString("#6366f1"):QString("#d1d5db")));
+        p.setBrush(t>0.5 ? QColor(0x63,0x66,0xf1) : QColor(0xd1,0xd5,0xdb));
         p.setPen(Qt::NoPen);
         p.drawRoundedRect(rect(),12,12);
         p.setBrush(Qt::white);
         p.drawEllipse(QRectF(2+t*18, 2, 20, 20));
+        p.restore();
     }
     void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); }
 private:
