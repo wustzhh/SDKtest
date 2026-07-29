@@ -211,8 +211,8 @@ void FilterDialog::rebuildRuleWidgets() {
         chip->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         connect(chip, &QWidget::customContextMenuRequested, this, [this,i](){ removeRule(i); });
         auto* hl = new QHBoxLayout(chip);
-        hl->setContentsMargins(8,5,8,5);
-        hl->setSpacing(6);
+        hl->setContentsMargins(12,4,6,4);
+        hl->setSpacing(4);
         hl->setAlignment(Qt::AlignVCenter);
         auto* label = new QLabel(r.keyword);
         label->setStyleSheet("background:transparent;font-size:14px;color:#374151;border:none;");
