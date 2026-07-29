@@ -75,6 +75,11 @@ public:
     QVector<FilterRule> rules() const { return m_rules; }
     bool enabled() const;
     void setSrcTree(QTreeWidget* t) { m_srcTree = t; updatePreview(); }
+    void loadRules(const QVector<FilterRule>& rules) {
+        m_rules = rules;
+        rebuildRuleWidgets();
+        updatePreview();
+    }
     void paintEvent(QPaintEvent*) override {
         QPainter p(this);
         p.fillRect(rect(), QColor(0,0,0,128));
@@ -171,7 +176,8 @@ private:
     QTreeWidget*    m_tree;
     QMenu*          m_contextMenu;
     QVector<TestCase> m_allCases;
-    QVector<FilterRule> m_advFilters;  // 当前方案的高级筛选规则
+    QVector<FilterRule> m_advFilters;
+    bool m_filterEnabled = false;  // 当前方案的高级筛选规则
 
     bool            m_updating = false;
 };

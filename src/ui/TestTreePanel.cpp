@@ -235,7 +235,7 @@ void FilterDialog::rebuildRuleWidgets() {
 }
 
 QVector<TestCase> FilterDialog::applyFilter() const {
-    if (m_rules.isEmpty() || !m_enabled) return m_allCases;
+    if (m_rules.isEmpty()) return m_allCases;
     QVector<TestCase> result;
     for (const auto& tc : m_allCases) {
         QString name = tc.fullName();
@@ -822,12 +822,26 @@ void TestTreePanel::onReverseFilterClicked() {
 
 void TestTreePanel::onAdvancedFilter() {
     FilterDialog dlg(m_allCases, this);
-    dlg.setSrcTree(m_tree);  // 用例树指针用于预览树复制结构
-    if (dlg.exec() == QDialog::Accepted && dlg.enabled()) {
-        auto filtered = dlg.rules();
-        if (filtered.isEmpty()) return;
-        m_advFilters = filtered;
-        std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
+    dlg.setSrcTree(m_tree);
+    // 加载已保存的筛选规则
+    dlg.loadRules(m_advFilters);
+    if (dlg.exec() == QDialog::Accepted) {
+        m_advFilters = dlg.rules();
+        m_filterEnabled = dlg.enabled();
+        // 更新按钮高亮
+        if (m_filterEnabled && !m_advFilters.isEmpty()) {
+            m_btnReverseFilter->setStyleSheet(
+                "QPushButton{background:#d4edda;border:2px solid #28a745;border-radius:6px;"
+                "padding:0;font-size:14px}QPushButton:hover{background:#c3e6cb;}");
+        } else {
+            QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
+                           "padding:0;font-size:14px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
+            m_btnReverseFilter->setStyleSheet(tbBtn);
+        }
+        // 启用时才应用到用例树
+        if (m_filterEnabled && !m_advFilters.isEmpty()) {
+            auto filtered = m_advFilters;
+            std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
             if (item->childCount() == 0) {
                 QString suite = item->data(0, Role_SuiteName).toString();
                 QString name  = item->data(0, Role_CaseName).toString();
@@ -859,6 +873,7 @@ void TestTreePanel::onAdvancedFilter() {
         m_tree->viewport()->update();
         updateStats();
         emit selectionChanged(selectedTests().size());
+        }
     }
 }
 void TestTreePanel::onExpandAllClicked()   {
