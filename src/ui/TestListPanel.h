@@ -20,7 +20,8 @@ class ToggleSwitch : public QWidget {
     Q_OBJECT
 public:
     ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_pos(0){
-        setFixedSize(40,22);setCursor(Qt::PointingHandCursor);
+        setFixedSize(44,24);setCursor(Qt::PointingHandCursor);
+        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
     bool isChecked() const { return m_checked; }
     void setChecked(bool c) {
