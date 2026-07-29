@@ -103,9 +103,6 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     connect(m_previewTree, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int){
         item->setExpanded(!item->isExpanded());
     });
-    // 空格/回车展开收缩
-    m_previewTree->installEventFilter(this);
-    m_previewTree->setFocusPolicy(Qt::StrongFocus);
     lay->addWidget(m_previewTree, 1);
 
     auto* btnRow = new QHBoxLayout;
