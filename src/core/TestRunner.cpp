@@ -112,6 +112,9 @@ void TestRunner::startNextBatch() {
         else filters << tc.fullName();
     }
     QString filter = filters.join(":");
+    // 全选或filter过长时直接用*，避免超出Windows命令行8191字符限制
+    if (batch->cases.size() >= m_totalCount || filter.length() > 4000)
+        filter = "*";
 
     batch->accumulatedStdout.clear();
     batch->process = new QProcess(this);
