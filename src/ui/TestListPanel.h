@@ -15,6 +15,7 @@
 #include <QListWidget>
 #include <QScrollArea>
 #include <QPropertyAnimation>
+#include <QEvent>
 
 // ── ToggleSwitch（头文件中确保MOC正确生成） ──
 class ToggleSwitch : public QWidget {
