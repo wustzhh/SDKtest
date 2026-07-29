@@ -848,10 +848,10 @@ void TestTreePanel::onAdvancedFilter() {
         if (m_filterEnabled && !m_advFilters.isEmpty()) {
             m_btnReverseFilter->setStyleSheet(
                 "QPushButton{background:#d4edda;border:2px solid #28a745;border-radius:6px;"
-                "padding:0;font-size:14px}QPushButton:hover{background:#c3e6cb;}");
+                "padding:4px 12px;font-size:13px}QPushButton:hover{background:#c3e6cb;}");
         } else {
             QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
-                           "padding:0;font-size:14px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
+                           "padding:4px 12px;font-size:13px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
             m_btnReverseFilter->setStyleSheet(tbBtn);
         }
         // 启用时才应用到用例树
@@ -900,10 +900,10 @@ void TestTreePanel::setAdvFilters(const QVector<FilterRule>& f, bool enabled) {
     if (m_filterEnabled && !m_advFilters.isEmpty()) {
         m_btnReverseFilter->setStyleSheet(
             "QPushButton{background:#d4edda;border:2px solid #28a745;border-radius:6px;"
-            "padding:0;font-size:14px}QPushButton:hover{background:#c3e6cb;}");
+            "padding:4px 12px;font-size:13px}QPushButton:hover{background:#c3e6cb;}");
     } else {
         QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
-                       "padding:0;font-size:14px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
+                       "padding:4px 12px;font-size:13px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
         m_btnReverseFilter->setStyleSheet(tbBtn);
     }
     if (enabled && !f.isEmpty()) {
