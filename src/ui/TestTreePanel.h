@@ -129,6 +129,10 @@ public:
     QStringList selectedTestNames() const;
     void setSelectedTestNames(const QStringList& names);
     void selectAll(bool select);
+    QVector<FilterRule> advFilters() const { return m_advFilters; }
+    bool filterEnabled() const { return m_filterEnabled; }
+    void setAdvFilters(const QVector<FilterRule>& f, bool enabled);
+    void applyAdvancedFilters(const QVector<FilterRule>& filtered);
 
 signals:
     void selectionChanged(int selectedCount);
@@ -146,10 +150,6 @@ private slots:
     void onExpandAllClicked();
     void onCollapseAllClicked();
     void onTreeContextMenu(const QPoint& pos);
-    QVector<FilterRule> advFilters() const { return m_advFilters; }
-    bool filterEnabled() const { return m_filterEnabled; }
-    void setAdvFilters(const QVector<FilterRule>& f, bool enabled);
-    void applyAdvancedFilters(const QVector<FilterRule>& filtered);
 
 private:
     void buildTree(const QVector<TestCase>& cases,
