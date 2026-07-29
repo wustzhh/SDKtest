@@ -232,7 +232,7 @@ void MainWindow::setupUi() {
         }
     });
     bl->addWidget(m_chkSingleTest);
-    QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::activated), this, [this](int idx) {
+    QObject::connect(m_scenarioCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
         if (idx <= 0) return; // 第一项是占位提示
         auto& prof = m_config.currentProfile();
         if (idx-1 < prof.scenarios.size()) {
