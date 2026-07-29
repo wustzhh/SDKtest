@@ -75,8 +75,10 @@ public:
     QVector<FilterRule> rules() const { return m_rules; }
     bool enabled() const;
     void setSrcTree(QTreeWidget* t) { m_srcTree = t; updatePreview(); }
-    void loadRules(const QVector<FilterRule>& rules) {
+    void loadRules(const QVector<FilterRule>& rules, bool enabled) {
         m_rules = rules;
+        m_enabled = enabled;
+        m_enableSwitch->setChecked(enabled);
         rebuildRuleWidgets();
         updatePreview();
     }
@@ -131,6 +133,7 @@ public:
 signals:
     void selectionChanged(int selectedCount);
     void collapseRequested();
+    void filtersSaved();
 
 private slots:
     void onFilterChanged(const QString& text);
@@ -143,6 +146,10 @@ private slots:
     void onExpandAllClicked();
     void onCollapseAllClicked();
     void onTreeContextMenu(const QPoint& pos);
+    QVector<FilterRule> advFilters() const { return m_advFilters; }
+    bool filterEnabled() const { return m_filterEnabled; }
+    void setAdvFilters(const QVector<FilterRule>& f, bool enabled);
+    void applyAdvancedFilters(const QVector<FilterRule>& filtered);
 
 private:
     void buildTree(const QVector<TestCase>& cases,

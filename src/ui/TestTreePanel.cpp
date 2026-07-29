@@ -262,10 +262,25 @@ void FilterDialog::updatePreview() {
     if (!srcTree) return;
     std::function<void(QTreeWidgetItem*,QTreeWidgetItem*)> copyItem = [&](QTreeWidgetItem* dstParent, QTreeWidgetItem* src) {
         auto* dst = dstParent ? new QTreeWidgetItem(dstParent) : new QTreeWidgetItem(m_previewTree);
-        // 去掉用例树的复选框前缀
+        // 去掉用例树的复选框前缀和勾选计数，只保留名称和纯数字计数
         QString txt = src->text(0);
         txt.replace(QRegularExpression("^[☐☑☒]  "), "");
-        dst->setText(0, txt);
+        // 替换 "(checked/total)" 为 "(total)" — 只显示总数
+        txt.replace(QRegularExpression("\\(\\d+/\\d+\\)"), "");
+        if (src->childCount() > 0) {
+            int leafCount = 0;
+            std::function<void(QTreeWidgetItem*)> countLeaf = [&](QTreeWidgetItem* it) {
+                for (int i = 0; i < it->childCount(); i++) {
+                    auto* c = it->child(i);
+                    if (c->childCount() == 0) leafCount++;
+                    else countLeaf(c);
+                }
+            };
+            countLeaf(src);
+            dst->setText(0, txt.trimmed() + QString(" (%1)").arg(leafCount));
+        } else {
+            dst->setText(0, txt);
+        }
         dst->setExpanded(src->isExpanded());
         QFont f = src->font(0); dst->setFont(0, f);
         bool hasVisibleChild = false;
@@ -824,7 +839,7 @@ void TestTreePanel::onAdvancedFilter() {
     FilterDialog dlg(m_allCases, this);
     dlg.setSrcTree(m_tree);
     // 加载已保存的筛选规则
-    dlg.loadRules(m_advFilters);
+    dlg.loadRules(m_advFilters, m_filterEnabled);
     if (dlg.exec() == QDialog::Accepted) {
         m_advFilters = dlg.rules();
         m_filterEnabled = dlg.enabled();
@@ -875,6 +890,15 @@ void TestTreePanel::onAdvancedFilter() {
         emit selectionChanged(selectedTests().size());
         }
     }
+    emit filtersSaved();
+}
+
+void TestTreePanel::setAdvFilters(const QVector<FilterRule>& f, bool enabled) {
+    m_advFilters = f; m_filterEnabled = enabled;
+}
+
+void TestTreePanel::applyAdvancedFilters(const QVector<FilterRule>&) {
+    // stub — TODO
 }
 void TestTreePanel::onExpandAllClicked()   {
     m_tree->expandAll();
