@@ -24,7 +24,7 @@ class ToggleSwitch : public QWidget {
     Q_PROPERTY(double animPos READ animPos WRITE setAnimPos)
 public:
     ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_animPos(0){
-        setFixedSize(44,24);setCursor(Qt::PointingHandCursor);
+        setFixedSize(50,28);setCursor(Qt::PointingHandCursor);
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         m_anim = new QPropertyAnimation(this,"animPos");
         m_anim->setDuration(180);
@@ -55,9 +55,9 @@ protected:
         double t=m_animPos;
         p.setBrush(t>0.5 ? QColor(0x63,0x66,0xf1) : QColor(0xd1,0xd5,0xdb));
         p.setPen(Qt::NoPen);
-        p.drawRoundedRect(rect(),12,12);
+        p.drawRoundedRect(rect(),14,14);
         p.setBrush(Qt::white);
-        p.drawEllipse(QRectF(2+t*18, 2, 20, 20));
+        p.drawEllipse(QRectF(3+t*21, 3, 22, 22));
         p.restore();
     }
     void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); }
