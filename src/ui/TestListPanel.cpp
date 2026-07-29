@@ -89,8 +89,9 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
 
     m_previewTree = new QTreeWidget;
     m_previewTree->setHeaderHidden(true);
-    m_previewTree->setRootIsDecorated(true);
+    m_previewTree->setRootIsDecorated(false);
     m_previewTree->setAnimated(true);
+    m_previewTree->setIndentation(16);
     m_previewTree->setStyleSheet(
         "QTreeWidget{background:rgba(255,255,255,0.95);border-radius:10px;font-size:14px;padding:4px;}"
         "QTreeWidget::item{padding:3px 6px;border-radius:4px;}"
@@ -103,6 +104,20 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     connect(m_previewTree, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int){
         item->setExpanded(!item->isExpanded());
     });
+    // Alt+数字快捷键（和主界面一致）
+    for (int d = 0; d <= 3; d++) {
+        auto* sc = new QShortcut(QKeySequence(Qt::ALT | (Qt::Key_0 + d)), this);
+        connect(sc, &QShortcut::activated, this, [this,d]() {
+            int target = (d == 0) ? 10 : d;  // Alt+0 = 全部展开
+            std::function<void(QTreeWidgetItem*,int)> setLvl = [&](QTreeWidgetItem* it, int depth) {
+                if (depth < target) it->setExpanded(true);
+                else it->setExpanded(false);
+                for (int i = 0; i < it->childCount(); i++) setLvl(it->child(i), depth+1);
+            };
+            for (int i = 0; i < m_previewTree->topLevelItemCount(); i++)
+                setLvl(m_previewTree->topLevelItem(i), 1);
+        });
+    }
     lay->addWidget(m_previewTree, 1);
 
     auto* btnRow = new QHBoxLayout;
