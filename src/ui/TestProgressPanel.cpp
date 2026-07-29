@@ -1,5 +1,7 @@
 #include "TestProgressPanel.h"
 #include <QScrollBar>
+#include <QFileDialog>
+#include <QFile>
 
 TestProgressPanel::TestProgressPanel(QWidget* parent)
     : QWidget(parent)
@@ -29,11 +31,13 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
     // ── 日志 ──
     m_logView = new QTextEdit(this);
     m_logView->setReadOnly(true);
+    m_logView->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_logView->setFont(QFont("Consolas", 10));
     m_logView->setStyleSheet("background: #1e1e1e; color: #d4d4d4;");
     m_logView->setMinimumHeight(120);
 
-    // ── 取消按钮 ──
+    // ── 按钮行 ──
+    auto* btnRow = new QHBoxLayout;
     m_btnCancel = new QPushButton("取消运行", this);
     m_btnCancel->setEnabled(false);
     m_btnCancel->setStyleSheet(
@@ -43,11 +47,30 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
         "QPushButton:disabled { background: #f8f9fb; color: #94a3b8; border-color: #e2e8f0; }");
     connect(m_btnCancel, &QPushButton::clicked, this, &TestProgressPanel::cancelRequested);
 
+    auto* btnExport = new QPushButton(QString::fromUtf8("\xf0\x9f\x93\x8b \xe5\xaf\xbc\xe5\x87\xba cout"), this);
+    btnExport->setStyleSheet(
+        "QPushButton { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; "
+        "border-radius: 6px; padding: 5px 14px; font-weight:500; }"
+        "QPushButton:hover { background: #dbeafe; border-color:#93c5fd; }");
+    connect(btnExport, &QPushButton::clicked, this, [this]() {
+        QString path = QFileDialog::getSaveFileName(this, QString::fromUtf8("\xe5\xaf\xbc\xe5\x87\xba cout"), "cout_output.txt", "Text files (*.txt)");
+        if (!path.isEmpty()) {
+            QFile f(path);
+            if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                f.write(m_logView->toPlainText().toUtf8());
+                f.close();
+            }
+        }
+    });
+    btnRow->addWidget(m_btnCancel);
+    btnRow->addWidget(btnExport);
+    btnRow->addStretch();
+
     m_layout->addWidget(m_lblProgress);
     m_layout->addWidget(m_lblElapsed);
     m_layout->addWidget(m_progressBar);
     m_layout->addWidget(m_logView);
-    m_layout->addWidget(m_btnCancel);
+    m_layout->addLayout(btnRow);
 }
 
 void TestProgressPanel::startRun(int totalTests) {
