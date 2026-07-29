@@ -39,6 +39,11 @@ public:
         m_anim->start();
         emit toggled(m_checked);
     }
+    void setCheckedNoAnim(bool c) {
+        m_checked = c;
+        m_animPos = c ? 1.0 : 0.0;
+        update();
+    }
     double animPos() const { return m_animPos; }
     void setAnimPos(double v) { m_animPos=v; update(); }
 signals:
@@ -78,7 +83,7 @@ public:
     void loadRules(const QVector<FilterRule>& rules, bool enabled) {
         m_rules = rules;
         m_enabled = enabled;
-        m_enableSwitch->setChecked(enabled);
+        m_enableSwitch->setCheckedNoAnim(enabled);
         rebuildRuleWidgets();
         updatePreview();
     }

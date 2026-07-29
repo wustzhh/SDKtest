@@ -220,7 +220,7 @@ void FilterDialog::rebuildRuleWidgets() {
         hl->addWidget(label);
         // 正/反：两个小按钮
         auto* sw = new ToggleSwitch;
-        sw->setChecked(r.include);
+        sw->setCheckedNoAnim(r.include);
         sw->setFixedSize(36,20);
         connect(sw, &ToggleSwitch::toggled, this, [this,i,chip,sw](bool on){
             m_rules[i].include = on;
@@ -892,6 +892,16 @@ void TestTreePanel::onAdvancedFilter() {
 
 void TestTreePanel::setAdvFilters(const QVector<FilterRule>& f, bool enabled) {
     m_advFilters = f; m_filterEnabled = enabled;
+    // 更新按钮高亮
+    if (m_filterEnabled && !m_advFilters.isEmpty()) {
+        m_btnReverseFilter->setStyleSheet(
+            "QPushButton{background:#d4edda;border:2px solid #28a745;border-radius:6px;"
+            "padding:0;font-size:14px}QPushButton:hover{background:#c3e6cb;}");
+    } else {
+        QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
+                       "padding:0;font-size:14px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
+        m_btnReverseFilter->setStyleSheet(tbBtn);
+    }
     if (enabled && !f.isEmpty()) {
         // 应用筛选到用例树
         std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
