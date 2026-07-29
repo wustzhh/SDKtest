@@ -67,10 +67,10 @@ struct FilterRule {
     bool include = true; // true=正选, false=反选
 };
 
-class AdvancedFilterDialog : public QDialog {
+class FilterDialog : public QDialog {
     Q_OBJECT
 public:
-    AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent = nullptr);
+    FilterDialog(const QVector<TestCase>& allCases, QWidget* parent = nullptr);
     QVector<FilterRule> rules() const { return m_rules; }
     bool enabled() const;
     void setSrcTree(QTreeWidget* t) { m_srcTree = t; updatePreview(); }
@@ -99,10 +99,10 @@ private:
     QVector<FilterRule> m_rules;
 };
 
-class TestListPanel : public QWidget {
+class TestTreePanel : public QWidget {
     Q_OBJECT
 public:
-    explicit TestListPanel(QWidget* parent = nullptr);
+    explicit TestTreePanel(QWidget* parent = nullptr);
 
     void loadTests(const QVector<TestCase>& cases,
                    const QVector<TestCategory>& categories = {});

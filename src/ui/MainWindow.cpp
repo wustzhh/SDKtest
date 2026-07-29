@@ -105,9 +105,9 @@ void MainWindow::setupUi() {
     m_leftPanel->setMinimumWidth(0);
     auto* leftL = new QVBoxLayout(m_leftPanel);
     leftL->setContentsMargins(0, 0, 0, 0);
-    m_testList = new TestListPanel(m_leftPanel);
+    m_testList = new TestTreePanel(m_leftPanel);
     leftL->addWidget(m_testList, 1);
-    connect(m_testList, &TestListPanel::collapseRequested, this, [=]() {
+    connect(m_testList, &TestTreePanel::collapseRequested, this, [=]() {
         m_leftPanel->setVisible(!m_leftPanel->isVisible());
     });
 
@@ -115,7 +115,7 @@ void MainWindow::setupUi() {
     auto* centerSplitter = new QSplitter(Qt::Vertical);
     m_progress = new TestProgressPanel;
     m_progress->setMinimumHeight(100);
-    m_centerResultView = new ModelRenderView;
+    m_centerResultView = new TestResultView;
     m_centerSplitter = centerSplitter;
     centerSplitter->addWidget(m_progress);
     centerSplitter->addWidget(m_centerResultView);
@@ -439,23 +439,23 @@ void MainWindow::setupConnections() {
         LOG("ERR", m);
         QMessageBox::warning(this, "Error", m);
     });
-    connect(m_testList, &TestListPanel::selectionChanged, this, &MainWindow::onSelectionChanged);
+    connect(m_testList, &TestTreePanel::selectionChanged, this, &MainWindow::onSelectionChanged);
     connect(m_progress, &TestProgressPanel::cancelRequested, this, &MainWindow::onCancelRun);
 
     // 中栏结果树选中 → 更新右栏 ModelInfo
-    connect(m_centerResultView, &ModelRenderView::openModelFile, this, [this](const QString& path) {
+    connect(m_centerResultView, &TestResultView::openModelFile, this, [this](const QString& path) {
         m_model3D->loadFile(path);
     });
-    connect(m_centerResultView, &ModelRenderView::toggleHighlight, this, [this](const QVector<int>& ids, bool on) {
+    connect(m_centerResultView, &TestResultView::toggleHighlight, this, [this](const QVector<int>& ids, bool on) {
         m_model3D->highlightFaces(on ? ids : QVector<int>{});
     });
-    connect(m_centerResultView, &ModelRenderView::toggleHighlightBoxes, this, [this](const QString& propKey, const QVector<QVector<double>>& boxes, bool on) {
+    connect(m_centerResultView, &TestResultView::toggleHighlightBoxes, this, [this](const QString& propKey, const QVector<QVector<double>>& boxes, bool on) {
         m_model3D->highlightFacesInBoxes(propKey, boxes, on);
     });
     connect(m_model3D, &Model3DViewer::boxesResolved, this, [this](const QString& propKey, const QString& displayText) {
         m_centerResultView->updatePropertyText(propKey, displayText);
     });
-    connect(m_centerResultView, &ModelRenderView::resultSelected, this, [this](const TestRunResult& r) {
+    connect(m_centerResultView, &TestResultView::resultSelected, this, [this](const TestRunResult& r) {
         if (r.properties.contains("model"))
             m_model3D->loadFile(r.properties["model"]);
         else

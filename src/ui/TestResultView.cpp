@@ -1,4 +1,4 @@
-#include "ModelRenderView.h"
+#include "TestResultView.h"
 
 #include <QHeaderView>
 #include <QScrollBar>
@@ -23,7 +23,7 @@ static const QColor COLOR_HIGHLIGHT(0xFF, 0xFF, 0x99); // 黄色高亮
 static const QColor COLOR_SECTION(0x21, 0x96, 0xF3);  // 蓝色标题
 static const QColor COLOR_NORMAL(0x33, 0x33, 0x33);    // 深灰正文
 
-ModelRenderView::ModelRenderView(QWidget* parent)
+TestResultView::TestResultView(QWidget* parent)
     : QWidget(parent)
 {
     m_layout = new QVBoxLayout(this);
@@ -58,15 +58,15 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_searchEdit = new QLineEdit(m_content);
     m_searchEdit->setPlaceholderText("搜索模型数据...");
     m_searchEdit->setStyleSheet("padding:2px 4px; font-size:12px;");
-    connect(m_searchEdit, &QLineEdit::textChanged, this, &ModelRenderView::onSearchChanged);
+    connect(m_searchEdit, &QLineEdit::textChanged, this, &TestResultView::onSearchChanged);
     QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
                     "padding:3px 10px;font-size:12px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
     m_btnExpand = new QPushButton("展开", m_content);
     m_btnExpand->setFixedHeight(28);m_btnExpand->setStyleSheet(tbBtn);
-    connect(m_btnExpand, &QPushButton::clicked, this, &ModelRenderView::onExpandAll);
+    connect(m_btnExpand, &QPushButton::clicked, this, &TestResultView::onExpandAll);
     m_btnCollapse = new QPushButton("折叠", m_content);
     m_btnCollapse->setFixedHeight(28);m_btnCollapse->setStyleSheet(tbBtn);
-    connect(m_btnCollapse, &QPushButton::clicked, this, &ModelRenderView::onCollapseAll);
+    connect(m_btnCollapse, &QPushButton::clicked, this, &TestResultView::onCollapseAll);
     m_btnLocate = new QPushButton("\xE2\x97\x8A", m_content);  // ◊
     m_btnLocate->setFixedSize(28,28);
     m_btnLocate->setStyleSheet(
@@ -107,8 +107,8 @@ ModelRenderView::ModelRenderView(QWidget* parent)
         "QTreeWidget{outline:none;}");
     m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_tree, &QTreeWidget::customContextMenuRequested,
-            this, &ModelRenderView::onResultTreeContextMenu);
-    connect(m_tree, &QTreeWidget::itemClicked, this, &ModelRenderView::onTreeItemClicked);
+            this, &TestResultView::onResultTreeContextMenu);
+    connect(m_tree, &QTreeWidget::itemClicked, this, &TestResultView::onTreeItemClicked);
     connect(m_btnLocate, &QPushButton::clicked, this, [this]() {
         if (m_lastHighlighted)
             m_tree->scrollToItem(m_lastHighlighted, QAbstractItemView::EnsureVisible);
@@ -147,7 +147,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     // 属性树右键菜单
     m_propTree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_propTree, &QTreeWidget::customContextMenuRequested,
-            this, &ModelRenderView::onPropTreeContextMenu);
+            this, &TestResultView::onPropTreeContextMenu);
     contentLayout->addWidget(m_bottomSplit, 1);
 
     m_stack->addWidget(m_content);  // page 1
@@ -155,7 +155,7 @@ ModelRenderView::ModelRenderView(QWidget* parent)
     m_layout->addWidget(m_stack, 1);
 }
 
-void ModelRenderView::showResults(const QVector<TestRunResult>& results) {
+void TestResultView::showResults(const QVector<TestRunResult>& results) {
     m_results = results;
     m_resultMap.clear();
     for (auto& r : m_results)
@@ -181,7 +181,7 @@ void ModelRenderView::showResults(const QVector<TestRunResult>& results) {
     m_tree->expandAll();
 }
 
-void ModelRenderView::clear() {
+void TestResultView::clear() {
     m_tree->clear();
     m_propTree->clear();
     m_results.clear();
@@ -191,7 +191,7 @@ void ModelRenderView::clear() {
     m_searchEdit->clear();  // 留在内容页，只是清空数据
 }
 
-void ModelRenderView::buildResultTree(const QVector<TestRunResult>& results) {
+void TestResultView::buildResultTree(const QVector<TestRunResult>& results) {
     m_lastHighlighted = nullptr;
     m_tree->clear();
 
@@ -220,7 +220,7 @@ void ModelRenderView::buildResultTree(const QVector<TestRunResult>& results) {
     }
 }
 
-void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& node) {
+void TestResultView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& node) {
     for (const auto& child : node.children) {
         auto* item = new QTreeWidgetItem(parent);
         item->setText(0, "");
@@ -275,7 +275,7 @@ void ModelRenderView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& n
     }
 }
 
-void ModelRenderView::onSearchChanged(const QString& text) {
+void TestResultView::onSearchChanged(const QString& text) {
     // 遍历所有项，匹配的高亮+展开，不匹配的隐藏
     std::function<bool(QTreeWidgetItem*)> filter;
     filter = [&](QTreeWidgetItem* item) -> bool {
@@ -305,7 +305,7 @@ void ModelRenderView::onSearchChanged(const QString& text) {
     m_tree->viewport()->update();
 }
 
-void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
+void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     Q_UNUSED(column);
     if (!item) return;
 
@@ -343,7 +343,7 @@ void ModelRenderView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     }
 }
 
-void ModelRenderView::updateDetailPanel(const TestRunResult* result) {
+void TestResultView::updateDetailPanel(const TestRunResult* result) {
     m_propTree->clear();
     if (!result || result->properties.isEmpty()) return;
     m_propTree->expandAll();
@@ -446,11 +446,11 @@ void ModelRenderView::updateDetailPanel(const TestRunResult* result) {
     }
 }
 
-void ModelRenderView::onExpandAll() {
+void TestResultView::onExpandAll() {
     m_tree->expandAll();
 }
 
-void ModelRenderView::updatePropertyText(const QString& key, const QString& newText) {
+void TestResultView::updatePropertyText(const QString& key, const QString& newText) {
     // 递归搜索所有层级的 item 匹配 key
     std::function<bool(QTreeWidgetItem*)> search = [&](QTreeWidgetItem* parent) -> bool {
         for (int i = 0; i < parent->childCount(); ++i) {
@@ -467,7 +467,7 @@ void ModelRenderView::updatePropertyText(const QString& key, const QString& newT
     }
 }
 
-void ModelRenderView::showFullOutput(const QString& title, const QString& text) {
+void TestResultView::showFullOutput(const QString& title, const QString& text) {
     auto* dlg = new QDialog(this);
     dlg->setWindowTitle(title);
     dlg->resize(800, 600);
@@ -481,12 +481,12 @@ void ModelRenderView::showFullOutput(const QString& title, const QString& text) 
     dlg->show();
 }
 
-int ModelRenderView::saveBottomSplitPos() const {
+int TestResultView::saveBottomSplitPos() const {
     auto s = m_bottomSplit->sizes();
     return s.size() >= 2 ? s[0] : 400;
 }
 
-void ModelRenderView::restoreBottomSplitPos(int pos) {
+void TestResultView::restoreBottomSplitPos(int pos) {
     if (pos <= 0) return;
     int total = m_bottomSplit->height();
     if (total < 50) total = pos + 80;
@@ -494,11 +494,11 @@ void ModelRenderView::restoreBottomSplitPos(int pos) {
     m_bottomSplit->setSizes({treeH, total - treeH});
 }
 
-void ModelRenderView::onCollapseAll() {
+void TestResultView::onCollapseAll() {
     m_tree->collapseAll();
 }
 
-void ModelRenderView::onPropTreeContextMenu(const QPoint& pos) {
+void TestResultView::onPropTreeContextMenu(const QPoint& pos) {
     QTreeWidgetItem* item = m_propTree->itemAt(pos);
     if (!item) return;
 
@@ -532,7 +532,7 @@ void ModelRenderView::onPropTreeContextMenu(const QPoint& pos) {
     }
 }
 
-void ModelRenderView::onResultTreeContextMenu(const QPoint& pos) {
+void TestResultView::onResultTreeContextMenu(const QPoint& pos) {
     QTreeWidgetItem* item = m_tree->itemAt(pos);
     if (!item) return;
     

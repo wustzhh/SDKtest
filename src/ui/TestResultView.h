@@ -20,10 +20,10 @@
 //  结果模型渲染视图
 //  将结构化测试结果渲染为可交互的树形模型
 // ────────────────────────────────────────────────────────────
-class ModelRenderView : public QWidget {
+class TestResultView : public QWidget {
     Q_OBJECT
 public:
-    explicit ModelRenderView(QWidget* parent = nullptr);
+    explicit TestResultView(QWidget* parent = nullptr);
 
     // 显示所有运行结果
     void showResults(const QVector<TestRunResult>& results);

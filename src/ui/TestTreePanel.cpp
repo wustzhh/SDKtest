@@ -1,4 +1,4 @@
-#include "TestListPanel.h"
+#include "TestTreePanel.h"
 
 #include <QHeaderView>
 #include <QVBoxLayout>
@@ -47,9 +47,9 @@ private:
 // 网页风格Toggle开关
 
 // ═══════════════════════════════════════════════════════════
-//  AdvancedFilterDialog
+//  FilterDialog
 // ═══════════════════════════════════════════════════════════
-AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent)
+FilterDialog::FilterDialog(const QVector<TestCase>& allCases, QWidget* parent)
     : QDialog(parent), m_allCases(allCases)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
@@ -80,7 +80,7 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     m_input = new QLineEdit;
     m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6..."));
     m_input->setStyleSheet("background:rgba(255,255,255,0.95);border:none;border-radius:10px;padding:12px 16px;font-size:15px;");
-    connect(m_input, &QLineEdit::returnPressed, this, &AdvancedFilterDialog::addRule);
+    connect(m_input, &QLineEdit::returnPressed, this, &FilterDialog::addRule);
     inputRow->addWidget(m_input, 1);
     lay->addLayout(inputRow);
 
@@ -166,9 +166,9 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     updatePreview();
 }
 
-bool AdvancedFilterDialog::enabled() const { return m_enabled; }
+bool FilterDialog::enabled() const { return m_enabled; }
 
-void AdvancedFilterDialog::addRule() {
+void FilterDialog::addRule() {
     QString kw = m_input->text().trimmed();
     if (kw.isEmpty()) return;
     m_input->clear();
@@ -178,7 +178,7 @@ void AdvancedFilterDialog::addRule() {
     emit filterChanged();
 }
 
-void AdvancedFilterDialog::removeRule(int idx) {
+void FilterDialog::removeRule(int idx) {
     if (idx < 0 || idx >= m_rules.size()) return;
     m_rules.remove(idx);
     rebuildRuleWidgets();
@@ -186,7 +186,7 @@ void AdvancedFilterDialog::removeRule(int idx) {
     emit filterChanged();
 }
 
-void AdvancedFilterDialog::toggleRule(int idx) {
+void FilterDialog::toggleRule(int idx) {
     if (idx < 0 || idx >= m_rules.size()) return;
     m_rules[idx].include = !m_rules[idx].include;
     rebuildRuleWidgets();
@@ -194,7 +194,7 @@ void AdvancedFilterDialog::toggleRule(int idx) {
     emit filterChanged();
 }
 
-void AdvancedFilterDialog::rebuildRuleWidgets() {
+void FilterDialog::rebuildRuleWidgets() {
     QLayoutItem* child;
     while ((child = m_ruleLayout->takeAt(0)) != nullptr) {
         if (child->widget()) delete child->widget();
@@ -226,7 +226,7 @@ void AdvancedFilterDialog::rebuildRuleWidgets() {
     m_ruleWidget->updateGeometry();
 }
 
-QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
+QVector<TestCase> FilterDialog::applyFilter() const {
     if (m_rules.isEmpty() || !m_enabled) return m_allCases;
     QVector<TestCase> result;
     for (const auto& tc : m_allCases) {
@@ -242,7 +242,7 @@ QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
     return result;
 }
 
-void AdvancedFilterDialog::updatePreview() {
+void FilterDialog::updatePreview() {
     m_previewTree->clear();
     auto filtered = applyFilter();
     // 收集筛选后的完整名
@@ -287,7 +287,7 @@ static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
 static const QString MARK_YES  = QString::fromUtf8("\xe2\x98\x91");
 static const QString MARK_HALF = QString::fromUtf8("\xe2\x98\x92");
 
-TestListPanel::TestListPanel(QWidget* parent)
+TestTreePanel::TestTreePanel(QWidget* parent)
     : QWidget(parent)
 {
     auto* layout = new QVBoxLayout(this);
@@ -304,7 +304,7 @@ TestListPanel::TestListPanel(QWidget* parent)
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText("搜索用例...");
     m_searchEdit->setClearButtonEnabled(true);
-    connect(m_searchEdit, &QLineEdit::textChanged, this, &TestListPanel::onFilterChanged);
+    connect(m_searchEdit, &QLineEdit::textChanged, this, &TestTreePanel::onFilterChanged);
     headerRow->addWidget(m_searchEdit, 1);
     layout->addLayout(headerRow);
 
@@ -330,9 +330,9 @@ TestListPanel::TestListPanel(QWidget* parent)
     tb->addStretch();
     tb->addWidget(m_lblStats);
     layout->addWidget(m_toolbar);
-    connect(m_btnSelectAll,   &QPushButton::clicked, this, &TestListPanel::onSelectAllClicked);
-    connect(m_btnDeselectAll, &QPushButton::clicked, this, &TestListPanel::onDeselectAllClicked);
-    connect(m_btnReverseFilter, &QPushButton::clicked, this, &TestListPanel::onAdvancedFilter);
+    connect(m_btnSelectAll,   &QPushButton::clicked, this, &TestTreePanel::onSelectAllClicked);
+    connect(m_btnDeselectAll, &QPushButton::clicked, this, &TestTreePanel::onDeselectAllClicked);
+    connect(m_btnReverseFilter, &QPushButton::clicked, this, &TestTreePanel::onAdvancedFilter);
 
     // Tree
     m_tree = new QTreeWidget(this);
@@ -367,7 +367,7 @@ TestListPanel::TestListPanel(QWidget* parent)
 
     m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_tree, &QTreeWidget::customContextMenuRequested,
-            this, &TestListPanel::onTreeContextMenu);
+            this, &TestTreePanel::onTreeContextMenu);
 
     m_contextMenu = new QMenu(this);
 
@@ -382,7 +382,7 @@ TestListPanel::TestListPanel(QWidget* parent)
     showEmptyPlaceholder();
 }
 
-void TestListPanel::showEmptyPlaceholder() {
+void TestTreePanel::showEmptyPlaceholder() {
     m_tree->clear();
     auto* item = new QTreeWidgetItem(m_tree);
     item->setText(0, QString::fromUtf8("\xe6\x9c\xaa\xe5\x8a\xa0\xe8\xbd\xbd\xe6\xb5\x8b\xe8\xaf\x95\xef\xbc\x8c\xe8\xaf\xb7\xe5\x85\x88\xe9\x85\x8d\xe7\xbd\xae\xe5\xb9\xb6\xe5\x8a\xa0\xe8\xbd\xbd"));
@@ -397,7 +397,7 @@ static void setItemChecked(QTreeWidgetItem* item, bool checked) {
     item->setData(0, Qt::UserRole, checked);
 }
 
-void TestListPanel::toggleItem(QTreeWidgetItem* item) {
+void TestTreePanel::toggleItem(QTreeWidgetItem* item) {
     m_updating = true;
     bool newState = !itemChecked(item);
     if (item->childCount() > 0) {
@@ -420,7 +420,7 @@ void TestListPanel::toggleItem(QTreeWidgetItem* item) {
     emit selectionChanged(selectedTests().size());
 }
 
-void TestListPanel::applyToDescendants(QTreeWidgetItem* parent, bool checked) {
+void TestTreePanel::applyToDescendants(QTreeWidgetItem* parent, bool checked) {
     for (int i = 0; i < parent->childCount(); ++i) {
         auto* child = parent->child(i);
         if (child->isHidden()) { setItemChecked(child, false); continue; }
@@ -435,7 +435,7 @@ void TestListPanel::applyToDescendants(QTreeWidgetItem* parent, bool checked) {
     }
 }
 
-void TestListPanel::updateParentState(QTreeWidgetItem* item) {
+void TestTreePanel::updateParentState(QTreeWidgetItem* item) {
     if (!item) return;
     int total = 0, checked = 0;
     for (int i = 0; i < item->childCount(); ++i) {
@@ -461,7 +461,7 @@ void TestListPanel::updateParentState(QTreeWidgetItem* item) {
     updateParentState(item->parent());
 }
 
-void TestListPanel::updateItemText(QTreeWidgetItem* item) {
+void TestTreePanel::updateItemText(QTreeWidgetItem* item) {
     int total = 0, checked = 0;
     std::function<void(QTreeWidgetItem*)> countCases = [&](QTreeWidgetItem* it) {
         for (int i = 0; i < it->childCount(); ++i) {
@@ -486,13 +486,13 @@ void TestListPanel::updateItemText(QTreeWidgetItem* item) {
     else           item->setText(0, MARK_NO + "  " + base + cntStr);
 }
 
-int TestListPanel::countVisibleLeaf() const {
+int TestTreePanel::countVisibleLeaf() const {
     int n = 0;
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         n += countVisibleLeafRec(m_tree->topLevelItem(i));
     return n;
 }
-int TestListPanel::countVisibleLeafRec(QTreeWidgetItem* item) const {
+int TestTreePanel::countVisibleLeafRec(QTreeWidgetItem* item) const {
     if (item->isHidden()) return 0;
     if (item->childCount() == 0) return (item->flags() & Qt::ItemIsSelectable) ? 1 : 0;
     int n = 0;
@@ -501,13 +501,13 @@ int TestListPanel::countVisibleLeafRec(QTreeWidgetItem* item) const {
     return n;
 }
 
-void TestListPanel::updateStats() {
+void TestTreePanel::updateStats() {
     int total = countVisibleLeaf();
     int sel = selectedTests().size();
     m_lblStats->setText(QString("%1/%2").arg(sel).arg(total));
 }
 
-void TestListPanel::loadTests(const QVector<TestCase>& cases,
+void TestTreePanel::loadTests(const QVector<TestCase>& cases,
                                const QVector<TestCategory>& categories)
 {
     m_allCases = cases;  // 保存全部用例用于高级筛选
@@ -527,7 +527,7 @@ void TestListPanel::loadTests(const QVector<TestCase>& cases,
     emit selectionChanged(0);
 }
 
-void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,
+void TestTreePanel::buildGroupTree(QTreeWidgetItem* parent,
                                     const QVector<TestCase>& cases,
                                     const QVector<TestCategory>& categories)
 {
@@ -577,7 +577,7 @@ void TestListPanel::buildGroupTree(QTreeWidgetItem* parent,
     }
 }
 
-void TestListPanel::buildTree(const QVector<TestCase>& cases,
+void TestTreePanel::buildTree(const QVector<TestCase>& cases,
                                const QVector<TestCategory>& categories)
 {
     // 分参数化和非参数化
@@ -615,7 +615,7 @@ void TestListPanel::buildTree(const QVector<TestCase>& cases,
     addGroup(QString::fromUtf8("\xe9\x9d\x9e\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), normalCases);
 }
 
-QStringList TestListPanel::selectedTestNames() const {
+QStringList TestTreePanel::selectedTestNames() const {
     QStringList names;
     std::function<void(QTreeWidgetItem*)> collect = [&](QTreeWidgetItem* item) {
         if (!item || item->isHidden()) return;
@@ -631,7 +631,7 @@ QStringList TestListPanel::selectedTestNames() const {
     return names;
 }
 
-void TestListPanel::setSelectedTestNames(const QStringList& names) {
+void TestTreePanel::setSelectedTestNames(const QStringList& names) {
     QSet<QString> ns(names.begin(), names.end());
     m_updating = true;
     // 第一遍：逐个设 case 的状态和文字（不改父节点）
@@ -660,13 +660,13 @@ void TestListPanel::setSelectedTestNames(const QStringList& names) {
     emit selectionChanged(selectedTests().size());
 }
 
-QVector<TestCase> TestListPanel::selectedTests() const {
+QVector<TestCase> TestTreePanel::selectedTests() const {
     QVector<TestCase> res;
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         collectChecked(m_tree->topLevelItem(i), res);
     return res;
 }
-void TestListPanel::collectChecked(QTreeWidgetItem* item, QVector<TestCase>& out) const {
+void TestTreePanel::collectChecked(QTreeWidgetItem* item, QVector<TestCase>& out) const {
     if (!item || item->isHidden()) return;
     if (item->childCount() == 0 && itemChecked(item)) {
         TestCase tc;
@@ -678,7 +678,7 @@ void TestListPanel::collectChecked(QTreeWidgetItem* item, QVector<TestCase>& out
         collectChecked(item->child(i), out);
 }
 
-void TestListPanel::selectAll(bool select) {
+void TestTreePanel::selectAll(bool select) {
     m_updating = true;
     std::function<void(QTreeWidgetItem*)> selVis = [&](QTreeWidgetItem* item) {
         for (int i = 0; i < item->childCount(); ++i) {
@@ -708,7 +708,7 @@ void TestListPanel::selectAll(bool select) {
     emit selectionChanged(selectedTests().size());
 }
 
-void TestListPanel::onFilterChanged(const QString& text) {
+void TestTreePanel::onFilterChanged(const QString& text) {
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         applyFilter(m_tree->topLevelItem(i), text);
     // 隐藏的项取消选中 + 向上传播更新
@@ -733,7 +733,7 @@ void TestListPanel::onFilterChanged(const QString& text) {
     m_tree->viewport()->update();
     updateStats();
 }
-bool TestListPanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
+bool TestTreePanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
     if (!item) return false;
     if (item->childCount() == 0) {
         bool match = text.isEmpty() || item->text(0).contains(text, Qt::CaseInsensitive);
@@ -747,7 +747,7 @@ bool TestListPanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
     return any;
 }
 
-void TestListPanel::collapseToLevel(int level) {
+void TestTreePanel::collapseToLevel(int level) {
     if (level == 1) {
         for (int i = 0; i < m_tree->topLevelItemCount(); i++)
             if (!m_tree->topLevelItem(i)->isHidden())
@@ -766,7 +766,7 @@ void TestListPanel::collapseToLevel(int level) {
             if (!m_tree->topLevelItem(i)->isHidden()) rec(m_tree->topLevelItem(i), 2);
     }
 }
-void TestListPanel::expandToLevel(int level) {
+void TestTreePanel::expandToLevel(int level) {
     if (level == 1) {
         for (int i = 0; i < m_tree->topLevelItemCount(); i++)
             if (!m_tree->topLevelItem(i)->isHidden())
@@ -785,9 +785,9 @@ void TestListPanel::expandToLevel(int level) {
             if (!m_tree->topLevelItem(i)->isHidden()) rec(m_tree->topLevelItem(i), 2);
     }
 }
-void TestListPanel::onSelectAllClicked()   { selectAll(true); }
-void TestListPanel::onDeselectAllClicked() { selectAll(false); }
-void TestListPanel::onReverseFilterClicked() {
+void TestTreePanel::onSelectAllClicked()   { selectAll(true); }
+void TestTreePanel::onDeselectAllClicked() { selectAll(false); }
+void TestTreePanel::onReverseFilterClicked() {
     std::function<void(QTreeWidgetItem*)> rev = [&](QTreeWidgetItem* item) {
         if (!item->childCount()) {
             bool wasHidden = item->isHidden();
@@ -809,8 +809,8 @@ void TestListPanel::onReverseFilterClicked() {
     updateStats();
 }
 
-void TestListPanel::onAdvancedFilter() {
-    AdvancedFilterDialog dlg(m_allCases, this);
+void TestTreePanel::onAdvancedFilter() {
+    FilterDialog dlg(m_allCases, this);
     dlg.setSrcTree(m_tree);  // 用例树指针用于预览树复制结构
     if (dlg.exec() == QDialog::Accepted && dlg.enabled()) {
         auto filtered = dlg.rules();
@@ -850,17 +850,17 @@ void TestListPanel::onAdvancedFilter() {
         emit selectionChanged(selectedTests().size());
     }
 }
-void TestListPanel::onExpandAllClicked()   {
+void TestTreePanel::onExpandAllClicked()   {
     m_tree->expandAll();
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         m_tree->topLevelItem(i)->setExpanded(true);
 }
-void TestListPanel::onCollapseAllClicked() {
+void TestTreePanel::onCollapseAllClicked() {
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         m_tree->topLevelItem(i)->setExpanded(false);
 }
 
-void TestListPanel::onTreeContextMenu(const QPoint& pos) {
+void TestTreePanel::onTreeContextMenu(const QPoint& pos) {
     QTreeWidgetItem* item = m_tree->itemAt(pos);
     if (!item) return;
     m_contextMenu->clear();
@@ -924,7 +924,7 @@ void TestListPanel::onTreeContextMenu(const QPoint& pos) {
     m_contextMenu->popup(m_tree->viewport()->mapToGlobal(pos));
 }
 
-void TestListPanel::updatePathLabel(QTreeWidgetItem* item) {
+void TestTreePanel::updatePathLabel(QTreeWidgetItem* item) {
     if (!m_pathLabel) return;
     QStringList parts;
     QTreeWidgetItem* cur = item;
@@ -950,4 +950,4 @@ void TestListPanel::updatePathLabel(QTreeWidgetItem* item) {
     }
     m_pathLabel->setText(html);
 }
-#include "TestListPanel.moc"
+#include "TestTreePanel.moc"
