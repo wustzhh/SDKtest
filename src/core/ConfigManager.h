@@ -25,9 +25,11 @@ struct TestCategory {
 // ────────────────────────────────────────────────────────────
 struct TestScenario {
     QString     name;
-    QStringList selectedTests;  // "Suite.Case" 列表
-    bool        singleTest = false;  // 逐个运行
-    QVector<FilterSet> filterSets;   // 筛选条件组
+    QStringList selectedTests;
+    bool        singleTest = false;
+    QVector<FilterSet> filterSets;
+    // 高级筛选规则: keyword + include(正选/反选)
+    QVector<QPair<QString,bool>> advancedFilters;
 };
 
 struct ExeProfile {

@@ -95,16 +95,13 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
 
     auto* btnRow = new QHBoxLayout;
     btnRow->addStretch();
-    auto* btnApply = new QPushButton(QString::fromUtf8("\xe5\xba\x94\xe7\x94\xa8"));
-    btnApply->setStyleSheet("QPushButton{background:#10b981;color:white;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;}");
     auto* btnSave = new QPushButton(QString::fromUtf8("\xe4\xbf\x9d\xe5\xad\x98"));
     btnSave->setStyleSheet("QPushButton{background:#6366f1;color:white;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;}");
     auto* btnClose = new QPushButton(QString::fromUtf8("\xe5\x85\xb3\xe9\x97\xad"));
     btnClose->setStyleSheet("QPushButton{background:rgba(255,255,255,0.2);color:white;border-radius:8px;padding:10px 24px;font-size:15px;}");
     connect(btnSave, &QPushButton::clicked, this, &QDialog::accept);
     connect(btnClose, &QPushButton::clicked, this, &QDialog::reject);
-    connect(btnApply, &QPushButton::clicked, this, [this](){ emit filterChanged(); });
-    btnRow->addWidget(btnApply); btnRow->addWidget(btnSave); btnRow->addWidget(btnClose);
+    btnRow->addWidget(btnSave); btnRow->addWidget(btnClose);
     lay->addLayout(btnRow);
     updatePreview();
 }
@@ -733,6 +730,7 @@ void TestListPanel::onAdvancedFilter() {
     if (dlg.exec() == QDialog::Accepted && dlg.enabled()) {
         auto filtered = dlg.rules();
         if (filtered.isEmpty()) return;
+        m_advFilters = filtered;
         std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
             if (item->childCount() == 0) {
                 QString suite = item->data(0, Role_SuiteName).toString();

@@ -156,7 +156,8 @@ private:
     QLabel*         m_lblStats;
     QTreeWidget*    m_tree;
     QMenu*          m_contextMenu;
-    QVector<TestCase> m_allCases;  // 所有用例，用于高级筛选
+    QVector<TestCase> m_allCases;
+    QVector<FilterRule> m_advFilters;  // 当前方案的高级筛选规则
 
     bool            m_updating = false;
 };
