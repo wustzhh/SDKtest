@@ -197,16 +197,36 @@ QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
 void AdvancedFilterDialog::updatePreview() {
     m_previewTree->clear();
     auto filtered = applyFilter();
-    QMap<QString, QVector<TestCase>> groups;
-    for (const auto& tc : filtered) groups[tc.suiteName].append(tc);
-    for (auto it = groups.begin(); it != groups.end(); ++it) {
-        auto* suiteItem = new QTreeWidgetItem(m_previewTree);
-        suiteItem->setText(0, it.key() + QString(" (%1)").arg(it.value().size()));
-        for (const auto& tc : it.value()) {
-            auto* caseItem = new QTreeWidgetItem(suiteItem);
-            caseItem->setText(0, tc.caseName);
-        }
+    // 分参数化和非参数化（和主界面用例树一致）
+    QVector<TestCase> paramCases, normalCases;
+    for (const auto& tc : filtered) {
+        if (tc.suiteName.contains('/')) paramCases.append(tc);
+        else normalCases.append(tc);
     }
+    auto addGroup = [this](const QString& title, const QVector<TestCase>& group) {
+        if (group.isEmpty()) return;
+        auto* item = new QTreeWidgetItem(m_previewTree);
+        QFont f = item->font(0); f.setBold(true); item->setFont(0, f);
+        item->setExpanded(true);
+        // 按suite分组
+        QMap<QString, QVector<TestCase>> suites;
+        for (const auto& tc : group) suites[tc.suiteName].append(tc);
+        for (auto it = suites.begin(); it != suites.end(); ++it) {
+            auto* suiteItem = new QTreeWidgetItem(item);
+            suiteItem->setText(0, it.key() + QString(" (%1)").arg(it.value().size()));
+            suiteItem->setExpanded(true);
+            for (const auto& tc : it.value()) {
+                auto* caseItem = new QTreeWidgetItem(suiteItem);
+                caseItem->setText(0, tc.caseName);
+            }
+        }
+        int total = 0;
+        for (int i = 0; i < item->childCount(); i++)
+            total += item->child(i)->childCount();
+        item->setText(0, title + QString(" (%1)").arg(total));
+    };
+    addGroup(QString::fromUtf8("\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), paramCases);
+    addGroup(QString::fromUtf8("\xe9\x9d\x9e\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), normalCases);
 }
 
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
