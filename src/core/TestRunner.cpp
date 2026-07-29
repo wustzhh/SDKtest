@@ -106,13 +106,29 @@ void TestRunner::startNextBatch() {
 
     // 构造 filter
     QStringList filters;
+    // 聚合优化：同一suite下全部用例勾选 → suite.*
+    QMap<QString, int> suiteTotal;  // 每个suite的总用例数
+    for (const auto& tc : m_expectedTests)
+        suiteTotal[tc.suiteName]++;
+    QMap<QString, int> suiteHits;   // 当前批次中每个suite勾选的数量
     for (const auto& tc : batch->cases) {
         if (tc.suiteName == "*") { filters = {"*"}; break; }
-        if (tc.caseName == "*") filters << tc.suiteName + ".*";
-        else filters << tc.fullName();
+        if (tc.caseName == "*") { suiteHits[tc.suiteName] = suiteTotal[tc.suiteName]; continue; }
+        suiteHits[tc.suiteName]++;
+    }
+    if (filters.isEmpty()) {
+        for (auto it = suiteHits.begin(); it != suiteHits.end(); ++it) {
+            if (it.value() >= suiteTotal[it.key()])
+                filters << it.key() + ".*";  // suite全选
+            else {
+                // 逐个拼接（但会用上一个修复中的全选兜底）
+                for (const auto& tc : batch->cases)
+                    if (tc.suiteName == it.key() && tc.caseName != "*")
+                        filters << tc.fullName();
+            }
+        }
     }
     QString filter = filters.join(":");
-    // 全选或filter过长时直接用*，避免超出Windows命令行8191字符限制
     if (batch->cases.size() >= m_totalCount || filter.length() > 4000)
         filter = "*";
 
