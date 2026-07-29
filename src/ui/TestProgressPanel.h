@@ -45,5 +45,6 @@ private:
     QTimer*         m_elapsedTimer;
     QElapsedTimer   m_startTime;
     int             m_totalTests = 0;
+    bool            m_finished = false;
     void updateElapsed();
 };

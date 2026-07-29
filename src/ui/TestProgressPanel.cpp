@@ -51,6 +51,7 @@ TestProgressPanel::TestProgressPanel(QWidget* parent)
 }
 
 void TestProgressPanel::startRun(int totalTests) {
+    m_finished = false;
     m_totalTests = totalTests;
     m_progressBar->setValue(0);
     m_progressBar->setMaximum(totalTests);
@@ -83,6 +84,7 @@ void TestProgressPanel::updateElapsed() {
 }
 
 void TestProgressPanel::updateProgress(int done, int total) {
+    if (m_finished) return;
     m_progressBar->setValue(done);
     double pct = total > 0 ? qMin(done * 100.0 / total, 100.0) : 0.0;
     m_progressBar->setFormat(QString("%1%")
@@ -99,6 +101,7 @@ void TestProgressPanel::appendLog(const QString& line) {
 }
 
 void TestProgressPanel::finishRun() {
+    m_finished = true;
     m_elapsedTimer->stop();
     m_btnCancel->setEnabled(false);
     m_progressBar->setValue(m_progressBar->maximum());
