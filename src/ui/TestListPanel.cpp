@@ -249,7 +249,7 @@ void AdvancedFilterDialog::updatePreview() {
     QSet<QString> filteredNames;
     for (const auto& tc : filtered) filteredNames.insert(tc.fullName());
     
-    // 直接从主界面用例树复制结构
+    // 直接从用例树复制结构
     auto* srcTree = m_srcTree;
     if (!srcTree) return;
     std::function<void(QTreeWidgetItem*,QTreeWidgetItem*)> copyItem = [&](QTreeWidgetItem* dstParent, QTreeWidgetItem* src) {
@@ -811,7 +811,7 @@ void TestListPanel::onReverseFilterClicked() {
 
 void TestListPanel::onAdvancedFilter() {
     AdvancedFilterDialog dlg(m_allCases, this);
-    dlg.setSrcTree(m_tree);  // 设置主界面用例树用于复制结构
+    dlg.setSrcTree(m_tree);  // 用例树指针用于预览树复制结构
     if (dlg.exec() == QDialog::Accepted && dlg.enabled()) {
         auto filtered = dlg.rules();
         if (filtered.isEmpty()) return;

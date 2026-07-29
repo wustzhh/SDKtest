@@ -70,7 +70,7 @@ private:
     QSplitter*        m_centerSplitter  = nullptr;
     TestListPanel*    m_testList        = nullptr;
     TestProgressPanel* m_progress       = nullptr;
-    ModelRenderView*  m_centerResultView = nullptr;  // 中栏结果树
+    ModelRenderView*  m_centerResultView = nullptr;  // 用例列表（中间结果）
     Model3DViewer*    m_model3D         = nullptr;
     QWidget*          m_leftPanel       = nullptr;
     QWidget*          m_rightPanel      = nullptr;

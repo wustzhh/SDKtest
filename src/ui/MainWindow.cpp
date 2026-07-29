@@ -100,7 +100,7 @@ void MainWindow::setupUi() {
     m_mainSplitter->setCollapsible(0, true);
     m_mainSplitter->setCollapsible(2, true);
 
-    // ═══ 左：用例列表 ═══
+    // ═══ 左：用例树 ═══
     m_leftPanel = new QWidget;
     m_leftPanel->setMinimumWidth(0);
     auto* leftL = new QVBoxLayout(m_leftPanel);
