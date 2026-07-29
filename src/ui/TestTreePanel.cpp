@@ -211,6 +211,7 @@ void FilterDialog::rebuildRuleWidgets() {
         auto* hl = new QHBoxLayout(chip);
         hl->setContentsMargins(6,2,6,2);
         hl->setSpacing(4);
+        hl->setAlignment(Qt::AlignVCenter);
         auto* label = new QLabel(r.keyword);
         label->setStyleSheet("background:transparent;font-size:12px;color:#374151;border:none;");
         QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 120);
@@ -221,7 +222,12 @@ void FilterDialog::rebuildRuleWidgets() {
         auto* sw = new ToggleSwitch;
         sw->setChecked(r.include);
         sw->setFixedSize(36,20);
-        connect(sw, &ToggleSwitch::toggled, this, [this,i](bool on){ m_rules[i].include=on; rebuildRuleWidgets(); updatePreview(); emit filterChanged(); });
+        connect(sw, &ToggleSwitch::toggled, this, [this,i,chip,sw](bool on){
+            m_rules[i].include = on;
+            chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(on ? "#d1fae5" : "#fee2e2"));
+            updatePreview();
+            emit filterChanged();
+        });
         hl->addWidget(sw);
         m_ruleLayout->addWidget(chip);
     }
