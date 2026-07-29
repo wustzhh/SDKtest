@@ -56,7 +56,7 @@ protected:
         p.setPen(Qt::NoPen);
         p.drawRoundedRect(rect(),12,12);
         p.setBrush(Qt::white);
-        p.drawEllipse((int)(2+t*(width()-22)),1,22,22);
+        p.drawEllipse((int)(1+t*20),1,22,22);
     }
     void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); }
 private:
