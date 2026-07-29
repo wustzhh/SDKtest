@@ -265,44 +265,41 @@ void FilterDialog::updatePreview() {
         // 去掉用例树的复选框前缀和勾选计数，只保留名称和纯数字计数
         QString txt = src->text(0);
         txt.replace(QRegularExpression("^[☐☑☒]  "), "");
-        // 替换 "(checked/total)" 为 "(total)" — 只显示总数
         txt.replace(QRegularExpression("\\(\\d+/\\d+\\)"), "");
-        if (src->childCount() > 0) {
-            int leafCount = 0;
-            std::function<void(QTreeWidgetItem*)> countLeaf = [&](QTreeWidgetItem* it) {
-                for (int i = 0; i < it->childCount(); i++) {
-                    auto* c = it->child(i);
-                    if (c->childCount() == 0) leafCount++;
-                    else countLeaf(c);
-                }
-            };
-            countLeaf(src);
-            dst->setText(0, txt.trimmed() + QString(" (%1)").arg(leafCount));
-        } else {
-            dst->setText(0, txt);
-        }
+        dst->setText(0, txt);  // 临时，后面会更新计数
         dst->setExpanded(src->isExpanded());
         QFont f = src->font(0); dst->setFont(0, f);
         bool hasVisibleChild = false;
+        int visibleLeafCount = 0;
         for (int i = 0; i < src->childCount(); i++) {
             auto* srcChild = src->child(i);
             if (srcChild->childCount() == 0) {
-                // 叶子节点：检查是否在筛选结果中
                 QString suite = srcChild->data(0, Role_SuiteName).toString();
                 QString name  = srcChild->data(0, Role_CaseName).toString();
                 if (suite.isEmpty() || name.isEmpty()) continue;
                 if (filteredNames.contains(suite + "." + name)) {
                     auto* dstChild = new QTreeWidgetItem(dst);
-                    dstChild->setText(0, name);  // 只显示用例名，不加复选框
+                    dstChild->setText(0, name);
                     hasVisibleChild = true;
+                    visibleLeafCount++;
                 }
             } else {
                 copyItem(dst, srcChild);
-                if (dst->childCount() > 0 && !dst->child(dst->childCount()-1)->isHidden())
+                if (dst->childCount() > 0 && !dst->child(dst->childCount()-1)->isHidden()) {
                     hasVisibleChild = true;
+                    // 累计子节点的可见叶子数
+                    auto* lastChild = dst->child(dst->childCount()-1);
+                    QString lastTxt = lastChild->text(0);
+                    QRegularExpression cntRe("\\((\\d+)\\)");
+                    auto m = cntRe.match(lastTxt);
+                    if (m.hasMatch()) visibleLeafCount += m.captured(1).toInt();
+                }
             }
         }
         dst->setHidden(!hasVisibleChild);
+        if (src->childCount() > 0 && hasVisibleChild) {
+            dst->setText(0, txt.trimmed() + QString(" (%1)").arg(visibleLeafCount));
+        }
     };
     for (int i = 0; i < srcTree->topLevelItemCount(); i++)
         copyItem(nullptr, srcTree->topLevelItem(i));

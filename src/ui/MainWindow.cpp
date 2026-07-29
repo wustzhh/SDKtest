@@ -110,6 +110,18 @@ void MainWindow::setupUi() {
     connect(m_testList, &TestTreePanel::collapseRequested, this, [=]() {
         m_leftPanel->setVisible(!m_leftPanel->isVisible());
     });
+    // 筛选条件变更时保存到当前方案
+    connect(m_testList, &TestTreePanel::filtersSaved, this, [this]() {
+        auto& prof = m_config.currentProfile();
+        int idx = m_scenarioCombo->currentIndex() - 1;
+        if (idx >= 0 && idx < prof.scenarios.size()) {
+            auto& sc = prof.scenarios[idx];
+            sc.advancedFilters.clear();
+            for (const auto& r : m_testList->advFilters())
+                sc.advancedFilters.append({r.keyword, r.include});
+            m_config.save();
+        }
+    });
 
     // ═══ 中：进度(上) + 结果树(下) ═══
     auto* centerSplitter = new QSplitter(Qt::Vertical);
@@ -227,7 +239,11 @@ void MainWindow::setupUi() {
             const auto& sc = prof.scenarios[idx-1];
             m_testList->setSelectedTestNames(sc.selectedTests);
             if (m_chkSingleTest) m_chkSingleTest->setChecked(sc.singleTest);
-            // 记录最后选择的方案，下次启动恢复
+            // 加载高级筛选条件
+            QVector<FilterRule> rules;
+            for (const auto& af : sc.advancedFilters)
+                rules.append({af.first, af.second});
+            m_testList->setAdvFilters(rules, !sc.advancedFilters.isEmpty());
             prof.lastScenarioName = sc.name;
             m_config.save();
         }
