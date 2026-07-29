@@ -90,7 +90,22 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     m_previewTree = new QTreeWidget;
     m_previewTree->setHeaderHidden(true);
     m_previewTree->setRootIsDecorated(true);
-    m_previewTree->setStyleSheet("QTreeWidget{background:rgba(255,255,255,0.95);border-radius:10px;font-size:14px;padding:4px;}");
+    m_previewTree->setAnimated(true);
+    m_previewTree->setStyleSheet(
+        "QTreeWidget{background:rgba(255,255,255,0.95);border-radius:10px;font-size:14px;padding:4px;}"
+        "QTreeWidget::item{padding:3px 6px;border-radius:4px;}"
+        "QTreeWidget::item:hover{background:rgba(99,102,241,0.1);}"
+        "QTreeWidget::item:selected{background:rgba(99,102,241,0.2);color:#1f2937;}"
+        "QTreeWidget::branch:has-children:!has-siblings:closed,QTreeWidget::branch:closed:has-children:has-siblings{border-image:none;image:none;}"
+        "QTreeWidget::branch:open:has-children:!has-siblings,QTreeWidget::branch:open:has-children:has-siblings{border-image:none;image:none;}"
+    );
+    // 双击展开/收缩
+    connect(m_previewTree, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int){
+        item->setExpanded(!item->isExpanded());
+    });
+    // 空格/回车展开收缩
+    m_previewTree->installEventFilter(this);
+    m_previewTree->setFocusPolicy(Qt::StrongFocus);
     lay->addWidget(m_previewTree, 1);
 
     auto* btnRow = new QHBoxLayout;

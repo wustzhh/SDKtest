@@ -76,6 +76,19 @@ public:
         QPainter p(this);
         p.fillRect(rect(), QColor(0,0,0,128));
     }
+    bool eventFilter(QObject* obj, QEvent* ev) override {
+        if (obj == m_previewTree && ev->type() == QEvent::KeyPress) {
+            auto* ke = static_cast<QKeyEvent*>(ev);
+            if (ke->key() == Qt::Key_Space || ke->key() == Qt::Key_Return) {
+                auto* item = m_previewTree->currentItem();
+                if (item && item->childCount() > 0) {
+                    item->setExpanded(!item->isExpanded());
+                    return true;
+                }
+            }
+        }
+        return QDialog::eventFilter(obj, ev);
+    }
 signals:
     void filterChanged();
 private:
