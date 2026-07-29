@@ -14,38 +14,48 @@
 #include <QPainter>
 #include <QListWidget>
 #include <QScrollArea>
+#include <QPropertyAnimation>
 
 // ── ToggleSwitch（头文件中确保MOC正确生成） ──
 class ToggleSwitch : public QWidget {
     Q_OBJECT
+    Q_PROPERTY(double animPos READ animPos WRITE setAnimPos)
 public:
-    ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_pos(0){
+    ToggleSwitch(QWidget* p=nullptr):QWidget(p),m_checked(false),m_animPos(0){
         setFixedSize(44,24);setCursor(Qt::PointingHandCursor);
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        m_anim = new QPropertyAnimation(this,"animPos");
+        m_anim->setDuration(180);
     }
     bool isChecked() const { return m_checked; }
     void setChecked(bool c) {
         if(c==m_checked) return;
         m_checked=c;
-        m_pos=c?1.0:0.0;
-        update();
+        m_anim->stop();
+        m_anim->setStartValue(m_animPos);
+        m_anim->setEndValue(c?1.0:0.0);
+        m_anim->start();
         emit toggled(m_checked);
     }
+    double animPos() const { return m_animPos; }
+    void setAnimPos(double v) { m_animPos=v; update(); }
 signals:
     void toggled(bool);
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
-        p.setBrush(m_checked?QColor("#6366f1"):QColor("#d1d5db"));
+        double t=m_animPos;
+        p.setBrush(QColor(t>0.5?QString("#6366f1"):QString("#d1d5db")));
         p.setPen(Qt::NoPen);
-        p.drawRoundedRect(rect(),11,11);
+        p.drawRoundedRect(rect(),12,12);
         p.setBrush(Qt::white);
-        p.drawEllipse((int)(1+m_pos*(width()-20)),1,20,20);
+        p.drawEllipse((int)(2+t*(width()-22)),2,20,20);
     }
     void mousePressEvent(QMouseEvent*) override { setChecked(!m_checked); }
 private:
     bool m_checked;
-    double m_pos;
+    double m_animPos;
+    QPropertyAnimation* m_anim;
 };
 
 #include "models/TestResult.h"
