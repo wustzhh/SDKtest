@@ -243,36 +243,42 @@ QVector<TestCase> AdvancedFilterDialog::applyFilter() const {
 void AdvancedFilterDialog::updatePreview() {
     m_previewTree->clear();
     auto filtered = applyFilter();
-    // 分参数化和非参数化（和主界面用例树一致）
-    QVector<TestCase> paramCases, normalCases;
-    for (const auto& tc : filtered) {
-        if (tc.suiteName.contains('/')) paramCases.append(tc);
-        else normalCases.append(tc);
-    }
-    auto addGroup = [this](const QString& title, const QVector<TestCase>& group) {
-        if (group.isEmpty()) return;
-        auto* item = new QTreeWidgetItem(m_previewTree);
-        QFont f = item->font(0); f.setBold(true); item->setFont(0, f);
-        item->setExpanded(true);
-        // 按suite分组
-        QMap<QString, QVector<TestCase>> suites;
-        for (const auto& tc : group) suites[tc.suiteName].append(tc);
-        for (auto it = suites.begin(); it != suites.end(); ++it) {
-            auto* suiteItem = new QTreeWidgetItem(item);
-            suiteItem->setText(0, it.key() + QString(" (%1)").arg(it.value().size()));
-            suiteItem->setExpanded(true);
-            for (const auto& tc : it.value()) {
-                auto* caseItem = new QTreeWidgetItem(suiteItem);
-                caseItem->setText(0, tc.caseName);
+    // 收集筛选后的完整名
+    QSet<QString> filteredNames;
+    for (const auto& tc : filtered) filteredNames.insert(tc.fullName());
+    
+    // 直接从主界面用例树复制结构
+    auto* srcTree = m_srcTree;
+    if (!srcTree) return;
+    std::function<void(QTreeWidgetItem*,QTreeWidgetItem*)> copyItem = [&](QTreeWidgetItem* dstParent, QTreeWidgetItem* src) {
+        auto* dst = new QTreeWidgetItem(dstParent);
+        dst->setText(0, src->text(0));
+        dst->setExpanded(src->isExpanded());
+        QFont f = src->font(0); dst->setFont(0, f);
+        bool hasVisibleChild = false;
+        for (int i = 0; i < src->childCount(); i++) {
+            auto* srcChild = src->child(i);
+            if (srcChild->childCount() == 0) {
+                // 叶子节点：检查是否在筛选结果中
+                QString suite = srcChild->data(0, Role_SuiteName).toString();
+                QString name  = srcChild->data(0, Role_CaseName).toString();
+                if (suite.isEmpty() || name.isEmpty()) continue;
+                if (filteredNames.contains(suite + "." + name)) {
+                    auto* dstChild = new QTreeWidgetItem(dst);
+                    dstChild->setText(0, "  " + name);
+                    hasVisibleChild = true;
+                }
+            } else {
+                copyItem(dst, srcChild);
+                if (dst->childCount() > 0 && !dst->child(dst->childCount()-1)->isHidden())
+                    hasVisibleChild = true;
             }
         }
-        int total = 0;
-        for (int i = 0; i < item->childCount(); i++)
-            total += item->child(i)->childCount();
-        item->setText(0, title + QString(" (%1)").arg(total));
+        dst->setHidden(!hasVisibleChild);
     };
-    addGroup(QString::fromUtf8("\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), paramCases);
-    addGroup(QString::fromUtf8("\xe9\x9d\x9e\xe5\x8f\x82\xe6\x95\xb0\xe5\x8c\x96\xe6\xb5\x8b\xe8\xaf\x95"), normalCases);
+    for (int i = 0; i < srcTree->topLevelItemCount(); i++)
+        copyItem(m_previewTree, srcTree->topLevelItem(i));
+    m_previewTree->expandAll();
 }
 
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
@@ -805,6 +811,7 @@ void TestListPanel::onReverseFilterClicked() {
 
 void TestListPanel::onAdvancedFilter() {
     AdvancedFilterDialog dlg(m_allCases, this);
+    dlg.setSrcTree(m_tree);  // 设置主界面用例树用于复制结构
     if (dlg.exec() == QDialog::Accepted && dlg.enabled()) {
         auto filtered = dlg.rules();
         if (filtered.isEmpty()) return;

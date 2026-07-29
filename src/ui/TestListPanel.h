@@ -73,6 +73,7 @@ public:
     AdvancedFilterDialog(const QVector<TestCase>& allCases, QWidget* parent = nullptr);
     QVector<FilterRule> rules() const { return m_rules; }
     bool enabled() const;
+    void setSrcTree(QTreeWidget* t) { m_srcTree = t; }
     void paintEvent(QPaintEvent*) override {
         QPainter p(this);
         p.fillRect(rect(), QColor(0,0,0,128));
@@ -93,6 +94,7 @@ private:
     QWidget* m_ruleWidget;
     class FlowLayout* m_ruleLayout;
     QTreeWidget* m_previewTree;
+    QTreeWidget* m_srcTree = nullptr;
     QVector<TestCase> m_allCases;
     QVector<FilterRule> m_rules;
 };
