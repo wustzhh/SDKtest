@@ -886,12 +886,46 @@ void TestTreePanel::onAdvancedFilter() {
         updateStats();
         emit selectionChanged(selectedTests().size());
         }
+        emit filtersSaved();
     }
-    emit filtersSaved();
 }
 
 void TestTreePanel::setAdvFilters(const QVector<FilterRule>& f, bool enabled) {
     m_advFilters = f; m_filterEnabled = enabled;
+    if (enabled && !f.isEmpty()) {
+        // 应用筛选到用例树
+        std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
+            if (item->childCount() == 0) {
+                QString suite = item->data(0, Role_SuiteName).toString();
+                QString name  = item->data(0, Role_CaseName).toString();
+                QString full = suite + "." + name;
+                bool pass = true;
+                for (const auto& r : f) {
+                    bool match = full.contains(r.keyword, Qt::CaseInsensitive);
+                    if (r.include && !match) { pass = false; break; }
+                    if (!r.include && match) { pass = false; break; }
+                }
+                item->setHidden(!pass);
+                if (!pass) { setItemChecked(item, false); item->setText(0, MARK_NO + "  " + name); }
+            } else {
+                bool anyVis = false;
+                for (int i = 0; i < item->childCount(); i++) {
+                    apply(item->child(i));
+                    if (!item->child(i)->isHidden()) anyVis = true;
+                }
+                item->setHidden(!anyVis);
+                if (!item->isHidden()) updateItemText(item);
+            }
+        };
+        m_updating = true;
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++) {
+            apply(m_tree->topLevelItem(i));
+            if (!m_tree->topLevelItem(i)->isHidden()) updateItemText(m_tree->topLevelItem(i));
+        }
+        m_updating = false;
+        m_tree->viewport()->update();
+        updateStats();
+    }
 }
 
 void TestTreePanel::applyAdvancedFilters(const QVector<FilterRule>&) {
