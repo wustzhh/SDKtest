@@ -81,6 +81,8 @@ FilterDialog::FilterDialog(const QVector<TestCase>& allCases, QWidget* parent)
     m_input->setPlaceholderText(QString::fromUtf8("\xe8\xbe\x93\xe5\x85\xa5\xe5\x85\xb3\xe9\x94\xae\xe8\xaf\x8d\xe5\x90\x8e\xe5\x9b\x9e\xe8\xbd\xa6..."));
     m_input->setStyleSheet("background:rgba(255,255,255,0.95);border:none;border-radius:10px;padding:12px 16px;font-size:15px;");
     connect(m_input, &QLineEdit::returnPressed, this, &FilterDialog::addRule);
+    // 防止回车键触发对话框默认按钮关闭界面
+    m_input->installEventFilter(this);
     inputRow->addWidget(m_input, 1);
     lay->addLayout(inputRow);
 
@@ -254,7 +256,10 @@ void FilterDialog::updatePreview() {
     if (!srcTree) return;
     std::function<void(QTreeWidgetItem*,QTreeWidgetItem*)> copyItem = [&](QTreeWidgetItem* dstParent, QTreeWidgetItem* src) {
         auto* dst = dstParent ? new QTreeWidgetItem(dstParent) : new QTreeWidgetItem(m_previewTree);
-        dst->setText(0, src->text(0));
+        // 去掉用例树的复选框前缀
+        QString txt = src->text(0);
+        txt.replace(QRegularExpression("^[☐☑☒]  "), "");
+        dst->setText(0, txt);
         dst->setExpanded(src->isExpanded());
         QFont f = src->font(0); dst->setFont(0, f);
         bool hasVisibleChild = false;
@@ -267,7 +272,7 @@ void FilterDialog::updatePreview() {
                 if (suite.isEmpty() || name.isEmpty()) continue;
                 if (filteredNames.contains(suite + "." + name)) {
                     auto* dstChild = new QTreeWidgetItem(dst);
-                    dstChild->setText(0, "  " + name);
+                    dstChild->setText(0, name);  // 只显示用例名，不加复选框
                     hasVisibleChild = true;
                 }
             } else {

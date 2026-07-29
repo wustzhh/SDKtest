@@ -78,6 +78,16 @@ public:
         QPainter p(this);
         p.fillRect(rect(), QColor(0,0,0,128));
     }
+    bool eventFilter(QObject* obj, QEvent* ev) override {
+        if (obj == m_input && ev->type() == QEvent::KeyPress) {
+            auto* ke = static_cast<QKeyEvent*>(ev);
+            if (ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {
+                addRule();
+                return true;  // 消费事件，阻止传播到对话框
+            }
+        }
+        return QDialog::eventFilter(obj, ev);
+    }
 signals:
     void filterChanged();
 private:
