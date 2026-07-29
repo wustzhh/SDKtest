@@ -11,6 +11,8 @@
 #include <QPainter>
 #include <QPropertyAnimation>
 
+enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName };
+
 // 简易FlowLayout：自动换行的水平布局
 class FlowLayout : public QLayout {
 public:
@@ -251,7 +253,7 @@ void AdvancedFilterDialog::updatePreview() {
     auto* srcTree = m_srcTree;
     if (!srcTree) return;
     std::function<void(QTreeWidgetItem*,QTreeWidgetItem*)> copyItem = [&](QTreeWidgetItem* dstParent, QTreeWidgetItem* src) {
-        auto* dst = new QTreeWidgetItem(dstParent);
+        auto* dst = dstParent ? new QTreeWidgetItem(dstParent) : new QTreeWidgetItem(m_previewTree);
         dst->setText(0, src->text(0));
         dst->setExpanded(src->isExpanded());
         QFont f = src->font(0); dst->setFont(0, f);
@@ -277,15 +279,13 @@ void AdvancedFilterDialog::updatePreview() {
         dst->setHidden(!hasVisibleChild);
     };
     for (int i = 0; i < srcTree->topLevelItemCount(); i++)
-        copyItem(m_previewTree, srcTree->topLevelItem(i));
+        copyItem(nullptr, srcTree->topLevelItem(i));
     m_previewTree->expandAll();
 }
 
 static const QString MARK_NO   = QString::fromUtf8("\xe2\x98\x90");
 static const QString MARK_YES  = QString::fromUtf8("\xe2\x98\x91");
 static const QString MARK_HALF = QString::fromUtf8("\xe2\x98\x92");
-
-enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName };
 
 TestListPanel::TestListPanel(QWidget* parent)
     : QWidget(parent)
