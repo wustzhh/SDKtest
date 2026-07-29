@@ -225,7 +225,6 @@ void FilterDialog::rebuildRuleWidgets() {
         sw->setCheckedNoAnim(r.include);
         sw->setMinimumSize(50,28);
         sw->setMaximumSize(50,28);
-        sw->setFixedSize(36,20);
         connect(sw, &ToggleSwitch::toggled, this, [this,i,chip,sw](bool on){
             m_rules[i].include = on;
             chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(on ? "#d1fae5" : "#fee2e2"));
