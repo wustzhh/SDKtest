@@ -347,7 +347,8 @@ TestTreePanel::TestTreePanel(QWidget* parent)
     m_btnDeselectAll = new QPushButton("全消", this);
     m_btnDeselectAll->setFixedHeight(28);m_btnDeselectAll->setStyleSheet(tbBtn);
     m_btnReverseFilter = new QPushButton(QString::fromUtf8("\xf0\x9f\x94\x8d \xe7\xad\x9b\xe9\x80\x89"), this);
-    m_btnReverseFilter->setFixedHeight(28);m_btnReverseFilter->setStyleSheet(tbBtn);
+    m_btnReverseFilter->setFixedHeight(28);m_btnReverseFilter->setMinimumWidth(72);
+    m_btnReverseFilter->setStyleSheet(tbBtn + "QPushButton{padding:0 10px;font-size:13px;}");
     m_btnReverseFilter->setToolTip(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
     m_lblStats = new QLabel("0", this);
     tb->addWidget(m_btnSelectAll);
