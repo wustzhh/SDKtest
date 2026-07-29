@@ -104,18 +104,49 @@ AdvancedFilterDialog::AdvancedFilterDialog(const QVector<TestCase>& allCases, QW
     connect(m_previewTree, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int){
         item->setExpanded(!item->isExpanded());
     });
-    // Alt+数字快捷键（和主界面一致）
+    // Alt+数字折叠, Alt+Shift+数字展开（和主界面一致）
     for (int d = 0; d <= 3; d++) {
-        auto* sc = new QShortcut(QKeySequence(Qt::ALT | (Qt::Key_0 + d)), this);
-        connect(sc, &QShortcut::activated, this, [this,d]() {
-            int target = (d == 0) ? 10 : d;  // Alt+0 = 全部展开
-            std::function<void(QTreeWidgetItem*,int)> setLvl = [&](QTreeWidgetItem* it, int depth) {
-                if (depth < target) it->setExpanded(true);
-                else it->setExpanded(false);
-                for (int i = 0; i < it->childCount(); i++) setLvl(it->child(i), depth+1);
+        auto* scCollapse = new QShortcut(QKeySequence(Qt::ALT | (Qt::Key_0 + d)), this);
+        connect(scCollapse, &QShortcut::activated, this, [this,d]() {
+            int level = (d == 0) ? 99 : d;
+            auto rec = [&](auto& self, QTreeWidgetItem* item, int depth) -> void {
+                for (int i = 0; i < item->childCount(); i++) {
+                    auto* child = item->child(i);
+                    if (!child->isHidden()) {
+                        if (depth == level) child->setExpanded(false);
+                        self(self, child, depth+1);
+                    }
+                }
             };
-            for (int i = 0; i < m_previewTree->topLevelItemCount(); i++)
-                setLvl(m_previewTree->topLevelItem(i), 1);
+            if (level == 1) {
+                for (int i = 0; i < m_previewTree->topLevelItemCount(); i++)
+                    m_previewTree->topLevelItem(i)->setExpanded(false);
+            } else {
+                for (int i = 0; i < m_previewTree->topLevelItemCount(); i++)
+                    rec(rec, m_previewTree->topLevelItem(i), 2);
+            }
+        });
+        auto* scExpand = new QShortcut(QKeySequence(Qt::ALT | Qt::SHIFT | (Qt::Key_0 + d)), this);
+        connect(scExpand, &QShortcut::activated, this, [this,d]() {
+            int level = (d == 0) ? 99 : d;
+            auto rec = [&](auto& self, QTreeWidgetItem* item, int depth) -> void {
+                for (int i = 0; i < item->childCount(); i++) {
+                    auto* child = item->child(i);
+                    if (!child->isHidden()) {
+                        if (depth <= level) child->setExpanded(true);
+                        self(self, child, depth+1);
+                    }
+                }
+            };
+            if (level == 1) {
+                for (int i = 0; i < m_previewTree->topLevelItemCount(); i++)
+                    m_previewTree->topLevelItem(i)->setExpanded(true);
+            } else {
+                for (int i = 0; i < m_previewTree->topLevelItemCount(); i++) {
+                    m_previewTree->topLevelItem(i)->setExpanded(true);
+                    rec(rec, m_previewTree->topLevelItem(i), 2);
+                }
+            }
         });
     }
     lay->addWidget(m_previewTree, 1);
