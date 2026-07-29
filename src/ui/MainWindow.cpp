@@ -1584,10 +1584,10 @@ void MainWindow::refreshScenarioCombo() {
         const auto& s = scs[i];
         m_scenarioCombo->addItem(s.name);
         if (!targetName.isEmpty() && s.name == targetName)
-            restoreIdx = i + 1;  // +1 因为第0项是占位符
+            restoreIdx = i + 1;
     }
-    m_scenarioCombo->setCurrentIndex(restoreIdx);
     m_scenarioCombo->blockSignals(false);
+    m_scenarioCombo->setCurrentIndex(restoreIdx);  // 移到blockSignals之后触发加载
     // 恢复逐个运行复选框状态（从第1个方案）
     if (m_chkSingleTest) {
         m_chkSingleTest->setChecked(!scs.isEmpty() && scs[0].singleTest);
