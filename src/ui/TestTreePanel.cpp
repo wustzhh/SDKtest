@@ -211,14 +211,18 @@ void FilterDialog::rebuildRuleWidgets() {
         chip->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         connect(chip, &QWidget::customContextMenuRequested, this, [this,i](){ removeRule(i); });
         auto* hl = new QHBoxLayout(chip);
-        hl->setContentsMargins(12,4,6,4);
-        hl->setSpacing(4);
+        // 四种间距测试
+        int var = i % 4;
+        if (var == 0)      { hl->setContentsMargins(10,3,10,3); hl->setSpacing(0); }
+        else if (var == 1) { hl->setContentsMargins(10,3,10,3); hl->setSpacing(2); }
+        else if (var == 2) { hl->setContentsMargins(10,3,10,3); hl->setSpacing(4); }
+        // var==3: 不设置，用默认
         hl->setAlignment(Qt::AlignVCenter);
         auto* label = new QLabel(r.keyword);
-        label->setStyleSheet("background:transparent;font-size:14px;color:#374151;border:none;");
-        QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 120);
-        label->setText(elided);
-        if (elided != r.keyword) label->setToolTip(r.keyword);
+        label->setStyleSheet("font-size:14px;color:#374151;");
+        // 不同宽度限制
+        if (var <= 1) { QString elided = label->fontMetrics().elidedText(r.keyword, Qt::ElideRight, 80); label->setText(elided); if(elided!=r.keyword)label->setToolTip(r.keyword); }
+        else         { label->setText(r.keyword); }
         hl->addWidget(label);
         // 正/反：两个小按钮
         auto* sw = new ToggleSwitch;
