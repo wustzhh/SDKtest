@@ -221,6 +221,8 @@ void FilterDialog::rebuildRuleWidgets() {
         // 正/反：两个小按钮
         auto* sw = new ToggleSwitch;
         sw->setCheckedNoAnim(r.include);
+        sw->setFixedSize(44,24);
+        sw->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         sw->setFixedSize(36,20);
         connect(sw, &ToggleSwitch::toggled, this, [this,i,chip,sw](bool on){
             m_rules[i].include = on;
