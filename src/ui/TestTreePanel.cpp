@@ -206,6 +206,7 @@ void FilterDialog::rebuildRuleWidgets() {
         const auto& r = m_rules[i];
         auto* chip = new QWidget;
         chip->setStyleSheet(QString("background:%1;border-radius:6px;").arg(r.include ? "#d1fae5" : "#fee2e2"));
+        chip->setFixedHeight(30);
         chip->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(chip, &QWidget::customContextMenuRequested, this, [this,i](){ removeRule(i); });
         auto* hl = new QHBoxLayout(chip);
