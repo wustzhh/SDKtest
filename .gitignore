@@ -29,3 +29,4 @@ __pycache__/
 reports/
 /reports.7z
 config.json
+cout_output.txt
