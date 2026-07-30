@@ -63,12 +63,13 @@ echo pause
 ) > "%PACK_DIR%\uninstall.bat"
 echo   Done
 
-echo [5/5] Create zip...
+echo [5/5] Create zip (this may take a while for large SDK)...
 set "ZIP_NAME=%DEPLOY_DIR%test_runner_ui_portable.zip"
 if exist "%ZIP_NAME%" del "%ZIP_NAME%"
-powershell -NoProfile -Command "Compress-Archive -Path '%PACK_DIR%\*' -DestinationPath '%ZIP_NAME%' -Force" 2>nul
-echo   Done
-
+powershell -NoProfile -Command ^
+  "Add-Type -A 'System.IO.Compression.FileSystem'; ^
+   [System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%ZIP_NAME%','Optimal',$false); ^
+   Write-Host '  Done'"
 echo.
 echo ========================================
 echo   Output: %ZIP_NAME%
