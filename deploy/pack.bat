@@ -57,19 +57,17 @@ echo echo Done^^! ^& pause
 echo   Done
 
 :: Step 4: Compress
-echo [4/4] Compressing...
-set "OUTPUT=%DEPLOY_DIR%test_runner_ui_portable.zip"
+echo [4/4] Compressing (7z)...
+set "OUTPUT=%DEPLOY_DIR%test_runner_ui_portable.7z"
 if exist "%OUTPUT%" del /f "%OUTPUT%" 2>nul
 where 7z.exe >nul 2>nul
-if %errorlevel% equ 0 (
-    echo   Using 7z...
-    7z a -tzip -mx5 "%OUTPUT%" "%PACK_DIR%\*" >nul
-) else (
-    echo   Using PowerShell Compress-Archive...
-    powershell -NoProfile -Command "Compress-Archive -Path '%PACK_DIR%\*' -DestinationPath '%OUTPUT%' -Force" 2>nul
+if %errorlevel% neq 0 (
+    echo   [ERROR] 7-Zip not found. Install from https://7-zip.org/
+    pause & exit /b 1
 )
-
-if exist "%OUTPUT%" (for %%F in ("%OUTPUT%") do echo   Done: %%~zF bytes) else (echo   [ERROR] Failed to create zip & pause & exit /b 1)
+echo   Compressing with 7z -mx9 (may take a few minutes)...
+7z a -t7z -mx9 "%OUTPUT%" "%PACK_DIR%\*" >nul
+if exist "%OUTPUT%" (for %%F in ("%OUTPUT%") do echo   Done: %%~zF bytes) else (echo   [ERROR] Failed & pause & exit /b 1)
 echo ========================================
 echo   Output: %OUTPUT%
 echo ========================================
