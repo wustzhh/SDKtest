@@ -62,7 +62,7 @@ echo pause
 ) > "%PACK_DIR%\uninstall.bat"
 
 echo [5/5] Creating zip...
-set "ZIP_NAME=%ROOT%test_runner_ui_portable.zip"
+set "ZIP_NAME=%~dp0test_runner_ui_portable.zip"
 if exist "%ZIP_NAME%" del "%ZIP_NAME%"
 powershell -NoProfile -Command "Compress-Archive -Path '%PACK_DIR%\*' -DestinationPath '%ZIP_NAME%' -Force" 2>nul
 echo   OK
