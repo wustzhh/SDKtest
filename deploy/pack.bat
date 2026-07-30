@@ -81,17 +81,28 @@ echo pause
 ) > "%PACK_DIR%\uninstall.bat"
 echo   Done
 
-echo [5/5] Create zip (this may take a while for large SDK)...
-set "ZIP_NAME=%DEPLOY_DIR%test_runner_ui_portable.zip"
-if exist "%ZIP_NAME%" del /f "%ZIP_NAME%" 2>nul
-(echo Add-Type -A 'System.IO.Compression.FileSystem'
-echo [System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%ZIP_NAME%','Optimal',$false^)
-) > "%TEMP%\zip.ps1"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP%\zip.ps1" 2>nul
-del "%TEMP%\zip.ps1" 2>nul
-echo   Done
+echo [5/5] Compress...
+set "ZIP_NAME=%DEPLOY_DIR%test_runner_ui_portable"
+if exist "%ZIP_NAME%.7z" del /f "%ZIP_NAME%.7z" 2>nul
+if exist "%ZIP_NAME%.zip" del /f "%ZIP_NAME%.zip" 2>nul
+:: 优先用7z（压缩率更高），其次zip
+where 7z.exe >nul 2>nul
+if %errorlevel% equ 0 (
+    echo   Using 7z...
+    7z a -mx9 "%ZIP_NAME%.7z" "%PACK_DIR%\*" >nul
+    echo   Done: %ZIP_NAME%.7z
+) else (
+    echo   Using zip (install 7-Zip for smaller files^)...
+    (echo Add-Type -A 'System.IO.Compression.FileSystem'
+    echo [System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%ZIP_NAME%.zip','Optimal',$false^)
+    ) > "%TEMP%\zip.ps1"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP%\zip.ps1" 2>nul
+    del "%TEMP%\zip.ps1" 2>nul
+    echo   Done: %ZIP_NAME%.zip
+)
 echo.
 echo ========================================
-echo   Output: %ZIP_NAME%
+if exist "%ZIP_NAME%.7z" echo   Output: %ZIP_NAME%.7z
+if exist "%ZIP_NAME%.zip" echo   Output: %ZIP_NAME%.zip
 echo ========================================
 pause
