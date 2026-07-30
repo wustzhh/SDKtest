@@ -2,18 +2,19 @@ param([string]$ConfigPath, [string]$PackDir)
 
 $ErrorActionPreference = "Continue"
 
-$j = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$old = @("D:/pyProj/HUAWEISDK", "D:\\pyProj\\HUAWEISDK")
-$new = @("D:/test_runner_ui/sdk", "D:\\test_runner_ui\\sdk")
+$raw = Get-Content $ConfigPath -Raw -Encoding UTF8
+if ($raw[0] -eq [char]0xfeff) { $raw = $raw.Substring(1) }
 
-foreach ($p in $j.profiles) {
-    for ($i = 0; $i -lt 2; $i++) {
-        if ($p.test_binary) { $p.test_binary = $p.test_binary.Replace($old[$i], $new[$i]) }
-        $nd = @(); foreach ($d in $p.dependencies) { $nd += $d.Replace($old[$i], $new[$i]) }
-        $p.dependencies = $nd
-        if ($p.env_vars.MODEL_DIR) { $p.env_vars.MODEL_DIR = $p.env_vars.MODEL_DIR.Replace($old[$i], $new[$i]) }
-    }
-}
-$j.config_path = "D:/.SDKtest/config.json"
+# JSON文本中的路径以两种形式存在：
+#   正斜杠：  "path": "D:/pyProj/HUAWEISDK/..."
+#   反斜杠：  "path": "D:\\pyProj\\HUAWEISDK\\..."
+# 原始格式(尾斜杠、大小写)完全保留
+
+$raw = $raw.Replace("D:/pyProj/HUAWEISDK", "D:/test_runner_ui/sdk")
+$raw = $raw.Replace("D:\\pyProj\\HUAWEISDK", "D:\\test_runner_ui\\sdk")
+
+# 添加 config_path 字段
+$j = $raw | ConvertFrom-Json
+$j | Add-Member -MemberType NoteProperty -Name "config_path" -Value "D:/.SDKtest/config.json" -Force -ErrorAction SilentlyContinue
 $out = Join-Path $PackDir "config.json"
 $j | ConvertTo-Json -Depth 10 | Set-Content $out -Encoding UTF8
