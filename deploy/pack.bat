@@ -6,9 +6,9 @@ echo   Pack script for test_runner_ui
 echo ========================================
 echo.
 
-set "ROOT=%~dp0.."
-set "PACK_DIR=%ROOT%\pack"
-set "DIST_DIR=%ROOT%\dist"
+set "ROOT=%~dp0..\"
+set "PACK_DIR=%ROOT%pack"
+set "DIST_DIR=%ROOT%dist"
 
 if not exist "%ROOT%config.json" (
     echo [ERROR] config.json not found in script dir
