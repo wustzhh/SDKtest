@@ -35,8 +35,26 @@ if exist "%SDK_DIR%" (
 )
 
 echo [3/5] Fix config paths...
-powershell -NoProfile -Command "$c = Get-Content '%ROOT%config.json' -Raw -Encoding UTF8 | ConvertFrom-Json; foreach ($p in $c.profiles) { $p.test_binary = $p.test_binary -replace 'D:/pyProj/HUAWEISDK','D:/test_runner_ui/sdk'; $nd = @(); foreach ($d in $p.dependencies) { $nd += $d -replace 'D:/pyProj/HUAWEISDK','D:/test_runner_ui/sdk' }; $p.dependencies = $nd; if ($p.env_vars.MODEL_DIR) { $p.env_vars.MODEL_DIR = $p.env_vars.MODEL_DIR -replace 'D:/pyProj/HUAWEISDK','D:/test_runner_ui/sdk' -replace 'D:\\\\pyProj\\\\HUAWEISDK','D:\\\\test_runner_ui\\\\sdk' } }; $c.config_path = 'D:/.SDKtest/config.json'; $c | ConvertTo-Json -Depth 10 | Set-Content '%PACK_DIR%\config.json' -Encoding UTF8" 2>nul
-if not exist "%PACK_DIR%\config.json" copy "%ROOT%config.json" "%PACK_DIR%\config.json" >nul
+set "CFG=%ROOT%config.json"
+set "OUT=%PACK_DIR%\config.json"
+(
+echo $j = Get-Content '%CFG%' -Raw -Encoding UTF8 ^| ConvertFrom-Json
+echo $old = @('D:/pyProj/HUAWEISDK', 'D:\\pyProj\\HUAWEISDK'^)
+echo $new = @('D:/test_runner_ui/sdk', 'D:\\test_runner_ui\\sdk'^)
+echo foreach ($p in $j.profiles^) {
+echo   for ($i=0; $i -lt 2; $i++^) {
+echo     if ($p.test_binary^) { $p.test_binary = $p.test_binary.Replace($old[$i], $new[$i]^) }
+echo     $nd = @(^); foreach ($d in $p.dependencies^) { $nd += $d.Replace($old[$i], $new[$i]^) }
+echo     $p.dependencies = $nd
+echo     if ($p.env_vars.MODEL_DIR^) { $p.env_vars.MODEL_DIR = $p.env_vars.MODEL_DIR.Replace($old[$i], $new[$i]^) }
+echo   }
+echo }
+echo $j.config_path = 'D:/.SDKtest/config.json'
+echo $j ^| ConvertTo-Json -Depth 10 ^| Set-Content '%OUT%' -Encoding UTF8
+) > "%TEMP%\fix_conf.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP%\fix_conf.ps1" 2>nul
+del "%TEMP%\fix_conf.ps1" 2>nul
+if not exist "%OUT%" copy "%CFG%" "%OUT%" >nul
 echo   Done
 
 echo [4/5] Generate scripts...
@@ -65,11 +83,13 @@ echo   Done
 
 echo [5/5] Create zip (this may take a while for large SDK)...
 set "ZIP_NAME=%DEPLOY_DIR%test_runner_ui_portable.zip"
-if exist "%ZIP_NAME%" del "%ZIP_NAME%"
-powershell -NoProfile -Command ^
-  "Add-Type -A 'System.IO.Compression.FileSystem'; ^
-   [System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%ZIP_NAME%','Optimal',$false); ^
-   Write-Host '  Done'"
+if exist "%ZIP_NAME%" del /f "%ZIP_NAME%" 2>nul
+(echo Add-Type -A 'System.IO.Compression.FileSystem'
+echo [System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%ZIP_NAME%','Optimal',$false^)
+) > "%TEMP%\zip.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP%\zip.ps1" 2>nul
+del "%TEMP%\zip.ps1" 2>nul
+echo   Done
 echo.
 echo ========================================
 echo   Output: %ZIP_NAME%
