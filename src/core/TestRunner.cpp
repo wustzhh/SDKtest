@@ -44,7 +44,7 @@ void TestRunner::run(const QString& binaryPath,
     m_dependencies = dependencies;
     m_expectedTests = expectedTests.isEmpty() ? cases : expectedTests;
     m_singleTest = singleTest;
-    m_totalCount = qMax(actualTotal, m_expectedTests.size());
+    m_totalCount = actualTotal;
     m_doneCount = 0;
     m_nextBatchIdx = 0;
     m_batchesFinished = 0;
