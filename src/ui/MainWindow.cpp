@@ -554,7 +554,8 @@ void MainWindow::onRunSelected() {
     }
 
     int actualRunCount = sel.size();
-    QVector<TestCase> originalSel = sel;  // 保存优化前的完整用例列表（含 DISABLED）
+    QVector<TestCase> originalSel = sel;
+    LOG("RUN", QString("Selected: %1 tests (discovery=%2)").arg(sel.size()).arg(m_loader.testCases().size()));
     // 按套件优化 filter：全选所有用例或部分选中都走同一路径
     // 每个套件若全选则用 "Suite.*"，否则逐个添加
     bool allSelected = sel.size() == m_loader.testCases().size();
