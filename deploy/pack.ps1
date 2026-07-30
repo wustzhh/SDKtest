@@ -3,47 +3,47 @@ param(
     [string]$PackDir
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 Write-Host "[2/5] Parsing config and collecting files..."
 
 $raw = Get-Content $ConfigPath -Raw -Encoding UTF8
-# remove BOM if present
 if ($raw[0] -eq 0xfeff) { $raw = $raw.Substring(1) }
 $config = $raw | ConvertFrom-Json
 $todo = @()
 
 foreach ($p in $config.profiles) {
-    # collect test binary and its local DLLs
+    Write-Host "  Profile: $($p.name)"
     $exe = $p.test_binary
     if ($exe -and (Test-Path $exe)) {
+        Write-Host "    exe OK: $exe"
         $todo += @{src=$exe; dst='bin\' + (Split-Path $exe -Leaf)}
         $exeDir = Split-Path $exe -Parent
-        Get-ChildItem $exeDir -Filter *.dll -ErrorAction SilentlyContinue | ForEach-Object {
-            $todo += @{src=$_.FullName; dst='bin\' + $_.Name}
+        foreach ($f in (Get-ChildItem $exeDir -Filter *.dll -ErrorAction SilentlyContinue)) {
+            $todo += @{src=$f.FullName; dst='bin\' + $f.Name}
         }
+        Write-Host "    dlls from exe dir collected"
     }
-    # collect dependency dir DLLs
     foreach ($dep in $p.dependencies) {
         if (Test-Path $dep) {
-            Get-ChildItem $dep -File -ErrorAction SilentlyContinue | ForEach-Object {
-                $todo += @{src=$_.FullName; dst='bin\' + $_.Name}
+            foreach ($f in (Get-ChildItem $dep -File -ErrorAction SilentlyContinue)) {
+                $todo += @{src=$f.FullName; dst='bin\' + $f.Name}
             }
+            Write-Host "    dep OK: $dep"
         }
     }
-    # collect model files from MODEL_DIR
     $modelDir = $p.env_vars.MODEL_DIR
     if ($modelDir -and (Test-Path $modelDir)) {
-        Get-ChildItem $modelDir -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
-            $rel = $_.FullName.Substring($modelDir.Length).TrimStart('\')
-            $todo += @{src=$_.FullName; dst='models\' + $rel}
+        foreach ($f in (Get-ChildItem $modelDir -Recurse -File -ErrorAction SilentlyContinue)) {
+            $rel = $f.FullName.Substring($modelDir.Length).TrimStart('\')
+            $todo += @{src=$f.FullName; dst='models\' + $rel}
         }
+        Write-Host "    models OK: $modelDir"
     }
 }
 
 # dedup
-$todo = $todo | Sort-Object -Property dst -Unique
-
+$todo = $todo | Group-Object { $_.src } | ForEach-Object { $_.Group[0] }
 Write-Host "  Found $($todo.Count) files to copy"
 
 Write-Host "[3/5] Copying files..."
@@ -70,5 +70,5 @@ foreach ($p in $config.profiles) {
     }
 }
 $config.config_path = 'D:/.SDKtest/config.json'
-$config | ConvertTo-Json -Depth 10 | ForEach-Object { $_ -replace '^\xEF\xBB\xBF', '' } | Set-Content (Join-Path $PackDir 'config.json') -Encoding UTF8
+$config | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $PackDir 'config.json') -Encoding UTF8
 Write-Host "  OK"
