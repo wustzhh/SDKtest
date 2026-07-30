@@ -12,7 +12,7 @@ echo ========================================
 echo   test_runner_ui - Pack
 echo ========================================
 echo.
-if not exist "%ROOT%config.json" (echo [ERROR] config.json not found & pause & exit /b 1)
+if not exist "%~dp0config.json" (echo [ERROR] config.json not found & pause & exit /b 1)
 
 :: Clean
 if exist "%PACK_DIR%" rmdir /s /q "%PACK_DIR%"
@@ -36,8 +36,8 @@ if exist "%SDK_DIR%" (
 
 :: Step 3: Config fix + scripts
 echo [3/4] Fix config...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0fix_conf.ps1" -ConfigPath "%ROOT%config.json" -PackDir "%PACK_DIR%" 2>nul
-if not exist "%PACK_DIR%\config.json" copy "%ROOT%config.json" "%PACK_DIR%\config.json" >nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0fix_conf.ps1" -ConfigPath "%~dp0config.json" -PackDir "%PACK_DIR%" 2>nul
+if not exist "%PACK_DIR%\config.json" copy "%~dp0config.json" "%PACK_DIR%\config.json" >nul
 (
 echo @echo off
 echo robocopy "%%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np ^>nul
