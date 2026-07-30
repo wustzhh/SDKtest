@@ -1,16 +1,18 @@
 @echo off
 setlocal enabledelayedexpansion
+pushd "%~dp0..\"
+set "ROOT=%CD%\"
+popd
+
+set "DEPLOY_DIR=%~dp0"
+set "PACK_DIR=%ROOT%pack"
+set "DIST_DIR=%ROOT%dist"
+set "SDK_DIR=D:\pyProj\HUAWEISDK"
 
 echo ========================================
 echo   test_runner_ui - Pack
 echo ========================================
 echo.
-
-set "ROOT=%~dp0..\"
-set "DEPLOY_DIR=%~dp0"
-set "PACK_DIR=%ROOT%pack"
-set "DIST_DIR=%ROOT%dist"
-set "SDK_DIR=D:\pyProj\HUAWEISDK"
 
 if not exist "%ROOT%config.json" (
     echo [ERROR] config.json not found
