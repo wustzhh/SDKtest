@@ -357,18 +357,8 @@ void TestRunner::onBatchFinished(BatchState* batch) {
     // 启动下一批
     startNextBatch();
 
-    // 全部完成时才处理未出现的用例（避免跨批次重复计数）
+    // 全部完成
     if (m_batchesFinished >= m_batches.size()) {
-        for (const auto& tc : m_expectedTests) {
-            QString full = tc.fullName();
-            if (tc.caseName == "*" || m_seen.contains(full)) continue;
-            TestRunResult res;
-            res.testCase = tc;
-            res.status = m_anyCrashed ? "CRASHED" : "SKIPPED";
-            m_doneCount++;
-            m_seen.insert(full);
-            emit testFinished(res);
-        }
         safeProgress(m_totalCount);
         emit allFinished();
     }

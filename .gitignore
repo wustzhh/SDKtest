@@ -30,3 +30,4 @@ reports/
 /reports.7z
 config.json
 cout_output.txt
+deploy/test_runner_ui_portable.7z
