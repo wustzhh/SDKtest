@@ -75,22 +75,15 @@ set "OUTPUT=%DEPLOY_DIR%test_runner_ui_portable"
 if exist "%OUTPUT%.zip" del /f "%OUTPUT%.zip" 2>nul
 if exist "%OUTPUT%.7z" del /f "%OUTPUT%.7z" 2>nul
 
-:: Try 7z first (fast + small), then tar.exe, then fallback
+:: Try 7z first, then PowerShell (tar.exe has path issues on Windows)
 where 7z.exe >nul 2>nul && (
     echo   Using 7z...
     7z a -tzip -mx5 "%OUTPUT%.zip" "%PACK_DIR%\*" >nul
-    echo   Done: %OUTPUT%.zip
 ) || (
-    where tar.exe >nul 2>nul && (
-        echo   Using tar.exe...
-        tar -a -cf "%OUTPUT%.zip" -C "%PACK_DIR%" . >nul 2>nul
-        echo   Done: %OUTPUT%.zip
-    ) || (
-        echo   Using PowerShell...
-        powershell -NoProfile -Command "Add-Type -A 'System.IO.Compression.FileSystem';[System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%OUTPUT%.zip','Fastest',$false)" 2>nul
-        echo   Done: %OUTPUT%.zip
-    )
+    echo   Using PowerShell...
+    powershell -NoProfile -Command "Add-Type -A 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('%PACK_DIR%','%OUTPUT%.zip','Fastest',$false)" 2>nul
 )
+echo   Done: %OUTPUT%.zip
 
 :: Verify
 if exist "%OUTPUT%.zip" (
