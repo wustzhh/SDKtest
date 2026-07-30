@@ -321,29 +321,6 @@ void TestRunner::onBatchFinished(BatchState* batch) {
         m_doneCount++;
         emit testFinished(res);
     }
-    // XML 中有但 stdout 中缺失的测试（splitRe 解析遗漏等）
-    for (auto it = allProps.begin(); it != allProps.end(); ++it) {
-        if (m_seen.contains(it.key()) || it.value().isEmpty()) continue;
-        int dot = it.key().lastIndexOf('.');
-        if (dot < 0) continue;
-        TestRunResult res;
-        res.testCase.suiteName = it.key().left(dot);
-        res.testCase.caseName  = it.key().mid(dot + 1);
-        QString fullName = it.key();
-        // 优先用 XML status
-        if (xmlStatuses.contains(fullName)) {
-            QString xst = xmlStatuses[fullName];
-            res.status = (xst == "FAILED") ? "FAILED" :
-                         (xst == "notrun") ? "SKIPPED" : "PASSED";
-        } else {
-            res.status = "SKIPPED";
-        }
-        res.durationMs = xmlDurations.value(fullName, 0);
-        res.properties = it.value();
-        m_doneCount++;
-        m_seen.insert(fullName);
-        emit testFinished(res);
-    }
 
     // 进度
     safeProgress(m_doneCount);
