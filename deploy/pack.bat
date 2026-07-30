@@ -61,26 +61,8 @@ echo [4/4] Compressing...
 set "OUTPUT=%DEPLOY_DIR%test_runner_ui_portable.7z"
 if exist "%OUTPUT%" del /f "%OUTPUT%" 2>nul
 
-:: Find 7z: 1) deploy\7za.exe  2) system PATH
-set "SZ="
-if exist "%~dp07za.exe" set "SZ=%~dp07za.exe"
-if "%SZ%"=="" where 7z.exe >nul 2>nul && set "SZ=7z.exe"
-if "%SZ%"=="" where 7za.exe >nul 2>nul && set "SZ=7za.exe"
-if "%SZ%"=="" (
-    echo   [WARN] 7-Zip not found
-    echo   Downloading 7za.exe (1.2MB)...
-    powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://www.7-zip.org/a/7za920.zip' -OutFile '%TEMP%\7za.zip'" 2>nul
-    powershell -NoProfile -Command "Expand-Archive -Path '%TEMP%\7za.zip' -DestinationPath '%TEMP%\7z_tmp' -Force" 2>nul
-    if exist "%TEMP%\7z_tmp\7za.exe" (
-        copy "%TEMP%\7z_tmp\7za.exe" "%~dp07za.exe" >nul
-        set "SZ=%~dp07za.exe"
-        del /q "%TEMP%\7za.zip" 2>nul & rmdir /s /q "%TEMP%\7z_tmp" 2>nul
-    )
-    if "%SZ%"=="" (
-        echo   [ERROR] Cannot get 7z. Download from https://7-zip.org/ and put 7za.exe in deploy\
-        pause & exit /b 1
-    )
-)
+:: Use bundled 7za.exe (always present in deploy/)
+set "SZ=%~dp07za.exe"
 echo   Compressing with 7z -mx9...
 "%SZ%" a -t7z -mx9 "%OUTPUT%" "%PACK_DIR%\*" >nul
 if exist "%OUTPUT%" (for %%F in ("%OUTPUT%") do echo   Done: %%~zF bytes) else (echo   [ERROR] Failed & pause & exit /b 1)
