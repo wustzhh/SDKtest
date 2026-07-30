@@ -106,25 +106,30 @@ void TestRunner::startNextBatch() {
 
     // 构造 filter
     QStringList filters;
-    // 聚合优化：同一suite下全部用例勾选 → suite.*
-    QMap<QString, int> suiteTotal;  // 每个suite的总用例数
-    for (const auto& tc : m_expectedTests)
-        suiteTotal[tc.suiteName]++;
-    QMap<QString, int> suiteHits;   // 当前批次中每个suite勾选的数量
-    for (const auto& tc : batch->cases) {
-        if (tc.suiteName == "*") { filters = {"*"}; break; }
-        if (tc.caseName == "*") { suiteHits[tc.suiteName] = suiteTotal[tc.suiteName]; continue; }
-        suiteHits[tc.suiteName]++;
-    }
-    if (filters.isEmpty()) {
-        for (auto it = suiteHits.begin(); it != suiteHits.end(); ++it) {
-            if (it.value() >= suiteTotal[it.key()])
-                filters << it.key() + ".*";  // suite全选
-            else {
-                // 逐个拼接（但会用上一个修复中的全选兜底）
-                for (const auto& tc : batch->cases)
-                    if (tc.suiteName == it.key() && tc.caseName != "*")
-                        filters << tc.fullName();
+    if (m_singleTest) {
+        // 逐个模式：精确filter，不聚合
+        for (const auto& tc : batch->cases)
+            filters << tc.fullName();
+    } else {
+        // 聚合优化：同一suite下全部用例勾选 → suite.*
+        QMap<QString, int> suiteTotal;
+        for (const auto& tc : m_expectedTests)
+            suiteTotal[tc.suiteName]++;
+        QMap<QString, int> suiteHits;
+        for (const auto& tc : batch->cases) {
+            if (tc.suiteName == "*") { filters = {"*"}; break; }
+            if (tc.caseName == "*") { suiteHits[tc.suiteName] = suiteTotal[tc.suiteName]; continue; }
+            suiteHits[tc.suiteName]++;
+        }
+        if (filters.isEmpty()) {
+            for (auto it = suiteHits.begin(); it != suiteHits.end(); ++it) {
+                if (it.value() >= suiteTotal[it.key()])
+                    filters << it.key() + ".*";
+                else {
+                    for (const auto& tc : batch->cases)
+                        if (tc.suiteName == it.key() && tc.caseName != "*")
+                            filters << tc.fullName();
+                }
             }
         }
     }
