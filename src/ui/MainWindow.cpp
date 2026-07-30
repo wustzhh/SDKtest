@@ -1374,6 +1374,13 @@ void MainWindow::onAbout() {
 }
 
 void MainWindow::onTestFinished(const TestRunResult& result) {
+    // 去重保护：同名用例只保留第一次结果
+    QString fname = result.testCase.fullName();
+    if (m_seenResults.contains(fname)) {
+        LOG("DUP", "Duplicate testFinished: " + fname);
+        return;
+    }
+    m_seenResults.insert(fname);
     auto parsed = ResultParser::parse(
         result.testCase, result.rawStdout, result.rawStderr,
         result.durationMs, result.status);
