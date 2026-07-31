@@ -1,6 +1,12 @@
 @echo off
 echo Installing test_runner_ui...
 echo.
+:: Already installed?
+if exist "D:\.SDKtest\.installed" (
+  echo [SKIP] Already installed. Run uninstall.bat first.
+  pause
+  exit /b
+)
 :: Backup existing config if any
 if exist "D:\.SDKtest\config.json" (
   echo [Backup] config.json
@@ -11,7 +17,6 @@ robocopy "%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
 robocopy "%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
 if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
 copy /y "%~dp0config.json" "D:\.SDKtest\config.json" >nul
-:: Mark installed
 echo installed > "D:\.SDKtest\.installed"
 echo.
 echo [2/2] Starting...
