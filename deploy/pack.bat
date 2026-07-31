@@ -22,6 +22,9 @@ echo [1/4] Copy app...
 mkdir "%PACK_DIR%\app" 2>nul
 copy /y "%DIST_DIR%\test_runner_ui.exe" "%PACK_DIR%\app\" >nul
 copy /y "%DIST_DIR%\*.dll" "%PACK_DIR%\app\" >nul 2>nul
+if exist "%DIST_DIR%\platforms" robocopy "%DIST_DIR%\platforms" "%PACK_DIR%\app\platforms" /e /njh /njs /ndl /np >nul
+if exist "%DIST_DIR%\template_report.html" copy /y "%DIST_DIR%\template_report.html" "%PACK_DIR%\app\" >nul
+if exist "%DIST_DIR%\concrt140.dll" copy /y "%DIST_DIR%\concrt140*.dll" "%DIST_DIR%\msvcp140*.dll" "%DIST_DIR%\vcruntime140*.dll" "%DIST_DIR%\vccorlib140*.dll" "%PACK_DIR%\app\" >nul 2>nul
 echo   Done
 
 :: Step 2: SDK
