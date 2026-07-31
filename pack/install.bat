@@ -7,10 +7,15 @@ if exist "D:\.SDKtest\.installed" (
   pause
   exit /b
 )
-:: Backup existing config if any
+:: Backup existing config (only if not already backed up)
 if exist "D:\.SDKtest\config.json" (
-  echo [Backup] config.json
-  move /y "D:\.SDKtest\config.json" "D:\.SDKtest\config.json.bak"
+  if not exist "D:\.SDKtest\config.json.bak" (
+    echo [Backup] config.json
+    move /y "D:\.SDKtest\config.json" "D:\.SDKtest\config.json.bak"
+  ) else (
+    echo [Backup] config.json.bak exists, keeping original backup
+    del /q "D:\.SDKtest\config.json"
+  )
 )
 echo [1/2] Copying files...
 robocopy "%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
