@@ -134,7 +134,7 @@ void TestRunner::startNextBatch() {
         }
     }
     QString filter = filters.join(":");
-    if (batch->cases.size() >= m_totalCount || filter.length() > 8000)
+    if (batch->cases.size() >= m_totalCount && m_totalCount > 1)
         filter = "*";
 
     batch->accumulatedStdout.clear();
