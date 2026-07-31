@@ -14,8 +14,9 @@ echo ========================================
 echo.
 if not exist "%~dp0config.json" (echo [ERROR] config.json not found & pause & exit /b 1)
 
-:: Clean
-if exist "%PACK_DIR%" rmdir /s /q "%PACK_DIR%"
+:: Keep existing pack, only update app/config/scripts (SDK is large, skip if exists)
+if not exist "%PACK_DIR%" mkdir "%PACK_DIR%"
+if not exist "%PACK_DIR%\sdk" mkdir "%PACK_DIR%\sdk"
 
 :: Step 1: App
 echo [1/4] Copy app...
