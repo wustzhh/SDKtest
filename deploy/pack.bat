@@ -43,27 +43,57 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0fix_conf.ps1" -ConfigP
 if not exist "%PACK_DIR%\config.json" copy "%~dp0config.json" "%PACK_DIR%\config.json" >nul
 (
 echo @echo off
+echo setlocal enabledelayedexpansion
 echo echo Installing test_runner_ui...
 echo echo.
-echo echo [1/3] Copying app...
-echo robocopy "%%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
-echo echo [2/3] Copying SDK...
-echo robocopy "%%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
-echo echo [3/3] Installing config...
-echo if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
-echo copy /y "%%~dp0config.json" "D:\.SDKtest\config.json"
+echo :: Backup existing data if any
+echo if exist "D:\test_runner_ui\" ^(
+echo   echo [Backup] D:\test_runner_ui -^> D:\test_runner_ui.bak
+echo   if exist "D:\test_runner_ui.bak\" rmdir /s /q "D:\test_runner_ui.bak"
+echo   move "D:\test_runner_ui" "D:\test_runner_ui.bak"
+echo ^)
+echo if exist "D:\.SDKtest\config.json" ^(
+echo   echo [Backup] D:\.SDKtest\config.json -^> config.json.bak
+echo   move /y "D:\.SDKtest\config.json" "D:\.SDKtest\config.json.bak"
+echo ^)
 echo echo.
-echo echo Starting...
+echo echo [1/2] Copying files...
+echo robocopy "%%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
+echo robocopy "%%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
+echo if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
+echo copy /y "%%~dp0config.json" "D:\.SDKtest\config.json" ^>nul
+echo echo.
+echo echo [2/2] Starting...
 echo start "" "D:\test_runner_ui\app\test_runner_ui.exe"
 echo echo Done^^!
 echo pause
 ) > "%PACK_DIR%\install.bat"
 (
 echo @echo off
-echo if exist "D:\test_runner_ui" rmdir /s /q "D:\test_runner_ui"
-echo if exist "D:\.SDKtest\config.json" del /q "D:\.SDKtest\config.json"
+echo echo Uninstalling test_runner_ui...
+echo echo.
+echo :: Remove our files
+echo if exist "D:\test_runner_ui" ^(
+echo   echo [Remove] D:\test_runner_ui
+echo   rmdir /s /q "D:\test_runner_ui"
+echo ^)
+echo if exist "D:\.SDKtest\config.json" ^(
+echo   echo [Remove] D:\.SDKtest\config.json
+echo   del /q "D:\.SDKtest\config.json"
+echo ^)
+echo :: Restore original data
+echo if exist "D:\test_runner_ui.bak\" ^(
+echo   echo [Restore] D:\test_runner_ui.bak -^> D:\test_runner_ui
+echo   move "D:\test_runner_ui.bak" "D:\test_runner_ui"
+echo ^)
+echo if exist "D:\.SDKtest\config.json.bak" ^(
+echo   echo [Restore] D:\.SDKtest\config.json.bak -^> config.json
+echo   move /y "D:\.SDKtest\config.json.bak" "D:\.SDKtest\config.json"
+echo ^)
+echo :: Clean empty dir
 echo dir /b "D:\.SDKtest" 2^>nul ^| findstr "^" ^>nul ^|^| rmdir /q "D:\.SDKtest"
-echo echo Done^^! ^& pause
+echo echo Done^^!
+echo pause
 ) > "%PACK_DIR%\uninstall.bat"
 echo   Done
 
