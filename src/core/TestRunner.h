@@ -62,7 +62,8 @@ private:
     static const int MAX_CONCURRENT = 10;
     static const int MAX_FILTER_LEN = 2000;
     bool m_singleTest = false;
-
+    bool m_cancelled = false;
+    bool m_killed = false;
     QString         m_binaryPath;
     QString         m_workingDir;
     int             m_totalCount = 0;

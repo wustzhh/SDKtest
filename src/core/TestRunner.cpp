@@ -49,6 +49,7 @@ void TestRunner::run(const QString& binaryPath,
     m_nextBatchIdx = 0;
     m_batchesFinished = 0;
     m_activeCount = 0;
+    m_killed = false;
     m_cancelled = false;
     m_batches.clear();
     m_seen.clear();
@@ -356,15 +357,14 @@ void TestRunner::safeProgress(int done) {
 
 void TestRunner::cancel() {
     m_cancelled = true;
+    m_killed = true;
     for (auto& b : m_batches) {
-        if (b.process) {
-            if (b.process->state() != QProcess::NotRunning)
-                b.process->kill();
-            b.process->deleteLater();
-            b.process = nullptr;
+        if (b.process && b.process->state() != QProcess::NotRunning) {
+            b.process->kill();
+            b.process->waitForFinished(1000);
         }
     }
-    // 重置全部计数器，让 isRunning() 返回 false，UI 恢复可用
+
     m_activeCount = 0;
     m_nextBatchIdx = m_batches.size();
     m_batchesFinished = m_batches.size();
