@@ -44,27 +44,22 @@ if not exist "%PACK_DIR%\config.json" copy "%~dp0config.json" "%PACK_DIR%\config
 (
 echo @echo off
 echo setlocal enabledelayedexpansion
+echo set "MYDIR=%%~dp0"
+echo if "%%MYDIR:~-1%%"=="\" set "MYDIR=%%MYDIR:~0,-1%%"
 echo echo Installing test_runner_ui...
+echo echo   Source: %%MYDIR%%
 echo echo.
-echo :: Backup existing data if any
-echo if exist "D:\test_runner_ui\" ^(
-echo   echo [Backup] D:\test_runner_ui -^> D:\test_runner_ui.bak
-echo   if exist "D:\test_runner_ui.bak\" rmdir /s /q "D:\test_runner_ui.bak"
-echo   move "D:\test_runner_ui" "D:\test_runner_ui.bak"
-echo ^)
+echo :: Backup existing config if any
 echo if exist "D:\.SDKtest\config.json" ^(
 echo   echo [Backup] D:\.SDKtest\config.json -^> config.json.bak
 echo   move /y "D:\.SDKtest\config.json" "D:\.SDKtest\config.json.bak"
 echo ^)
-echo echo.
-echo echo [1/2] Copying files...
-echo robocopy "%%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
-echo robocopy "%%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
 echo if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
-echo copy /y "%%~dp0config.json" "D:\.SDKtest\config.json" ^>nul
+echo :: Read template and replace paths
+echo powershell -NoProfile -Command "$m='%%MYDIR%%';$mf=$m.Replace('\','/');$mb=$m.Replace('\','\\');$c=Get-Content '%%MYDIR%%\config.json' -Raw -Encoding UTF8;$c=$c -replace 'D:/test_runner_ui/sdk',($mf+'/sdk');$c=$c -replace 'D:\\\\test_runner_ui\\\\sdk',($mb+'\\\\sdk');$c | Set-Content 'D:\.SDKtest\config.json' -Encoding UTF8"
 echo echo.
-echo echo [2/2] Starting...
-echo start "" "D:\test_runner_ui\app\test_runner_ui.exe"
+echo echo Starting...
+echo start "" "%%MYDIR%%\app\test_runner_ui.exe"
 echo echo Done^^!
 echo pause
 ) > "%PACK_DIR%\install.bat"
@@ -72,22 +67,14 @@ echo pause
 echo @echo off
 echo echo Uninstalling test_runner_ui...
 echo echo.
-echo :: Remove our files
-echo if exist "D:\test_runner_ui" ^(
-echo   echo [Remove] D:\test_runner_ui
-echo   rmdir /s /q "D:\test_runner_ui"
-echo ^)
+echo :: Remove our config
 echo if exist "D:\.SDKtest\config.json" ^(
 echo   echo [Remove] D:\.SDKtest\config.json
 echo   del /q "D:\.SDKtest\config.json"
 echo ^)
-echo :: Restore original data
-echo if exist "D:\test_runner_ui.bak\" ^(
-echo   echo [Restore] D:\test_runner_ui.bak -^> D:\test_runner_ui
-echo   move "D:\test_runner_ui.bak" "D:\test_runner_ui"
-echo ^)
+echo :: Restore original config
 echo if exist "D:\.SDKtest\config.json.bak" ^(
-echo   echo [Restore] D:\.SDKtest\config.json.bak -^> config.json
+echo   echo [Restore] config.json.bak
 echo   move /y "D:\.SDKtest\config.json.bak" "D:\.SDKtest\config.json"
 echo ^)
 echo :: Clean empty dir
