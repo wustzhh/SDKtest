@@ -75,7 +75,6 @@ private:
     QStringList     m_dependencies;
     QMap<QString, QString> m_envVars;
     QElapsedTimer   m_elapsed;
-    bool            m_cancelled = false;
     int             m_lastRunCount = 0;
     int             m_lastDoneCount = 0;
     int             m_lastEmittedProgress = 0;

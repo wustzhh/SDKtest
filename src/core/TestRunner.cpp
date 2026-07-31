@@ -99,6 +99,9 @@ void TestRunner::run(const QString& binaryPath,
 
 void TestRunner::startNextBatch() {
     if (m_cancelled || m_nextBatchIdx >= m_batches.size()) return;
+    // 逐个模式串行执行，非逐个模式限制并发
+    if (m_singleTest && m_activeCount > 0) return;
+    if (!m_singleTest && m_activeCount >= 4) return;
 
     BatchState* batch = &m_batches[m_nextBatchIdx];
     int batchIdx = m_nextBatchIdx;
