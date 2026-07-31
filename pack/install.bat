@@ -7,8 +7,11 @@ echo.
 :: Backup entire .SDKtest if exists
 if exist "D:\.SDKtest" (
   echo [Backup] D:\.SDKtest -^> D:\.SDKtest.bak
-  if exist "D:\.SDKtest.bak" rmdir /s /q "D:\.SDKtest.bak"
-  move "D:\.SDKtest" "D:\.SDKtest.bak"
+  if exist "D:\.SDKtest.bak" (
+    echo [WARN] D:\.SDKtest.bak already exists, skipping backup
+  ) else (
+    move "D:\.SDKtest" "D:\.SDKtest.bak"
+  )
 )
 mkdir "D:\.SDKtest"
 echo [Install] Fixing paths...
