@@ -1,6 +1,12 @@
 @echo off
 echo Uninstalling test_runner_ui...
 echo.
+:: Only uninstall if we installed (backup exists)
+if not exist "D:\.SDKtest\config.json.bak" (
+  echo [SKIP] No backup found, nothing to uninstall.
+  pause
+  exit /b
+)
 :: Remove our files
 if exist "D:\test_runner_ui" (
   echo [Remove] D:\test_runner_ui
@@ -23,10 +29,8 @@ if exist "D:\.SDKtest\xml" (
   rmdir /s /q "D:\.SDKtest\xml"
 )
 :: Restore original config
-if exist "D:\.SDKtest\config.json.bak" (
-  echo [Restore] config.json.bak
-  move /y "D:\.SDKtest\config.json.bak" "D:\.SDKtest\config.json"
-)
+echo [Restore] config.json.bak
+move /y "D:\.SDKtest\config.json.bak" "D:\.SDKtest\config.json"
 :: Clean empty dir
 dir /b "D:\.SDKtest" 2>nul | findstr "^" >nul || rmdir /q "D:\.SDKtest"
 echo Done!
