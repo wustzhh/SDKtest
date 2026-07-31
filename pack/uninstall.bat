@@ -1,7 +1,11 @@
 @echo off
 echo Uninstalling test_runner_ui...
 echo.
-:: Remove our generated data
+:: Remove our files
+if exist "D:\test_runner_ui" (
+  echo [Remove] D:\test_runner_ui
+  rmdir /s /q "D:\test_runner_ui"
+)
 if exist "D:\.SDKtest\config.json" (
   echo [Remove] config.json
   del /q "D:\.SDKtest\config.json"
