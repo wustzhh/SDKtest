@@ -11,6 +11,8 @@ robocopy "%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
 robocopy "%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
 if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
 copy /y "%~dp0config.json" "D:\.SDKtest\config.json" >nul
+:: Mark installed
+echo installed > "D:\.SDKtest\.installed"
 echo.
 echo [2/2] Starting...
 start "" "D:\test_runner_ui\app\test_runner_ui.exe"
