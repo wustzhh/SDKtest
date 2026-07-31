@@ -43,12 +43,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0fix_conf.ps1" -ConfigP
 if not exist "%PACK_DIR%\config.json" copy "%~dp0config.json" "%PACK_DIR%\config.json" >nul
 (
 echo @echo off
-echo robocopy "%%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np ^>nul
-echo robocopy "%%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np ^>nul
+echo echo Installing test_runner_ui...
+echo echo.
+echo echo [1/3] Copying app...
+echo robocopy "%%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
+echo echo [2/3] Copying SDK...
+echo robocopy "%%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
+echo echo [3/3] Installing config...
 echo if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
-echo copy /y "%%~dp0config.json" "D:\.SDKtest\config.json" ^>nul
+echo copy /y "%%~dp0config.json" "D:\.SDKtest\config.json"
+echo echo.
+echo echo Starting...
 echo start "" "D:\test_runner_ui\app\test_runner_ui.exe"
-echo echo Done^^! ^& pause
+echo echo Done^^!
+echo pause
 ) > "%PACK_DIR%\install.bat"
 (
 echo @echo off
