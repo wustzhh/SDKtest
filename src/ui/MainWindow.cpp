@@ -530,6 +530,7 @@ void MainWindow::onLoadTests() {
         m_testList->loadTests(m_loader.testCases(), m_config.categories());
         m_centerResultView->clear();
         m_report = {};
+        m_seenResults.clear();
         // 如果加载时有预设方案，自动勾选对应用例
         if (m_scenarioCombo && m_scenarioCombo->currentIndex() > 0) {
             int scIdx = m_scenarioCombo->currentIndex() - 1;
@@ -580,7 +581,8 @@ void MainWindow::onRunSelected() {
 
     LOG("RUN", "Selected", QString::number(sel.size()) + " tests");
 
-    m_report = {};
+        m_report = {};
+        m_seenResults.clear();
     m_report.startTime = QDateTime::currentDateTime();
     m_report.testBinary = m_config.testBinary();
     m_report.filterPattern = allSelected ? "*" : "custom";
@@ -1629,7 +1631,8 @@ void MainWindow::refreshProfileCombo() {
             refreshProfileCombo();
             refreshScenarioCombo();
             m_centerResultView->clear();
-            m_report = {};
+        m_report = {};
+        m_seenResults.clear();
         });
     }
 }

@@ -907,7 +907,7 @@ void TestTreePanel::setAdvFilters(const QVector<FilterRule>& f, bool enabled) {
         m_btnReverseFilter->setStyleSheet(tbBtn);
     }
     if (enabled && !f.isEmpty()) {
-        // 应用筛选到用例树
+        // 应用筛选
         std::function<void(QTreeWidgetItem*)> apply = [&](QTreeWidgetItem* item) {
             if (item->childCount() == 0) {
                 QString suite = item->data(0, Role_SuiteName).toString();
@@ -936,6 +936,20 @@ void TestTreePanel::setAdvFilters(const QVector<FilterRule>& f, bool enabled) {
             apply(m_tree->topLevelItem(i));
             if (!m_tree->topLevelItem(i)->isHidden()) updateItemText(m_tree->topLevelItem(i));
         }
+        m_updating = false;
+        m_tree->viewport()->update();
+        updateStats();
+    } else {
+        // 禁用或清空筛选 → 显示全部
+        m_updating = true;
+        std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* item) {
+            item->setHidden(false);
+            for (int i = 0; i < item->childCount(); i++)
+                showAll(item->child(i));
+            if (item->childCount() > 0) updateItemText(item);
+        };
+        for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+            showAll(m_tree->topLevelItem(i));
         m_updating = false;
         m_tree->viewport()->update();
         updateStats();
