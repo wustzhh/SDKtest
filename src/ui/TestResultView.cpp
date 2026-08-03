@@ -92,13 +92,13 @@ TestResultView::TestResultView(QWidget* parent)
     m_tree->setMinimumHeight(100);
     m_tree->setColumnWidth(0, 24);
     m_tree->header()->setStretchLastSection(false);
-    m_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
     m_tree->setRootIsDecorated(true);
     m_tree->setAnimated(true);
     m_tree->setSelectionMode(QAbstractItemView::NoSelection);
     m_tree->setAlternatingRowColors(true);
     m_tree->setWordWrap(true);
     m_tree->setTextElideMode(Qt::ElideNone);
+    m_tree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_tree->setStyleSheet(
         "QTreeWidget { font-size:13px; border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
         "QTreeWidget::item { padding:6px 10px; min-height:28px; border-bottom:1px solid #f1f5f9; }"
