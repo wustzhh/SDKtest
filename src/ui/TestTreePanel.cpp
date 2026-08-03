@@ -1,6 +1,5 @@
 #include "TestTreePanel.h"
 
-#include "Logger.h"
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QShortcut>
@@ -907,7 +906,6 @@ void TestTreePanel::onAdvancedFilter() {
             emit selectionChanged(selectedTests().size());
         }
         emit filtersSaved();
-        LOG("FILTER", QString("Saved %1 rules, enabled=%2")
             .arg(m_advFilters.size()).arg(m_filterEnabled));
     }
 }
