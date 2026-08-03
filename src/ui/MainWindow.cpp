@@ -531,6 +531,8 @@ void MainWindow::onLoadTests() {
         m_centerResultView->clear();
         m_report = {};
         m_seenResults.clear();
+        // 重新应用当前高级筛选
+        m_testList->reapplyFilter();
         // 如果加载时有预设方案，自动勾选对应用例
         if (m_scenarioCombo && m_scenarioCombo->currentIndex() > 0) {
             int scIdx = m_scenarioCombo->currentIndex() - 1;
