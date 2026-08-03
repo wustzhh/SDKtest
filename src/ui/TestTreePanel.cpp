@@ -1,5 +1,6 @@
 #include "TestTreePanel.h"
 
+#include "Logger.h"
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QShortcut>

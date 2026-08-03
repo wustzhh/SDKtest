@@ -138,7 +138,6 @@ public:
     void selectAll(bool select);
     QVector<FilterRule> advFilters() const { return m_advFilters; }
     bool filterEnabled() const { return m_filterEnabled; }
-    bool filterEnabled() const { return m_filterEnabled; }
     void setAdvFilters(const QVector<FilterRule>& f, bool enabled);
     void reapplyFilter() { setAdvFilters(m_advFilters, m_filterEnabled); }
     void applyAdvancedFilters(const QVector<FilterRule>& filtered);
