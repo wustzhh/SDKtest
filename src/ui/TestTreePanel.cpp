@@ -906,7 +906,6 @@ void TestTreePanel::onAdvancedFilter() {
             emit selectionChanged(selectedTests().size());
         }
         emit filtersSaved();
-            .arg(m_advFilters.size()).arg(m_filterEnabled));
     }
 }
 
