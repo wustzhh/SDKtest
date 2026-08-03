@@ -889,6 +889,21 @@ void TestTreePanel::onAdvancedFilter() {
         m_tree->viewport()->update();
         updateStats();
         emit selectionChanged(selectedTests().size());
+        } else {
+            // 禁用或清空筛选 → 显示全部
+            m_updating = true;
+            std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* item) {
+                item->setHidden(false);
+                for (int i = 0; i < item->childCount(); i++)
+                    showAll(item->child(i));
+                if (item->childCount() > 0) updateItemText(item);
+            };
+            for (int i = 0; i < m_tree->topLevelItemCount(); i++)
+                showAll(m_tree->topLevelItem(i));
+            m_updating = false;
+            m_tree->viewport()->update();
+            updateStats();
+            emit selectionChanged(selectedTests().size());
         }
         emit filtersSaved();
     }
