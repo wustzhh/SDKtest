@@ -66,6 +66,8 @@ MainWindow::MainWindow(QWidget* parent)
                 for (const auto& af : sc.advancedFilters)
                     rules.append({af.first, af.second});
                 m_testList->setAdvFilters(rules, !sc.advancedFilters.isEmpty());
+                LOG("FILTER", QString("Startup load: %1 rules for scenario '%2'")
+                    .arg(rules.size()).arg(sc.name));
             }
         }
         // 恢复线宽设置
