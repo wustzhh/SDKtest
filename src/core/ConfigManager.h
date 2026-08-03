@@ -30,6 +30,7 @@ struct TestScenario {
     QVector<FilterSet> filterSets;
     // 高级筛选规则: keyword + include(正选/反选)
     QVector<QPair<QString,bool>> advancedFilters;
+    bool        filterEnabled = false;
 };
 
 struct ExeProfile {

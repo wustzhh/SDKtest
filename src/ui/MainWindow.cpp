@@ -65,7 +65,7 @@ MainWindow::MainWindow(QWidget* parent)
                 QVector<FilterRule> rules;
                 for (const auto& af : sc.advancedFilters)
                     rules.append({af.first, af.second});
-                m_testList->setAdvFilters(rules, !sc.advancedFilters.isEmpty());
+                m_testList->setAdvFilters(rules, sc.filterEnabled);
                 LOG("FILTER", QString("Startup load: %1 rules for scenario '%2'")
                     .arg(rules.size()).arg(sc.name));
             }
@@ -133,6 +133,7 @@ void MainWindow::setupUi() {
             sc.advancedFilters.clear();
             for (const auto& r : m_testList->advFilters())
                 sc.advancedFilters.append({r.keyword, r.include});
+            sc.filterEnabled = m_testList->filterEnabled();
             m_config.save();
         }
     });
@@ -257,7 +258,7 @@ void MainWindow::setupUi() {
             QVector<FilterRule> rules;
             for (const auto& af : sc.advancedFilters)
                 rules.append({af.first, af.second});
-            m_testList->setAdvFilters(rules, !sc.advancedFilters.isEmpty());
+            m_testList->setAdvFilters(rules, sc.filterEnabled);
             prof.lastScenarioName = sc.name;
             m_config.save();
         }
