@@ -97,9 +97,22 @@ void StepWorker::doWork() {
                 fb.Get(fx1,fy1,fz1,fx2,fy2,fz2);
                 double fdiag = sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1));
                 BRepAdaptor_Surface ads(face);
-                bool isPlane = (ads.GetType() == GeomAbs_Plane);
-                double fdefl = isPlane ? fdiag * 100.0 : qMax(0.1, fdiag * 0.04);
-                double fang  = isPlane ? 30.0 * M_PI / 180.0 : 3.0 * M_PI / 180.0;
+                GeomAbs_SurfaceType st = ads.GetType();
+                double fdefl, fang;
+                if (st == GeomAbs_Plane) {
+                    // 平面：最少三角形
+                    fdefl = fdiag * 100.0;
+                    fang  = 30.0 * M_PI / 180.0;
+                } else if (st == GeomAbs_Cylinder || st == GeomAbs_Cone ||
+                           st == GeomAbs_Sphere || st == GeomAbs_Torus) {
+                    // 解析曲面：适度剖分
+                    fdefl = qMax(0.1, fdiag * 0.02);
+                    fang  = 1.5 * M_PI / 180.0;
+                } else {
+                    // NURBS/自由曲面：谨慎参数，避免破面漏面
+                    fdefl = qMax(0.05, fdiag * 0.01);
+                    fang  = 1.0 * M_PI / 180.0;
+                }
                 BRepMesh_IncrementalMesh(face, fdefl, Standard_False, fang, Standard_False).Perform();
             }
         }
