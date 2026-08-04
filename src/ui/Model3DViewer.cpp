@@ -98,8 +98,8 @@ void StepWorker::doWork() {
                 double fdiag = sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1));
                 BRepAdaptor_Surface ads(face);
                 bool isPlane = (ads.GetType() == GeomAbs_Plane);
-                double fdefl = isPlane ? fdiag * 100.0 : qMax(0.01, fdiag * 0.02);
-                double fang  = isPlane ? 30.0 * M_PI / 180.0 : 1.0 * M_PI / 180.0;
+                double fdefl = isPlane ? fdiag * 100.0 : qMax(0.1, fdiag * 0.04);
+                double fang  = isPlane ? 30.0 * M_PI / 180.0 : 3.0 * M_PI / 180.0;
                 BRepMesh_IncrementalMesh(face, fdefl, Standard_False, fang, Standard_False).Perform();
             }
         }
