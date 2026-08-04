@@ -1090,7 +1090,6 @@ void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop()
     if(m_worker){m_worker->deleteLater();m_worker=nullptr;}m_workerThread=nullptr;}
 void Model3DViewer::loadFile(const QString& fp){
     cancelLoad();m_gl->clear();
-    m_pendingBoxesMap.clear();
     if (!QFile::exists(fp)) {
         LOG("3D", "File not found: " + fp);
         m_status->setText(QString::fromUtf8("\xe6\x96\x87\xe4\xbb\xb6\xe4\xb8\x8d\xe5\xad\x98\xe5\x9c\xa8: ") + fp);
@@ -1111,6 +1110,7 @@ void Model3DViewer::loadFile(const QString& fp){
             m_status->setText(r.error);
             m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");
         }
+        applyPendingBoxes();
         emit modelLoaded();
         return;
     }
