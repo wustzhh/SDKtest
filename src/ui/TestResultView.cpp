@@ -1,5 +1,4 @@
 #include "TestResultView.h"
-#include "core/Logger.h"
 
 #include <QHeaderView>
 #include <QScrollBar>
@@ -346,11 +345,7 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
 
 void TestResultView::updateDetailPanel(const TestRunResult* result) {
     m_propTree->clear();
-    if (!result || result->properties.isEmpty()) {
-        LOG("FEAT", "updateDetailPanel: no result or properties empty");
-        return;
-    }
-    LOG("FEAT", QString("updateDetailPanel: %1 properties").arg(result->properties.size()));
+    if (!result || result->properties.isEmpty()) return;
     m_propTree->expandAll();
     QStringList priority = {"interface", "model", "resultModel"};
     for (const auto& pk : priority) {
@@ -386,7 +381,6 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
         // ── 检测包围盒格式 [minX,minY,minZ,maxX,maxY,maxZ],[...] ──
         QVector<QVector<double>> boxes;
         bool isBoxProp = false;
-        LOG("FEAT", QString("  prop '%1': startsWith[=%2, len=%3").arg(it.key()).arg(v.startsWith('[')).arg(v.length()));
         if (v.startsWith('[')) {
             static QRegularExpression boxRe(R"(\[([^\]]+)\])");
             auto boxIt = boxRe.globalMatch(v);
@@ -405,7 +399,6 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
                 }
             }
             isBoxProp = !boxes.isEmpty();
-            LOG("FEAT", QString("  prop '%1': parsed %2 boxes, isBoxProp=%3").arg(it.key()).arg(boxes.size()).arg(isBoxProp));
         }
 
         if (isBoxProp) {
@@ -417,7 +410,6 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
                 btn->setCheckable(true);
                 QString propKey = it.key();
                 connect(btn, &QPushButton::toggled, this, [this, propKey, boxes, btn](bool on){
-                    LOG("FEAT", QString("toggle btn '%1': on=%2 boxes=%3").arg(propKey).arg(on).arg(boxes.size()));
                     btn->setText(on?QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"):QString::fromUtf8("\xe9\x9a\x90\xe8\x97\x8f"));
                     emit toggleHighlightBoxes(propKey, boxes, on);
                 });

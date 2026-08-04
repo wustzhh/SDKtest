@@ -487,16 +487,10 @@ void MainWindow::setupConnections() {
         m_centerResultView->updatePropertyText(propKey, displayText);
     });
     connect(m_centerResultView, &TestResultView::resultSelected, this, [this](const TestRunResult& r) {
-        LOG("FEAT", QString("resultSelected: %1, properties=%2")
-            .arg(r.testCase.fullName()).arg(r.properties.size()));
-        for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
-            LOG("FEAT", QString("  property: %1 = %2").arg(it.key()).arg(it.value().left(200)));
         if (r.properties.contains("model"))
             m_model3D->loadFile(r.properties["model"]);
-        else {
-            LOG("FEAT", "  no 'model' property, clearing view");
+        else
             m_model3D->clear();
-        }
         // 高亮由包围盒属性按钮控制，不在这里用searchResultID/removeResultID
     });
 

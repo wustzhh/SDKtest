@@ -267,17 +267,6 @@ GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouse
 }
 void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const QVector<QVector3D>& n,const QVector<EdgeLine>& e,const QVector<int>& fi,const QVector<QVector3D>& fc,const QVector<int>& fci,const QVector<FaceBBox>& fbb){
     m_verts=v;m_tri=t;m_normals=n;m_edges=e;m_faceIds=fi;m_faceCenters=fc;m_faceCenterIds=fci;m_faceBBoxes=fbb;
-    // 诊断：输出面ID映射和包围盒索引的关系
-    {
-        QSet<int> uniqueFaceIds(fi.begin(), fi.end());
-        QList<int> sortedIds = uniqueFaceIds.values();
-        std::sort(sortedIds.begin(), sortedIds.end());
-        QStringList idList; for (int id : sortedIds) idList << QString::number(id);
-        LOG("FEAT", QString("loadMesh: %1 unique faceIds [%2], %3 faceBBoxes, %4 faceCenterIds=%5")
-            .arg(uniqueFaceIds.size()).arg(idList.join(","))
-            .arg(fbb.size()).arg(fci.size())
-            .arg([&](){ QStringList sl; for(int id:fci) sl<<QString::number(id); return sl.join(","); }()));
-    }
     LOG("3D",QString("Faces=%1 Centers: first=(%2,%3,%4) last=(%5,%6,%7)")
         .arg(fc.size())
         .arg(fc.size()>0?fc[0].x():0,0,'f',3).arg(fc.size()>0?fc[0].y():0,0,'f',3).arg(fc.size()>0?fc[0].z():0,0,'f',3)
@@ -334,15 +323,7 @@ void GLViewer::resetView(){
         m_zoom=m_modelSize/(qMax(qMax(needW,needH),.001f));
     }else{m_zoom=1;m_panX=0;m_panY=0;}
     m_hasAnchor=false;m_pendingPick=false;update();}
-void GLViewer::setHighlightFaces(const QVector<int>& ids){
-    LOG("FEAT", QString("setHighlightFaces: %1 ids, faceIds=%2 faceBBoxes=%3")
-        .arg(ids.size()).arg(m_faceIds.size()).arg(m_faceBBoxes.size()));
-    if (ids.size() <= 10) {
-        QStringList sl; for (int id : ids) sl << QString::number(id);
-        LOG("FEAT", "  highlight IDs: " + sl.join(", "));
-    }
-    m_hlFaces=ids;update();
-}
+void GLViewer::setHighlightFaces(const QVector<int>& ids){m_hlFaces=ids;update();}
 QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double maxX,double maxY,double maxZ,double eps) const {
     QVector<int> result;
     bool isPoint = (qAbs(maxX-minX) < eps && qAbs(maxY-minY) < eps && qAbs(maxZ-minZ) < eps);
@@ -454,25 +435,10 @@ void GLViewer::paintGL(){
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     // 高亮面（半透明黄色填充，用于属性高亮）
-    {
-        static int logCount = 0;
-        if (logCount < 5) {
-            LOG("FEAT", QString("paintGL entry: m_hlFaces=%1 m_tri=%2 m_faceIds=%3")
-                .arg(m_hlFaces.size()).arg(m_tri.size()).arg(m_faceIds.size()));
-            logCount++;
-        }
-    }
     if(!m_hlFaces.isEmpty()&&!m_tri.isEmpty()){
         QSet<int> hlFaceSet(m_hlFaces.begin(),m_hlFaces.end());
         QVector<int> hlTri; hlTri.reserve(m_tri.size());
         for(int ti=0;ti<m_tri.size()/3;ti++) if(ti<m_faceIds.size()&&hlFaceSet.contains(m_faceIds[ti])){hlTri.append(m_tri[ti*3]);hlTri.append(m_tri[ti*3+1]);hlTri.append(m_tri[ti*3+2]);}
-        static int hlLogCount = 0;
-        if (hlLogCount < 3 && !hlTri.isEmpty()) {
-            LOG("FEAT", QString("paintGL highlight: hlTri=%1 tris, m_hlFaces={%2}")
-                .arg(hlTri.size()/3)
-                .arg([&](){ QStringList sl; for(int id:m_hlFaces) sl<<QString::number(id); return sl.join(","); }()));
-            hlLogCount++;
-        }
         if(!hlTri.isEmpty()){
             glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
             glEnableClientState(GL_VERTEX_ARRAY);
@@ -1192,21 +1158,14 @@ void Model3DViewer::highlightFacesInBoxes(const QVector<QVector<double>>& boxes,
     highlightFacesInBoxes(QString(), boxes, on);
 }
 void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<QVector<double>>& boxes, bool on){
-    LOG("FEAT", QString("highlightFacesInBoxes: key='%1' boxes=%2 on=%3 faceBBoxCount=%4")
-        .arg(propKey).arg(boxes.size()).arg(on).arg(m_gl->faceBBoxCount()));
     if (!on) {
         m_pendingBoxesMap.remove(propKey);
         if (m_pendingBoxesMap.isEmpty()) m_gl->setHighlightFaces({});
         return;
     }
     m_pendingBoxesMap[propKey] = boxes;
-    LOG("FEAT", QString("  pendingBoxesMap now has %1 entries: %2")
-        .arg(m_pendingBoxesMap.size()).arg(QStringList(m_pendingBoxesMap.keys()).join(", ")));
     // 模型还没加载时不解析，保持"解析中..."不变
-    if (m_gl->faceBBoxCount() == 0 && !propKey.isEmpty()) {
-        LOG("FEAT", "  model not loaded yet, deferring to applyPendingBoxes");
-        return;
-    }
+    if (m_gl->faceBBoxCount() == 0 && !propKey.isEmpty()) return;
     // 输出XML包围盒，6值排序
     for (const auto& b : boxes) {
         if (b.size() < 6) continue;
@@ -1228,9 +1187,6 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
         totalBoxCount++;
         if (!ids.isEmpty()) matchedBoxCount++;
         else unmatchedBoxes.append(box);
-        LOG("FEAT", QString("  box[%1]: isPoint=%2 → found %3 face indices: %4")
-            .arg(totalBoxCount-1).arg(isPoint).arg(ids.size())
-            .arg([&](){ QStringList sl; for(int id:ids) sl<<QString::number(id); return sl.join(","); }()));
         for (int id : ids) allIds.insert(id);
         QStringList idStrs;
         for (int id : ids) idStrs << QString::number(id);
@@ -1276,7 +1232,6 @@ QVector<int> Model3DViewer::resolveBoxes(const QVector<QVector<double>>& boxes) 
     return QVector<int>(allIds.begin(), allIds.end());
 }
 void Model3DViewer::applyPendingBoxes() {
-    LOG("FEAT", QString("applyPendingBoxes: %1 pending entries").arg(m_pendingBoxesMap.size()));
     // 模型加载完成后，逐一解析所有 pending 的包围盒
     for (auto it = m_pendingBoxesMap.begin(); it != m_pendingBoxesMap.end(); ++it)
         highlightFacesInBoxes(it.key(), it.value(), true);
