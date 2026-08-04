@@ -71,10 +71,15 @@ void StepWorker::doWork() {
         if (!shapeBox.IsVoid()) { shapeBox.Get(x1,y1,z1,x2,y2,z2); }
         diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
     }
-    double deflection = qMax(0.01, diag * 0.01);
-    double angDefl = 1.5 * M_PI / 180.0;
-    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=1.5° (global + plane refine)")
-        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3));
+    double diagScale = (diag < 5.0) ? 0.03 : (diag < 50.0) ? 0.01 : 0.005;
+    double faceScale = (totalFaces > 1000) ? 4.0 : (totalFaces > 500) ? 2.0 : 1.0;
+    double deflection = qMax(0.001, diag * diagScale * faceScale);
+    double angDefl = (totalFaces > 1000) ? 1.0 * M_PI / 180.0
+                   : (diag < 1.0) ? 0.1 * M_PI / 180.0
+                   : 0.5 * M_PI / 180.0;
+    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4° (global + plane refine)")
+        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
+        .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
     // 平面单独极粗重剖
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
