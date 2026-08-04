@@ -71,7 +71,7 @@ void StepWorker::doWork() {
         if (!shapeBox.IsVoid()) { shapeBox.Get(x1,y1,z1,x2,y2,z2); }
         diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
     }
-    double deflection = qMax(0.1, diag * 0.01);
+    double deflection = qMax(0.01, diag * 0.01);
     double angDefl = 1.5 * M_PI / 180.0;
     LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=1.5° (global + plane refine)")
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3));
