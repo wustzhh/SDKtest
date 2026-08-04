@@ -61,7 +61,7 @@ void StepWorker::doWork() {
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
     qint64 tMesh=0, tFaces=0, tEdges=0;
     QElapsedTimer stage;
-    // 按面自适应剖分：每个面单独 BRepMesh，deflection = 面大小的 2%
+    // 全局粗剖一次（内部并行优化），然后平面单独极粗重剖
     double diag = 1.0;
     int totalFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
@@ -71,7 +71,19 @@ void StepWorker::doWork() {
         if (!shapeBox.IsVoid()) { shapeBox.Get(x1,y1,z1,x2,y2,z2); }
         diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
     }
-    LOG("MESH",QString("diag=%1 faces=%2 (per-face BRepMesh)").arg(diag,0,'f',1).arg(totalFaces));
+    double deflection = qMax(0.1, diag * 0.01);
+    double angDefl = 1.5 * M_PI / 180.0;
+    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=1.5° (global + plane refine)")
+        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3));
+    BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
+    // 平面单独极粗重剖
+    { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
+        TopoDS_Face face = TopoDS::Face(fExp.Current());
+        BRepAdaptor_Surface ads(face);
+        if (ads.GetType() == GeomAbs_Plane)
+            BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
+    }}
+    tMesh = stage.elapsed();
     // 边线采样间距
     double edgeSpacing = qBound(0.001, diag * 0.001, 2.0);
     stage.start();
@@ -89,33 +101,6 @@ void StepWorker::doWork() {
     TopExp_Explorer fExp(shape, TopAbs_FACE);
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
-        // 按面类型自适应剖分
-        {
-            Bnd_Box fb; BRepBndLib::Add(face, fb);
-            double fx1,fy1,fz1,fx2,fy2,fz2;
-            if (!fb.IsVoid()) {
-                fb.Get(fx1,fy1,fz1,fx2,fy2,fz2);
-                double fdiag = sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1));
-                BRepAdaptor_Surface ads(face);
-                GeomAbs_SurfaceType st = ads.GetType();
-                double fdefl, fang;
-                if (st == GeomAbs_Plane) {
-                    // 平面：最少三角形
-                    fdefl = fdiag * 100.0;
-                    fang  = 30.0 * M_PI / 180.0;
-                } else if (st == GeomAbs_Cylinder || st == GeomAbs_Cone ||
-                           st == GeomAbs_Sphere || st == GeomAbs_Torus) {
-                    // 解析曲面：适度剖分
-                    fdefl = qMax(0.1, fdiag * 0.02);
-                    fang  = 1.5 * M_PI / 180.0;
-                } else {
-                    // NURBS/自由曲面：谨慎参数，避免破面漏面
-                    fdefl = qMax(0.05, fdiag * 0.01);
-                    fang  = 1.0 * M_PI / 180.0;
-                }
-                BRepMesh_IncrementalMesh(face, fdefl, Standard_False, fang, Standard_False).Perform();
-            }
-        }
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
         if (tri.IsNull()) { skippedFaces++; faceIdx++; continue; }
         int base=voff, triStart=r.tris.size()/3;
