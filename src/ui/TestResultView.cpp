@@ -417,6 +417,7 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
                 btn->setCheckable(true);
                 QString propKey = it.key();
                 connect(btn, &QPushButton::toggled, this, [this, propKey, boxes, btn](bool on){
+                    LOG("FEAT", QString("toggle btn '%1': on=%2 boxes=%3").arg(propKey).arg(on).arg(boxes.size()));
                     btn->setText(on?QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"):QString::fromUtf8("\xe9\x9a\x90\xe8\x97\x8f"));
                     emit toggleHighlightBoxes(propKey, boxes, on);
                 });
@@ -431,19 +432,8 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
             if (isArray) {
                 item->setText(1, v);
                 item->setToolTip(1, v);
-                if (it.key() == "searchResultID" || it.key() == "removeResultID") {
-                    auto* btn = new QPushButton(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"));
-                    btn->setFixedSize(40, 18);
-                    btn->setStyleSheet("QPushButton{font-size:10px;padding:0 2px;border-radius:4px;background:#6c5ce7;color:white;border:none;}QPushButton:hover{background:#5a4bd1;}");
-                    btn->setCheckable(true);
-                    QVector<int> ids; for(const auto& p:parts){bool ok;int id=p.toInt(&ok);if(ok)ids.append(id);}
-                    connect(btn, &QPushButton::toggled, this, [this, ids, btn](bool on){
-                        btn->setText(on?QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"):QString::fromUtf8("\xe9\x9a\x90\xe8\x97\x8f"));
-                        emit toggleHighlight(ids, on);
-                    });
-                    btn->setChecked(true);
-                    m_propTree->setItemWidget(item, 2, btn);
-                }
+                // searchResultID/removeResultID 是gtest内部ID，不加高亮按钮
+                // 包围盒解析后才得到我们可用的面索引
             } else {
                 item->setText(1, v);
                 item->setToolTip(1, v);

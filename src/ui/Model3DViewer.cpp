@@ -262,6 +262,17 @@ GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouse
 }
 void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const QVector<QVector3D>& n,const QVector<EdgeLine>& e,const QVector<int>& fi,const QVector<QVector3D>& fc,const QVector<int>& fci,const QVector<FaceBBox>& fbb){
     m_verts=v;m_tri=t;m_normals=n;m_edges=e;m_faceIds=fi;m_faceCenters=fc;m_faceCenterIds=fci;m_faceBBoxes=fbb;
+    // 诊断：输出面ID映射和包围盒索引的关系
+    {
+        QSet<int> uniqueFaceIds(fi.begin(), fi.end());
+        QList<int> sortedIds = uniqueFaceIds.values();
+        std::sort(sortedIds.begin(), sortedIds.end());
+        QStringList idList; for (int id : sortedIds) idList << QString::number(id);
+        LOG("FEAT", QString("loadMesh: %1 unique faceIds [%2], %3 faceBBoxes, %4 faceCenterIds=%5")
+            .arg(uniqueFaceIds.size()).arg(idList.join(","))
+            .arg(fbb.size()).arg(fci.size())
+            .arg([&](){ QStringList sl; for(int id:fci) sl<<QString::number(id); return sl.join(","); }()));
+    }
     LOG("3D",QString("Faces=%1 Centers: first=(%2,%3,%4) last=(%5,%6,%7)")
         .arg(fc.size())
         .arg(fc.size()>0?fc[0].x():0,0,'f',3).arg(fc.size()>0?fc[0].y():0,0,'f',3).arg(fc.size()>0?fc[0].z():0,0,'f',3)
@@ -1194,6 +1205,9 @@ void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<
         totalBoxCount++;
         if (!ids.isEmpty()) matchedBoxCount++;
         else unmatchedBoxes.append(box);
+        LOG("FEAT", QString("  box[%1]: isPoint=%2 → found %3 face indices: %4")
+            .arg(totalBoxCount-1).arg(isPoint).arg(ids.size())
+            .arg([&](){ QStringList sl; for(int id:ids) sl<<QString::number(id); return sl.join(","); }()));
         for (int id : ids) allIds.insert(id);
         QStringList idStrs;
         for (int id : ids) idStrs << QString::number(id);
