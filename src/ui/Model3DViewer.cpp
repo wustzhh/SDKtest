@@ -472,11 +472,14 @@ void GLViewer::paintGL(){
             glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
             glEnableClientState(GL_VERTEX_ARRAY);
             glVertexPointer(3, GL_FLOAT, 0, nullptr);
-            glDisable(GL_LIGHTING);glColor3f(1,.85f,.1f);
-            glEnable(GL_POLYGON_OFFSET_FILL);
+            glDisable(GL_LIGHTING);
+            glDisable(GL_DEPTH_TEST);
+            glColor3f(1, 0, 0);
             glPolygonOffset(-1.0f, -1.0f);
+            glEnable(GL_POLYGON_OFFSET_FILL);
             glDrawElements(GL_TRIANGLES,hlTri.size(),GL_UNSIGNED_INT,hlTri.data());
             glDisable(GL_POLYGON_OFFSET_FILL);
+            glEnable(GL_DEPTH_TEST);
             glEnable(GL_LIGHTING);
             glDisableClientState(GL_VERTEX_ARRAY);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
