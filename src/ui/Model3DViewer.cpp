@@ -453,6 +453,14 @@ void GLViewer::paintGL(){
         QSet<int> hlFaceSet(m_hlFaces.begin(),m_hlFaces.end());
         QVector<int> hlTri; hlTri.reserve(m_tri.size());
         for(int ti=0;ti<m_tri.size()/3;ti++) if(ti<m_faceIds.size()&&hlFaceSet.contains(m_faceIds[ti])){hlTri.append(m_tri[ti*3]);hlTri.append(m_tri[ti*3+1]);hlTri.append(m_tri[ti*3+2]);}
+        static int logCount = 0;
+        if (logCount < 3) {
+            LOG("FEAT", QString("paintGL highlight: hlFaceSet={%1}, m_faceIds sample=[%2...], hlTri=%3 tris, m_tri=%4 tris")
+                .arg([&](){ QStringList sl; for(int id:m_hlFaces) sl<<QString::number(id); return sl.join(","); }())
+                .arg([&](){ QStringList sl; for(int i=0;i<qMin(20,(int)m_faceIds.size());i++) sl<<QString::number(m_faceIds[i]); return sl.join(","); }())
+                .arg(hlTri.size()/3).arg(m_tri.size()/3));
+            logCount++;
+        }
         if(!hlTri.isEmpty()){
             glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
             glEnableClientState(GL_VERTEX_ARRAY);
