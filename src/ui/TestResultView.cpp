@@ -1,4 +1,5 @@
 #include "TestResultView.h"
+#include "core/Logger.h"
 
 #include <QHeaderView>
 #include <QScrollBar>
@@ -345,7 +346,11 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
 
 void TestResultView::updateDetailPanel(const TestRunResult* result) {
     m_propTree->clear();
-    if (!result || result->properties.isEmpty()) return;
+    if (!result || result->properties.isEmpty()) {
+        LOG("FEAT", "updateDetailPanel: no result or properties empty");
+        return;
+    }
+    LOG("FEAT", QString("updateDetailPanel: %1 properties").arg(result->properties.size()));
     m_propTree->expandAll();
     QStringList priority = {"interface", "model", "resultModel"};
     for (const auto& pk : priority) {
@@ -381,7 +386,7 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
         // ── 检测包围盒格式 [minX,minY,minZ,maxX,maxY,maxZ],[...] ──
         QVector<QVector<double>> boxes;
         bool isBoxProp = false;
-        // 始终显示高亮按钮
+        LOG("FEAT", QString("  prop '%1': startsWith[=%2, len=%3").arg(it.key()).arg(v.startsWith('[')).arg(v.length()));
         if (v.startsWith('[')) {
             static QRegularExpression boxRe(R"(\[([^\]]+)\])");
             auto boxIt = boxRe.globalMatch(v);
@@ -400,6 +405,7 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
                 }
             }
             isBoxProp = !boxes.isEmpty();
+            LOG("FEAT", QString("  prop '%1': parsed %2 boxes, isBoxProp=%3").arg(it.key()).arg(boxes.size()).arg(isBoxProp));
         }
 
         if (isBoxProp) {

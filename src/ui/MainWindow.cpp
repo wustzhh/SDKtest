@@ -487,13 +487,20 @@ void MainWindow::setupConnections() {
         m_centerResultView->updatePropertyText(propKey, displayText);
     });
     connect(m_centerResultView, &TestResultView::resultSelected, this, [this](const TestRunResult& r) {
+        LOG("FEAT", QString("resultSelected: %1, properties=%2")
+            .arg(r.testCase.fullName()).arg(r.properties.size()));
+        for (auto it = r.properties.begin(); it != r.properties.end(); ++it)
+            LOG("FEAT", QString("  property: %1 = %2").arg(it.key()).arg(it.value().left(200)));
         if (r.properties.contains("model"))
             m_model3D->loadFile(r.properties["model"]);
-        else
+        else {
+            LOG("FEAT", "  no 'model' property, clearing view");
             m_model3D->clear();
+        }
         QVector<int> hl;
         auto parseIds=[&](const QString& key){ QString v=r.properties.value(key); if(!v.isEmpty()){ for(auto& s:v.split(',',Qt::SkipEmptyParts)){ bool ok; int id=s.trimmed().toInt(&ok); if(ok) hl.append(id); } } };
         parseIds("searchResult");parseIds("removeResult");
+        LOG("FEAT", QString("  searchResult/removeResult IDs: %1").arg(hl.size()));
         m_model3D->highlightFaces(hl);
     });
 

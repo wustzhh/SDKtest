@@ -1150,14 +1150,21 @@ void Model3DViewer::highlightFacesInBoxes(const QVector<QVector<double>>& boxes,
     highlightFacesInBoxes(QString(), boxes, on);
 }
 void Model3DViewer::highlightFacesInBoxes(const QString& propKey, const QVector<QVector<double>>& boxes, bool on){
+    LOG("FEAT", QString("highlightFacesInBoxes: key='%1' boxes=%2 on=%3 faceBBoxCount=%4")
+        .arg(propKey).arg(boxes.size()).arg(on).arg(m_gl->faceBBoxCount()));
     if (!on) {
         m_pendingBoxesMap.remove(propKey);
         if (m_pendingBoxesMap.isEmpty()) m_gl->setHighlightFaces({});
         return;
     }
     m_pendingBoxesMap[propKey] = boxes;
+    LOG("FEAT", QString("  pendingBoxesMap now has %1 entries: %2")
+        .arg(m_pendingBoxesMap.size()).arg(QStringList(m_pendingBoxesMap.keys()).join(", ")));
     // 模型还没加载时不解析，保持"解析中..."不变
-    if (m_gl->faceBBoxCount() == 0 && !propKey.isEmpty()) return;
+    if (m_gl->faceBBoxCount() == 0 && !propKey.isEmpty()) {
+        LOG("FEAT", "  model not loaded yet, deferring to applyPendingBoxes");
+        return;
+    }
     // 输出XML包围盒，6值排序
     for (const auto& b : boxes) {
         if (b.size() < 6) continue;
@@ -1224,6 +1231,7 @@ QVector<int> Model3DViewer::resolveBoxes(const QVector<QVector<double>>& boxes) 
     return QVector<int>(allIds.begin(), allIds.end());
 }
 void Model3DViewer::applyPendingBoxes() {
+    LOG("FEAT", QString("applyPendingBoxes: %1 pending entries").arg(m_pendingBoxesMap.size()));
     // 模型加载完成后，逐一解析所有 pending 的包围盒
     for (auto it = m_pendingBoxesMap.begin(); it != m_pendingBoxesMap.end(); ++it)
         highlightFacesInBoxes(it.key(), it.value(), true);
