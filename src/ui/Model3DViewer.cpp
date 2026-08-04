@@ -59,37 +59,22 @@ void StepWorker::doWork() {
     emit progress(QString::fromUtf8("\xE4\xB8\x89\xE8\xA7\x92\xE5\x8C\x96..."));
     qint64 tMesh=0, tFaces=0, tEdges=0;
     QElapsedTimer stage;
-    // 根据模型尺寸和面数自适应调整参数
+    // 按面自适应剖分：每个面单独 BRepMesh，deflection = 面大小的 2%
     double diag = 1.0;
     int totalFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
-    double faceScale = (totalFaces > 1000) ? 4.0 : (totalFaces > 500) ? 2.0 : (totalFaces <= 50) ? 2.0 : 1.0;
     {
         Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
-        if (!shapeBox.IsVoid()) {
-            double x1,y1,z1,x2,y2,z2;
-            shapeBox.Get(x1,y1,z1,x2,y2,z2);
-            diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
-        }
-        // 尺寸分级：小模型用更粗比例避免过度剖分
-        double diagScale = (diag < 5.0) ? 0.03 : (diag < 50.0) ? 0.01 : 0.005;
-        double deflPct = qBound(0.001, diag * diagScale * faceScale, 5.0);
-        double deflection = qMax(0.001, deflPct);
-        double angularDeflection = (totalFaces > 1000) ? 1.5 * M_PI / 180.0
-                                : (diag < 1.0 || totalFaces < 5) ? 0.5 * M_PI / 180.0
-                                : 1.0 * M_PI / 180.0;
-        LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
-            .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
-            .arg(angularDeflection*180.0/M_PI,0,'f',2));
-        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angularDeflection, true).Perform();
-        tMesh = stage.elapsed();
+        double x1,y1,z1,x2,y2,z2;
+        if (!shapeBox.IsVoid()) { shapeBox.Get(x1,y1,z1,x2,y2,z2); }
+        diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
     }
-    // 边线采样间距：模型尺寸自适应
-    double edgeSpacing = qBound(0.001, diag * 0.0005 * faceScale, 2.0);
+    LOG("MESH",QString("diag=%1 faces=%2 (per-face BRepMesh)").arg(diag,0,'f',1).arg(totalFaces));
+    // 边线采样间距
+    double edgeSpacing = qBound(0.001, diag * 0.001, 2.0);
     stage.start();
     emit progress(QString::fromUtf8("\xE6\x8F\x90\xE5\x8F\x96\xE7\xBD\x91\xE6\xA0\xBC..."));
     int skippedFaces = 0;
-    { } // totalFaces already counted above
     int voff=0, faceIdx=0;
     // 预分配内存减少reallocation
     r.verts.reserve(totalFaces * 100);
@@ -102,6 +87,17 @@ void StepWorker::doWork() {
     TopExp_Explorer fExp(shape, TopAbs_FACE);
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
+        // 按面大小自适应剖分: deflection=面对角线×2%, ang=1°
+        {
+            Bnd_Box fb; BRepBndLib::Add(face, fb);
+            double fx1,fy1,fz1,fx2,fy2,fz2;
+            if (!fb.IsVoid()) {
+                fb.Get(fx1,fy1,fz1,fx2,fy2,fz2);
+                double fdiag = sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1));
+                double fdefl = qMax(0.01, fdiag * 0.02);
+                BRepMesh_IncrementalMesh(face, fdefl, Standard_False, 1.0*M_PI/180.0, Standard_False).Perform();
+            }
+        }
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
         if (tri.IsNull()) { skippedFaces++; faceIdx++; continue; }
         int base=voff, triStart=r.tris.size()/3;
@@ -133,6 +129,7 @@ void StepWorker::doWork() {
         for (int ti=triStart;ti<triEnd;ti++) r.faceIds.append(faceIdx);
         faceIdx++;
     }
+    tMesh = stage.elapsed();
     if (r.verts.isEmpty()||r.tris.isEmpty()) { r.error="No triangles"; emit finished(r); return; }
     emit progress(QString::fromUtf8("\xE7\x94\x9F\xE6\x88\x90\xE8\xBE\xB9\xE7\xBA\xBF..."));
     QVector<TopoDS_Edge> allEdges; QMap<void*,QSet<void*>> edgeFaceMap;
