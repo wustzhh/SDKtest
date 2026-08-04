@@ -29,6 +29,8 @@
 #include <STEPControl_Reader.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRep_Tool.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <GeomAbs_Shape.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
 #include <TopExp.hxx>
@@ -87,15 +89,18 @@ void StepWorker::doWork() {
     TopExp_Explorer fExp(shape, TopAbs_FACE);
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
-        // 按面大小自适应剖分: deflection=面对角线×2%, ang=1°
+        // 按面类型自适应剖分
         {
             Bnd_Box fb; BRepBndLib::Add(face, fb);
             double fx1,fy1,fz1,fx2,fy2,fz2;
             if (!fb.IsVoid()) {
                 fb.Get(fx1,fy1,fz1,fx2,fy2,fz2);
                 double fdiag = sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1));
-                double fdefl = qMax(0.01, fdiag * 0.02);
-                BRepMesh_IncrementalMesh(face, fdefl, Standard_False, 1.0*M_PI/180.0, Standard_False).Perform();
+                BRepAdaptor_Surface ads(face);
+                bool isPlane = (ads.GetType() == GeomAbs_Plane);
+                double fdefl = isPlane ? fdiag * 100.0 : qMax(0.01, fdiag * 0.02);
+                double fang  = isPlane ? 30.0 * M_PI / 180.0 : 1.0 * M_PI / 180.0;
+                BRepMesh_IncrementalMesh(face, fdefl, Standard_False, fang, Standard_False).Perform();
             }
         }
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
