@@ -318,7 +318,15 @@ void GLViewer::resetView(){
         m_zoom=m_modelSize/(qMax(qMax(needW,needH),.001f));
     }else{m_zoom=1;m_panX=0;m_panY=0;}
     m_hasAnchor=false;m_pendingPick=false;update();}
-void GLViewer::setHighlightFaces(const QVector<int>& ids){m_hlFaces=ids;update();}
+void GLViewer::setHighlightFaces(const QVector<int>& ids){
+    LOG("FEAT", QString("setHighlightFaces: %1 ids, faceIds=%2 faceBBoxes=%3")
+        .arg(ids.size()).arg(m_faceIds.size()).arg(m_faceBBoxes.size()));
+    if (ids.size() <= 10) {
+        QStringList sl; for (int id : ids) sl << QString::number(id);
+        LOG("FEAT", "  highlight IDs: " + sl.join(", "));
+    }
+    m_hlFaces=ids;update();
+}
 QVector<int> GLViewer::findFacesInBox(double minX,double minY,double minZ,double maxX,double maxY,double maxZ,double eps) const {
     QVector<int> result;
     bool isPoint = (qAbs(maxX-minX) < eps && qAbs(maxY-minY) < eps && qAbs(maxZ-minZ) < eps);

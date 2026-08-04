@@ -431,7 +431,7 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
             if (isArray) {
                 item->setText(1, v);
                 item->setToolTip(1, v);
-                if (it.key() == "searchResult" || it.key() == "removeResult") {
+                if (it.key() == "searchResultID" || it.key() == "removeResultID") {
                     auto* btn = new QPushButton(QString::fromUtf8("\xe6\x98\xbe\xe7\xa4\xba"));
                     btn->setFixedSize(40, 18);
                     btn->setStyleSheet("QPushButton{font-size:10px;padding:0 2px;border-radius:4px;background:#6c5ce7;color:white;border:none;}QPushButton:hover{background:#5a4bd1;}");
