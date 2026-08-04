@@ -449,17 +449,24 @@ void GLViewer::paintGL(){
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     // 高亮面（半透明黄色填充，用于属性高亮）
+    {
+        static int logCount = 0;
+        if (logCount < 5) {
+            LOG("FEAT", QString("paintGL entry: m_hlFaces=%1 m_tri=%2 m_faceIds=%3")
+                .arg(m_hlFaces.size()).arg(m_tri.size()).arg(m_faceIds.size()));
+            logCount++;
+        }
+    }
     if(!m_hlFaces.isEmpty()&&!m_tri.isEmpty()){
         QSet<int> hlFaceSet(m_hlFaces.begin(),m_hlFaces.end());
         QVector<int> hlTri; hlTri.reserve(m_tri.size());
         for(int ti=0;ti<m_tri.size()/3;ti++) if(ti<m_faceIds.size()&&hlFaceSet.contains(m_faceIds[ti])){hlTri.append(m_tri[ti*3]);hlTri.append(m_tri[ti*3+1]);hlTri.append(m_tri[ti*3+2]);}
-        static int logCount = 0;
-        if (logCount < 3) {
-            LOG("FEAT", QString("paintGL highlight: hlFaceSet={%1}, m_faceIds sample=[%2...], hlTri=%3 tris, m_tri=%4 tris")
-                .arg([&](){ QStringList sl; for(int id:m_hlFaces) sl<<QString::number(id); return sl.join(","); }())
-                .arg([&](){ QStringList sl; for(int i=0;i<qMin(20,(int)m_faceIds.size());i++) sl<<QString::number(m_faceIds[i]); return sl.join(","); }())
-                .arg(hlTri.size()/3).arg(m_tri.size()/3));
-            logCount++;
+        static int hlLogCount = 0;
+        if (hlLogCount < 3 && !hlTri.isEmpty()) {
+            LOG("FEAT", QString("paintGL highlight: hlTri=%1 tris, m_hlFaces={%2}")
+                .arg(hlTri.size()/3)
+                .arg([&](){ QStringList sl; for(int id:m_hlFaces) sl<<QString::number(id); return sl.join(","); }()));
+            hlLogCount++;
         }
         if(!hlTri.isEmpty()){
             glBindBuffer(GL_ARRAY_BUFFER, m_vboVerts);
