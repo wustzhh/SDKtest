@@ -60,9 +60,10 @@ void TestRunner::run(const QString& binaryPath,
 
     if (m_totalCount == 0) { emit allFinished(); return; }
 
-    // 按 2000 字符拆批
+    // 按字符限制拆批
     auto makeSeg = [](const TestCase& tc) -> QString {
-        if (tc.caseName == "*") return tc.suiteName + ".*";
+        if (tc.suiteName == "*") return "*";           // 全选标记
+        if (tc.caseName == "*") return tc.suiteName + ".*"; // 套件全选标记
         return tc.fullName();
     };
 
@@ -108,38 +109,14 @@ void TestRunner::startNextBatch() {
     m_nextBatchIdx++;
     m_activeCount++;
 
-    // 构造 filter
+    // 构造 filter：处理全选标记(*)、套件全选标记(SuiteName.*)、普通用例
     QStringList filters;
-    if (m_singleTest) {
-        // 逐个模式：精确filter，不聚合
-        for (const auto& tc : batch->cases)
-            filters << tc.fullName();
-    } else {
-        // 聚合优化：同一suite下全部用例勾选 → suite.*
-        QMap<QString, int> suiteTotal;
-        for (const auto& tc : m_expectedTests)
-            suiteTotal[tc.suiteName]++;
-        QMap<QString, int> suiteHits;
-        for (const auto& tc : batch->cases) {
-            if (tc.suiteName == "*") { filters = {"*"}; break; }
-            if (tc.caseName == "*") { suiteHits[tc.suiteName] = suiteTotal[tc.suiteName]; continue; }
-            suiteHits[tc.suiteName]++;
-        }
-        if (filters.isEmpty()) {
-            for (auto it = suiteHits.begin(); it != suiteHits.end(); ++it) {
-                if (it.value() >= suiteTotal[it.key()])
-                    filters << it.key() + ".*";
-                else {
-                    for (const auto& tc : batch->cases)
-                        if (tc.suiteName == it.key() && tc.caseName != "*")
-                            filters << tc.fullName();
-                }
-            }
-        }
+    bool hasGlobalStar = false;
+    for (const auto& tc : batch->cases) {
+        if (tc.suiteName == "*") { hasGlobalStar = true; break; }
+        filters << (tc.caseName == "*" ? tc.suiteName + ".*" : tc.fullName());
     }
-    QString filter = filters.join(":");
-    if (batch->cases.size() >= m_totalCount && m_totalCount > 1)
-        filter = "*";
+    QString filter = hasGlobalStar ? "*" : filters.join(":");
 
     batch->accumulatedStdout.clear();
     batch->process = new QProcess(this);

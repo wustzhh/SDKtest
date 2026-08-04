@@ -562,32 +562,35 @@ void MainWindow::onRunSelected() {
     int actualRunCount = sel.size();
     QVector<TestCase> originalSel = sel;
     LOG("RUN", QString("Selected: %1 tests (discovery=%2)").arg(sel.size()).arg(m_loader.testCases().size()));
-    // 按套件优化 filter：全选所有用例或部分选中都走同一路径
-    // 每个套件若全选则用 "Suite.*"，否则逐个添加
-    bool allSelected = sel.size() == m_loader.testCases().size();
-    auto allCases = m_loader.groupedBySuite();
-    QMap<QString, int> selCount;
-    for (const auto& tc : sel) selCount[tc.suiteName]++;
-    QVector<TestCase> optimized;
-    for (auto it = allCases.begin(); it != allCases.end(); ++it) {
-        if (selCount.value(it.key()) == it.value().size()) {
-            TestCase suiteAll;
-            suiteAll.suiteName = it.key();
-            suiteAll.caseName = "*";
-            optimized.append(suiteAll);
-        } else {
-            for (const auto& tc : sel)
-                if (tc.suiteName == it.key()) optimized.append(tc);
+
+    // 聚合优化：全选所有用例 → "*"；某套件全选 → "SuiteName.*"
+    bool allSelected = (sel.size() == m_loader.testCases().size());
+    if (allSelected) {
+        TestCase star; star.suiteName = "*"; star.caseName = "";
+        sel = {star};
+        LOG("RUN", "All tests selected, filter=*");
+    } else {
+        auto allCases = m_loader.groupedBySuite();
+        QMap<QString, int> selCount;
+        for (const auto& tc : sel) selCount[tc.suiteName]++;
+        QVector<TestCase> optimized;
+        for (auto it = allCases.begin(); it != allCases.end(); ++it) {
+            int selectedInSuite = selCount.value(it.key());
+            if (selectedInSuite == 0) continue;
+            if (selectedInSuite == it.value().size()) {
+                TestCase suiteAll; suiteAll.suiteName = it.key(); suiteAll.caseName = "*";
+                optimized.append(suiteAll);
+                LOG("RUN", QString("Suite '%1' fully selected (%2 tests) → %1.*").arg(it.key()).arg(it.value().size()));
+            } else {
+                for (const auto& tc : sel)
+                    if (tc.suiteName == it.key()) optimized.append(tc);
+            }
         }
+        sel = optimized;
     }
-    sel = optimized;
-    LOG("RUN", QString(allSelected ? "All tests selected" : "Partial selected")
-        + ", optimized filter: " + QString::number(sel.size()) + " entries");
 
-    LOG("RUN", "Selected", QString::number(sel.size()) + " tests");
-
-        m_report = {};
-        m_seenResults.clear();
+    m_report = {};
+    m_seenResults.clear();
     m_report.startTime = QDateTime::currentDateTime();
     m_report.testBinary = m_config.testBinary();
     m_report.filterPattern = allSelected ? "*" : "custom";
