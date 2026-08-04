@@ -63,7 +63,7 @@ void StepWorker::doWork() {
     double diag = 1.0;
     int totalFaces = 0;
     { TopExp_Explorer fc(shape, TopAbs_FACE); for (; fc.More(); fc.Next()) totalFaces++; }
-    double faceScale = (totalFaces > 1000) ? 4.0 : (totalFaces > 500) ? 2.0 : 1.0;
+    double faceScale = (totalFaces > 1000) ? 4.0 : (totalFaces > 500) ? 2.0 : (totalFaces <= 50) ? 2.0 : 1.0;
     {
         Bnd_Box shapeBox; BRepBndLib::Add(shape, shapeBox);
         if (!shapeBox.IsVoid()) {
@@ -75,9 +75,9 @@ void StepWorker::doWork() {
         double diagScale = (diag < 5.0) ? 0.03 : (diag < 50.0) ? 0.01 : 0.005;
         double deflPct = qBound(0.001, diag * diagScale * faceScale, 5.0);
         double deflection = qMax(0.001, deflPct);
-        double angularDeflection = (totalFaces > 1000) ? 1.0 * M_PI / 180.0
-                                : (diag < 1.0 || totalFaces < 5) ? 0.1 * M_PI / 180.0
-                                : 0.5 * M_PI / 180.0;
+        double angularDeflection = (totalFaces > 1000) ? 1.5 * M_PI / 180.0
+                                : (diag < 1.0 || totalFaces < 5) ? 0.5 * M_PI / 180.0
+                                : 1.0 * M_PI / 180.0;
         LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
             .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
             .arg(angularDeflection*180.0/M_PI,0,'f',2));
