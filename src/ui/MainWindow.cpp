@@ -1420,10 +1420,15 @@ void MainWindow::onAllFinished() {
     m_report.endTime = QDateTime::currentDateTime();
     // 保存到历史（用于后续可能的对比）
     m_allRuns.append(m_report);
+    // 最多保留最近5次运行记录
+    if (m_allRuns.size() > 5) m_allRuns.removeFirst();
+    if (m_runNames.size() > 5) m_runNames.removeFirst();
     QString profileName = m_config.profiles().value(m_config.activeProfile()).name;
     m_runNames.append(profileName.isEmpty() ? QString::number(m_report.results.size()) + " tests" : profileName);
     m_progress->finishRun();
     m_centerResultView->showResults(m_report.results);
+    // 清理3D视图释放显存/内存
+    m_model3D->clear();
 
     int p = m_report.passed(), f = m_report.failed(), s = m_report.skipped(), d = m_report.disabled();
     LOG("RUN", QString("Done: passed=%1 failed=%2 skipped=%3 disabled=%4 total=%5")
