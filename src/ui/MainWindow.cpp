@@ -1615,9 +1615,12 @@ void MainWindow::refreshScenarioCombo() {
     }
     m_scenarioCombo->blockSignals(false);
     m_scenarioCombo->setCurrentIndex(restoreIdx);  // 移到blockSignals之后触发加载
-    // 恢复逐个运行复选框状态（从第1个方案）
+    // 恢复逐个运行复选框状态（从当前方案的第一个）
     if (m_chkSingleTest) {
         m_chkSingleTest->setChecked(!scs.isEmpty() && scs[0].singleTest);
+        // 如果选中了其他方案，从该方案恢复
+        if (restoreIdx > 0 && restoreIdx-1 < scs.size())
+            m_chkSingleTest->setChecked(scs[restoreIdx-1].singleTest);
     }
 }
 
