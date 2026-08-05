@@ -240,6 +240,13 @@ void MainWindow::setupUi() {
     QObject::connect(m_chkSingleTest, &QCheckBox::toggled, this, [this](bool checked) {
         int idx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
         auto& scs = m_config.currentProfile().scenarios;
+        // 如果combo没选中，通过lastScenarioName找到当前方案
+        if (idx < 0) {
+            const auto& prof = m_config.currentProfile();
+            for (int i = 0; i < scs.size(); i++) {
+                if (scs[i].name == prof.lastScenarioName) { idx = i; break; }
+            }
+        }
         if (idx < 0 && !scs.isEmpty()) idx = 0;
         if (idx >= 0 && idx < scs.size()) {
             scs[idx].singleTest = checked;
