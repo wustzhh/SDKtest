@@ -276,11 +276,6 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     for(auto& vv:v){if(vv.x()<mx)mx=vv.x();if(vv.x()>Mx)Mx=vv.x();if(vv.y()<my)my=vv.y();if(vv.y()>My)My=vv.y();if(vv.z()<mz)mz=vv.z();if(vv.z()>Mz)Mz=vv.z();}
     m_modelSize=qMax(qMax(Mx-mx,My-my),Mz-mz);m_modelSize=qMax(m_modelSize,.001f);
     m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_hasAnchor=false;resetView();
-    // 极小模型自动放大，避免默认视图看不到
-    if (m_modelSize < 1.0f) {
-        m_zoom *= m_modelSize;  // 模型越小，zoom越小，视图越大
-        LOG("3D", QString("Tiny model: modelSize=%1, auto-zoom to %2").arg(m_modelSize,0,'f',4).arg(m_zoom,0,'f',4));
-    }
     LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7 anchor=(%8,%9,%10)")
         .arg(mx,0,'f',3).arg(Mx,0,'f',3).arg(my,0,'f',3).arg(My,0,'f',3)
         .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3)
@@ -328,6 +323,8 @@ void GLViewer::resetView(){
         float needW=w,needH=h;
         if(as>1)needH=qMax(needH,needW/as);else needW=qMax(needW,needH*as);
         m_zoom=m_modelSize/(qMax(qMax(needW,needH),.001f));
+        // 极小模型自动放大
+        if (m_modelSize < 1.0f) m_zoom *= m_modelSize;
     }else{m_zoom=1;m_panX=0;m_panY=0;}
     m_hasAnchor=false;m_pendingPick=false;update();}
 void GLViewer::setHighlightFaces(const QVector<int>& ids){m_hlFaces=ids;update();}
