@@ -1736,6 +1736,7 @@ void MainWindow::showEvent(QShowEvent* e) {
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
+    m_config.save();
     saveLayout();
     QMainWindow::closeEvent(e);
 }
