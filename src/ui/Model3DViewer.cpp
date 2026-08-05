@@ -71,15 +71,10 @@ void StepWorker::doWork() {
         if (!shapeBox.IsVoid()) { shapeBox.Get(x1,y1,z1,x2,y2,z2); }
         diag = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
     }
-    double diagScale = (diag < 5.0) ? 0.03 : (diag < 50.0) ? 0.01 : 0.005;
-    double faceScale = (totalFaces > 1000) ? 4.0 : (totalFaces > 500) ? 2.0 : 1.0;
-    double deflection = qMax(0.001, diag * diagScale * faceScale);
-    double angDefl = (totalFaces > 1000) ? 1.0 * M_PI / 180.0
-                   : (diag < 1.0) ? 0.1 * M_PI / 180.0
-                   : 0.5 * M_PI / 180.0;
-    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4° (global + plane refine)")
-        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
-        .arg(angDefl*180.0/M_PI,0,'f',2));
+    double deflection = qMax(0.01, diag * 0.01);
+    double angDefl = 1.5 * M_PI / 180.0;
+    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=1.5° (global + plane refine)")
+        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
     // 平面单独极粗重剖
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
@@ -267,6 +262,12 @@ GLViewer::GLViewer(QWidget* p):QOpenGLWidget(p){setMinimumSize(200,150);setMouse
 }
 void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const QVector<QVector3D>& n,const QVector<EdgeLine>& e,const QVector<int>& fi,const QVector<QVector3D>& fc,const QVector<int>& fci,const QVector<FaceBBox>& fbb){
     m_verts=v;m_tri=t;m_normals=n;m_edges=e;m_faceIds=fi;m_faceCenters=fc;m_faceCenterIds=fci;m_faceBBoxes=fbb;
+    // 检查顶点是否有NaN
+    int nanCount = 0;
+    for (const auto& vv : v) {
+        if (std::isnan(vv.x()) || std::isnan(vv.y()) || std::isnan(vv.z())) nanCount++;
+    }
+    if (nanCount > 0) LOG("3D", QString("WARNING: %1/%2 vertices are NaN!").arg(nanCount).arg(v.size()));
     LOG("3D",QString("Faces=%1 Centers: first=(%2,%3,%4) last=(%5,%6,%7)")
         .arg(fc.size())
         .arg(fc.size()>0?fc[0].x():0,0,'f',3).arg(fc.size()>0?fc[0].y():0,0,'f',3).arg(fc.size()>0?fc[0].z():0,0,'f',3)
@@ -275,9 +276,15 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     for(auto& vv:v){if(vv.x()<mx)mx=vv.x();if(vv.x()>Mx)Mx=vv.x();if(vv.y()<my)my=vv.y();if(vv.y()>My)My=vv.y();if(vv.z()<mz)mz=vv.z();if(vv.z()>Mz)Mz=vv.z();}
     m_modelSize=qMax(qMax(Mx-mx,My-my),Mz-mz);m_modelSize=qMax(m_modelSize,.001f);
     m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_hasAnchor=false;resetView();
-    LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7")
+    // 极小模型自动放大，避免默认视图看不到
+    if (m_modelSize < 1.0f) {
+        m_zoom *= m_modelSize;  // 模型越小，zoom越小，视图越大
+        LOG("3D", QString("Tiny model: modelSize=%1, auto-zoom to %2").arg(m_modelSize,0,'f',4).arg(m_zoom,0,'f',4));
+    }
+    LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7 anchor=(%8,%9,%10)")
         .arg(mx,0,'f',3).arg(Mx,0,'f',3).arg(my,0,'f',3).arg(My,0,'f',3)
-        .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3));
+        .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3)
+        .arg(m_anchor.x(),0,'f',3).arg(m_anchor.y(),0,'f',3).arg(m_anchor.z(),0,'f',3));
     // 所有面 AABB（调试用，量大时关闭）
 #if 0
     for (const auto& b : fbb) {
@@ -398,6 +405,10 @@ void GLViewer::paintGL(){
     glDepthMask(GL_TRUE);
 
     if(m_verts.isEmpty())return;
+    if (std::isnan(m_anchor.x()) || std::isnan(m_modelSize)) {
+        LOG("3D", "ERROR: anchor or modelSize is NaN, skipping render");
+        return;
+    }
     float as=float(width())/float(height()),sz=m_modelSize*.6f/qMax(m_zoom,.01f);
     glMatrixMode(GL_PROJECTION);glLoadIdentity();
     double depthRange = sz * 100.0;  // 合理深度范围，确保polygon offset生效
