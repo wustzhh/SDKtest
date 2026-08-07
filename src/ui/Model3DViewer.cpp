@@ -324,7 +324,7 @@ void GLViewer::resetView(){
         if(as>1)needH=qMax(needH,needW/as);else needW=qMax(needW,needH*as);
         m_zoom=m_modelSize/(qMax(qMax(needW,needH),.001f));
         // 极小模型自动放大
-        if (m_modelSize < 1.0f) m_zoom *= m_modelSize;
+        if (m_modelSize < 1.0f) m_zoom = 0.4f;
     }else{m_zoom=1;m_panX=0;m_panY=0;}
     m_hasAnchor=false;m_pendingPick=false;update();}
 void GLViewer::setHighlightFaces(const QVector<int>& ids){m_hlFaces=ids;update();}
