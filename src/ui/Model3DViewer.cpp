@@ -103,9 +103,9 @@ void StepWorker::doWork() {
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
-        // ==== afterextendface2: 被跳过的面用全局参数重试 ====
+        // ==== afterextendface2: 被跳过面用适中参数重试 ====
         if (tri.IsNull() && m_path.contains("afterextendface2")) {
-            BRepMesh_IncrementalMesh(face, deflection, Standard_False, angDefl, Standard_False).Perform();
+            BRepMesh_IncrementalMesh(face, 2.0, Standard_False, 1.0*M_PI/180.0, Standard_False).Perform();
             tri = BRep_Tool::Triangulation(face, loc);
         }
         // ==== END ====
