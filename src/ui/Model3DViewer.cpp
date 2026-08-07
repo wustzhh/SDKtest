@@ -79,14 +79,13 @@ void StepWorker::doWork() {
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
     // ==== afterextendface2: 面被跳过，用更细参数全局重剖保证边界一致 ====
     if (m_path.contains("afterextendface2")) {
-        // 先检查是否有面被跳过
         bool hasSkipped = false;
         { TopExp_Explorer fe(shape, TopAbs_FACE);
           for (; fe.More(); fe.Next())
               if (BRep_Tool::Triangulation(TopoDS::Face(fe.Current())).IsNull()) { hasSkipped=true; break; }
         }
         if (hasSkipped) {
-            LOG("3D","afterextendface2: global remesh with finer params");
+            LOG("3D","afterextendface2: global remesh defl=0.5 ang=0.8");
             BRepMesh_IncrementalMesh(shape, 0.5, Standard_False, 0.8*M_PI/180.0, true).Perform();
         }
     }
