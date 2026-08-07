@@ -78,6 +78,12 @@ void StepWorker::doWork() {
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
+    // ==== faceExtend_sector: 跳过平面优化+极细ang ====
+    if (m_path.contains("faceExtend_sector")) {
+        deflection = qMax(0.1, diag * 0.001);
+        angDefl = 0.3 * M_PI / 180.0;
+        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
+    } else {
     // 平面优化：只有所有边全是直线的真平面才极粗重剖
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
@@ -95,6 +101,17 @@ void StepWorker::doWork() {
         if (!allLines) continue;
         BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
     }}
+    }
+    // ==== END ====
+    // 诊断：输出面类型和三角形数（所有模型）
+    { TopExp_Explorer fe(shape, TopAbs_FACE); int fi=0;
+      for (; fe.More(); fe.Next(), fi++) {
+        TopoDS_Face f = TopoDS::Face(fe.Current());
+        BRepAdaptor_Surface ads(f);
+        TopLoc_Location loc;
+        Handle(Poly_Triangulation) t = BRep_Tool::Triangulation(f, loc);
+        LOG("3D", QString("  face%1 type=%2 tri=%3").arg(fi).arg((int)ads.GetType()).arg(t.IsNull()?-1:t->NbTriangles()));
+      }}
     tMesh = stage.elapsed();
     // 边线采样间距
     double edgeSpacing = qBound(0.001, diag * 0.001, 2.0);
