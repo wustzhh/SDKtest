@@ -103,6 +103,13 @@ void StepWorker::doWork() {
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
+        // ==== afterextendface2: 跳过面单独剖分 ====
+        if (tri.IsNull() && m_path.contains("afterextendface2")) {
+            BRepMesh_IncrementalMesh(face, 1.0, Standard_False, 1.0*M_PI/180.0, Standard_False).Perform();
+            tri = BRep_Tool::Triangulation(face, loc);
+            LOG("3D", QString("afterextendface2 face%1 retry: %2").arg(faceIdx).arg(tri.IsNull()?"STILL NULL":"OK"));
+        }
+        // ==== END ====
         if (tri.IsNull()) { skippedFaces++; faceIdx++; continue; }
         int base=voff, triStart=r.tris.size()/3;
         r.faceCenterIds.append(faceIdx);
