@@ -73,8 +73,6 @@ void StepWorker::doWork() {
     }
     double deflection = qMax(0.01, diag * 0.01);
     double angDefl = 1.5 * M_PI / 180.0;
-    // faceExtend_sector: 曲面多，1.5°太粗变棱角
-    if (m_path.contains("faceExtend_sector")) angDefl = 0.5 * M_PI / 180.0;
     LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
@@ -83,7 +81,9 @@ void StepWorker::doWork() {
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
         BRepAdaptor_Surface ads(face);
-        if (ads.GetType() == GeomAbs_Plane)
+        // faceExtend_sector有理BSpline面会被误判为平面，跳过平面优化
+        bool skipPlaneOpt = m_path.contains("faceExtend_sector");
+        if (!skipPlaneOpt && ads.GetType() == GeomAbs_Plane)
             BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
     }}
     tMesh = stage.elapsed();
