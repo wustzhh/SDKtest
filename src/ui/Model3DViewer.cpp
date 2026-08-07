@@ -30,6 +30,7 @@
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRep_Tool.hxx>
 #include <BRepAdaptor_Surface.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <GeomAbs_Shape.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
@@ -77,12 +78,22 @@ void StepWorker::doWork() {
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
-    // 平面用合理粗剖（不用1e6避免误杀被误判的曲面）
+    // 平面优化：只有所有边全是直线的真平面才极粗重剖
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
         BRepAdaptor_Surface ads(face);
-        if (ads.GetType() == GeomAbs_Plane)
-            BRepMesh_IncrementalMesh(face, deflection * 100, Standard_False, 10.0*M_PI/180.0, Standard_False).Perform();
+        if (ads.GetType() != GeomAbs_Plane) continue;
+        // 检查是否所有边都是直线，有曲线边则不是纯平面，不碰
+        bool allLines = true;
+        TopExp_Explorer eExp(face, TopAbs_EDGE);
+        for (; eExp.More(); eExp.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(eExp.Current());
+            if (BRep_Tool::Degenerated(edge)) continue;
+            BRepAdaptor_Curve ac(edge);
+            if (ac.GetType() != GeomAbs_Line) { allLines = false; break; }
+        }
+        if (!allLines) continue;
+        BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
     }}
     tMesh = stage.elapsed();
     // 边线采样间距
