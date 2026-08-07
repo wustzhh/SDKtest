@@ -107,7 +107,23 @@ void StepWorker::doWork() {
         if (tri.IsNull() && m_path.contains("afterextendface2")) {
             BRepMesh_IncrementalMesh(face, 1.0, Standard_False, 1.0*M_PI/180.0, Standard_False).Perform();
             tri = BRep_Tool::Triangulation(face, loc);
-            LOG("3D", QString("afterextendface2 face%1 retry: %2").arg(faceIdx).arg(tri.IsNull()?"STILL NULL":"OK"));
+            if (!tri.IsNull()) {
+                // 检查三角化质量
+                int nbTri = tri->NbTriangles(), nbNodes = tri->NbNodes(), nbDeg=0;
+                double minArea=1e30, maxArea=0;
+                for (int i=1; i<=nbTri; i++) {
+                    int n1,n2,n3; tri->Triangle(i).Get(n1,n2,n3);
+                    gp_Pnt p1=tri->Node(n1).Transformed(loc.Transformation()),
+                           p2=tri->Node(n2).Transformed(loc.Transformation()),
+                           p3=tri->Node(n3).Transformed(loc.Transformation());
+                    double area = gp_Vec(p1,p2).Crossed(gp_Vec(p1,p3)).Magnitude() * 0.5;
+                    if (area < 1e-12) nbDeg++;
+                    if (area < minArea) minArea = area;
+                    if (area > maxArea) maxArea = area;
+                }
+                LOG("3D", QString("afterextendface2 face%1: tri=%2 nodes=%3 deg=%4 area=[%5,%6]")
+                    .arg(faceIdx).arg(nbTri).arg(nbNodes).arg(nbDeg).arg(minArea,0,'g',3).arg(maxArea,0,'g',3));
+            }
         }
         // ==== END ====
         if (tri.IsNull()) { skippedFaces++; faceIdx++; continue; }
