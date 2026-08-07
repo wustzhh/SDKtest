@@ -2,6 +2,9 @@
   "test_binary": "build/Release/ybaf-mesher-test.exe",
   "working_dir": ".",
   "extra_args": ["--gtest_also_run_disabled_tests"],
+  "model_params": [
+    {"match": "afterextendface2", "defl_pct": 0.3, "ang_deg": 0.5}
+  ],
   "categories": [
     {
       "name": "🧊 网格测试",
