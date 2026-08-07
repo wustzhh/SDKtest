@@ -93,17 +93,39 @@ void StepWorker::doWork() {
             }
         }
     }
-    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4° (global + plane refine)")
+    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
-    BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
-    // 平面单独极粗重剖
-    { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
-        TopoDS_Face face = TopoDS::Face(fExp.Current());
-        BRepAdaptor_Surface ads(face);
-        if (ads.GetType() == GeomAbs_Plane)
-            BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
-    }}
+    // 少面模型按面自适应，避免大面小面混在一起时全局参数失真
+    if (totalFaces <= 20) {
+        LOG("MESH","  per-face BRepMesh (few faces)");
+        TopExp_Explorer fExp(shape, TopAbs_FACE);
+        for (; fExp.More(); fExp.Next()) {
+            TopoDS_Face face = TopoDS::Face(fExp.Current());
+            BRepAdaptor_Surface ads(face);
+            if (ads.GetType() == GeomAbs_Plane) {
+                BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
+            } else {
+                Bnd_Box fb; BRepBndLib::Add(face, fb);
+                double fx1,fy1,fz1,fx2,fy2,fz2;
+                if (!fb.IsVoid()) {
+                    fb.Get(fx1,fy1,fz1,fx2,fy2,fz2);
+                    double fdiag = sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1));
+                    double fdefl = qMax(0.05, fdiag * 0.01);
+                    BRepMesh_IncrementalMesh(face, fdefl, Standard_False, angDefl, Standard_False).Perform();
+                }
+            }
+        }
+    } else {
+        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
+        // 平面单独极粗重剖
+        { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
+            TopoDS_Face face = TopoDS::Face(fExp.Current());
+            BRepAdaptor_Surface ads(face);
+            if (ads.GetType() == GeomAbs_Plane)
+                BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
+        }}
+    }
     tMesh = stage.elapsed();
     // 边线采样间距
     double edgeSpacing = qBound(0.001, diag * 0.001, 2.0);
