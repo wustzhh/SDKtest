@@ -74,6 +74,8 @@ void StepWorker::doWork() {
     }
     double deflection = qMax(0.01, diag * 0.01);
     double angDefl = 1.5 * M_PI / 180.0;
+    // faceExtend_sector曲面多，1.5°棱角明显
+    if (m_path.contains("faceExtend_sector")) angDefl = 0.5 * M_PI / 180.0;
     LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
