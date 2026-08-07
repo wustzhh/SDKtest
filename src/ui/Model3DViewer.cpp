@@ -73,8 +73,15 @@ void StepWorker::doWork() {
     }
     double deflection = qMax(0.01, diag * 0.01);
     double angDefl = 1.5 * M_PI / 180.0;
-    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=1.5° (global + plane refine)")
-        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3));
+    // ==== MODEL_SPECIFIC: afterextendface2显示扭曲，单独用细参数 ====
+    if (m_path.contains("afterextendface2")) {
+        deflection = qMax(0.01, diag * 0.003);
+        angDefl = 0.5 * M_PI / 180.0;
+    }
+    // ==== END MODEL_SPECIFIC ====
+    LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4° (global + plane refine)")
+        .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
+        .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
     // 平面单独极粗重剖
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
