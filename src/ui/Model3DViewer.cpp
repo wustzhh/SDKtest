@@ -73,12 +73,6 @@ void StepWorker::doWork() {
     }
     double deflection = qMax(0.01, diag * 0.01);
     double angDefl = 1.5 * M_PI / 180.0;
-    // ==== afterextendface2 单独参数，不影响其他模型 ====
-    if (m_path.contains("afterextendface2")) {
-        deflection = qMax(0.01, diag * 0.008);
-        angDefl = 1.0 * M_PI / 180.0;
-    }
-    // ==== END ====
     LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4°")
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
