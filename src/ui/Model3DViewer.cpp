@@ -77,14 +77,12 @@ void StepWorker::doWork() {
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
-    // 平面单独极粗重剖
+    // 平面用合理粗剖（不用1e6避免误杀被误判的曲面）
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
         BRepAdaptor_Surface ads(face);
-        // faceExtend_sector有理BSpline面会被误判为平面，跳过平面优化
-        bool skipPlaneOpt = m_path.contains("faceExtend_sector");
-        if (!skipPlaneOpt && ads.GetType() == GeomAbs_Plane)
-            BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
+        if (ads.GetType() == GeomAbs_Plane)
+            BRepMesh_IncrementalMesh(face, deflection * 100, Standard_False, 10.0*M_PI/180.0, Standard_False).Perform();
     }}
     tMesh = stage.elapsed();
     // 边线采样间距
