@@ -3,7 +3,7 @@
   "working_dir": ".",
   "extra_args": ["--gtest_also_run_disabled_tests"],
   "model_params": [
-    {"match": "afterextendface2", "defl_pct": 0.3, "ang_deg": 0.5}
+    {"match": "afterextendface2", "defl_pct": 0.8, "ang_deg": 1.0}
   ],
   "categories": [
     {
