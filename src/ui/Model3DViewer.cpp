@@ -11,6 +11,9 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #include <QTextStream>
 #include <QMap>
 #include <QSet>
@@ -73,12 +76,23 @@ void StepWorker::doWork() {
     }
     double deflection = qMax(0.01, diag * 0.01);
     double angDefl = 1.5 * M_PI / 180.0;
-    // ==== MODEL_SPECIFIC: afterextendface2显示扭曲，单独用细参数 ====
-    if (m_path.contains("afterextendface2")) {
-        deflection = qMax(0.01, diag * 0.003);
-        angDefl = 0.5 * M_PI / 180.0;
+    // 从配置文件读取模型专属参数覆盖
+    {
+        QString cfgPath = QCoreApplication::applicationDirPath() + "/config/test_config.json";
+        QFile cf(cfgPath);
+        if (cf.open(QIODevice::ReadOnly)) {
+            QJsonDocument doc = QJsonDocument::fromJson(cf.readAll());
+            cf.close();
+            for (const auto& v : doc.object()["model_params"].toArray()) {
+                QJsonObject o = v.toObject();
+                if (m_path.contains(o["match"].toString())) {
+                    if (o.contains("defl_pct")) deflection = qMax(0.01, diag * o["defl_pct"].toDouble() / 100.0);
+                    if (o.contains("ang_deg")) angDefl = o["ang_deg"].toDouble() * M_PI / 180.0;
+                    break;
+                }
+            }
+        }
     }
-    // ==== END MODEL_SPECIFIC ====
     LOG("MESH",QString("diag=%1 faces=%2 defl=%3 ang=%4° (global + plane refine)")
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
