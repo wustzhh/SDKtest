@@ -28,7 +28,6 @@
 #ifdef HAS_OCC
 #include <STEPControl_Reader.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
-#include <ShapeFix_Shape.hxx>
 #include <BRep_Tool.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <GeomAbs_Shape.hxx>
@@ -78,14 +77,6 @@ void StepWorker::doWork() {
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
-    // ==== afterextendface2: ShapeFix修复几何 ====
-    if (m_path.contains("afterextendface2")) {
-        Handle(ShapeFix_Shape) sfs = new ShapeFix_Shape(shape);
-        sfs->Perform();
-        shape = sfs->Shape();
-        BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
-    }
-    // ==== END ====
     // 平面单独极粗重剖
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
