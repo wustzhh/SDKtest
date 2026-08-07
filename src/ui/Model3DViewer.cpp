@@ -299,7 +299,7 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
     float mx=1e9,my=1e9,mz=1e9,Mx=-1e9,My=-1e9,Mz=-1e9;
     for(auto& vv:v){if(vv.x()<mx)mx=vv.x();if(vv.x()>Mx)Mx=vv.x();if(vv.y()<my)my=vv.y();if(vv.y()>My)My=vv.y();if(vv.z()<mz)mz=vv.z();if(vv.z()>Mz)Mz=vv.z();}
     m_modelSize=qMax(qMax(Mx-mx,My-my),Mz-mz);m_modelSize=qMax(m_modelSize,.001f);
-    m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_hasAnchor=false;resetView();
+    m_anchor=QVector3D((mx+Mx)/2,(my+My)/2,(mz+Mz)/2);m_defaultAnchor=m_anchor;m_hasAnchor=false;resetView();
     LOG("3D",QString("AABB: X=[%1,%2] Y=[%3,%4] Z=[%5,%6] size=%7 anchor=(%8,%9,%10)")
         .arg(mx,0,'f',3).arg(Mx,0,'f',3).arg(my,0,'f',3).arg(My,0,'f',3)
         .arg(mz,0,'f',3).arg(Mz,0,'f',3).arg(m_modelSize,0,'f',3)
@@ -324,7 +324,6 @@ void GLViewer::loadMesh(const QVector<QVector3D>& v,const QVector<int>& t,const 
         m_naCache[i*3] = m_normals[i].x(); m_naCache[i*3+1] = m_normals[i].y(); m_naCache[i*3+2] = m_normals[i].z();
     }
     m_vboDirty = true;
-    m_defaultAnchor = m_anchor;  // 保存初始锚点用于复位
 }
 void GLViewer::resetView(){
     m_rot = QQuaternion::fromAxisAndAngle(QVector3D(0,1,0), -35)
