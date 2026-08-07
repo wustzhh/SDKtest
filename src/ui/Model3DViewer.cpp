@@ -103,10 +103,17 @@ void StepWorker::doWork() {
     for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current()); TopLoc_Location loc;
         Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
-        // ==== afterextendface2: 被跳过的面单独重试细剖 ====
+        // ==== afterextendface2: 被跳过的面单独重试 ====
         if (tri.IsNull() && m_path.contains("afterextendface2")) {
-            LOG("3D", QString("afterextendface2 face %1 has no triangulation, retrying...").arg(faceIdx));
-            BRepMesh_IncrementalMesh(face, 0.1, Standard_False, 0.5*M_PI/180.0, Standard_False).Perform();
+            Bnd_Box fb; BRepBndLib::Add(face, fb);
+            double fx1,fy1,fz1,fx2,fy2,fz2;
+            double fdefl = 0.1;
+            if (!fb.IsVoid()) {
+                fb.Get(fx1,fy1,fz1,fx2,fy2,fz2);
+                fdefl = qMax(0.1, sqrt((fx2-fx1)*(fx2-fx1)+(fy2-fy1)*(fy2-fy1)+(fz2-fz1)*(fz2-fz1)) * 0.005);
+            }
+            LOG("3D", QString("afterextendface2 face %1 retry defl=%2").arg(faceIdx).arg(fdefl,0,'f',3));
+            BRepMesh_IncrementalMesh(face, fdefl, Standard_False, 1.0*M_PI/180.0, Standard_False).Perform();
             tri = BRep_Tool::Triangulation(face, loc);
         }
         // ==== END ====
