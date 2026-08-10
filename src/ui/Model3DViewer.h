@@ -165,5 +165,6 @@ private:
     QTimer* m_timeoutTimer = nullptr;
     QTimer* m_countdownTimer = nullptr;
     int m_remainingSeconds = 0;
+    bool m_busyLoading = false;  // 加载互斥：BRepMesh 卡死 terminate 期间拒绝新加载
     StepWorker* m_worker = nullptr;
 };

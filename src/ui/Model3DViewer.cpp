@@ -1118,7 +1118,7 @@ Model3DViewer::Model3DViewer(QWidget* p):QWidget(p){
 }
 Model3DViewer::~Model3DViewer(){cancelLoad();}
 void Model3DViewer::updateCountdown(){m_remainingSeconds--;if(m_remainingSeconds>0)m_status->setText(QString::fromUtf8("\xE5\x8A\xA0\xE8\xBD\xBD\xE4\xB8\xAD... %1s").arg(m_remainingSeconds));}
-void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop();
+void Model3DViewer::cancelLoad(){m_countdownTimer->stop();m_timeoutTimer->stop();m_busyLoading=false;
     if(m_workerThread){m_workerThread->requestInterruption();m_workerThread->quit();m_workerThread->wait(2000);}
     if(m_worker){m_worker->deleteLater();m_worker=nullptr;}m_workerThread=nullptr;}
 void Model3DViewer::loadFile(const QString& fp){
@@ -1152,6 +1152,13 @@ void Model3DViewer::loadFile(const QString& fp){
 #ifndef HAS_OCC
     m_status->setText("OCCT not available");LOG("3D","OCCT not available");return;
 #endif
+    // 加载互斥：上一个 worker 若因 BRepMesh 卡死还没终止，拒绝新加载，避免叠加
+    if (m_busyLoading) {
+        LOG("3D","busy loading, reject new load: "+fp);
+        m_status->setText(QString::fromUtf8("\xE5\x8A\xA0\xE8\xBD\xBD\xE4\xB8\xAD\xEF\xBC\x8C\xE8\xAF\xB7\xE7\xAD\x89\xE5\xBE\x85"));
+        return;
+    }
+    m_busyLoading = true;
     m_worker=new StepWorker(fp);m_workerThread=new QThread(this);m_worker->moveToThread(m_workerThread);
     connect(m_workerThread,&QThread::started,m_worker,&StepWorker::doWork);
     connect(m_worker,&StepWorker::progress,this,[this](const QString& t){m_status->setText(t);});
@@ -1165,14 +1172,26 @@ void Model3DViewer::loadFile(const QString& fp){
             m_status->setStyleSheet("color:#10b981;font-size:12px;padding:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:6px;");
             emit modelLoaded();}
         else{m_status->setText(r.error);m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");LOG("3D","FAIL: "+r.error);emit modelLoaded();}
+        m_busyLoading=false;
         if(m_workerThread){m_workerThread->quit();m_workerThread->wait();m_workerThread=nullptr;}if(m_worker){m_worker->deleteLater();m_worker=nullptr;}
     });
     connect(m_workerThread,&QThread::finished,this,[this](){if(m_worker){m_worker->deleteLater();m_worker=nullptr;}});
     connect(m_timeoutTimer,&QTimer::timeout,this,[this](){
-        LOG("3D","TIMEOUT 30s");m_countdownTimer->stop();
-        if(m_workerThread){m_workerThread->requestInterruption();m_workerThread->quit();m_workerThread->wait(1000);m_workerThread=nullptr;}
+        LOG("3D","TIMEOUT 30s, terminating worker thread");m_countdownTimer->stop();
+        if(m_workerThread){
+            m_workerThread->requestInterruption();
+            // BRepMesh 不响应中断，强制终止线程（纯计算线程，宁可泄漏不卡死）
+            m_workerThread->terminate();
+            if(!m_workerThread->wait(2000)){
+                m_workerThread->terminate();
+                m_workerThread->wait(2000);
+            }
+            m_workerThread->deleteLater();
+            m_workerThread=nullptr;
+        }
         if(m_worker){m_worker->deleteLater();m_worker=nullptr;}
-        m_status->setText(QString::fromUtf8("\xE8\xB6\x85\xE6\x97\xB6\xEF\xBC\x88")+"30s\xEF\xBC\x89");m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");
+        m_busyLoading=false;
+        m_status->setText(QString::fromUtf8("\xE8\xB6\x85\xE6\x97\xB6\xEF\xBC\x8830s\xEF\xBC\x89"));m_status->setStyleSheet("color:#ef4444;font-size:12px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;");
     });
     m_remainingSeconds=30;m_status->setText(QString::fromUtf8("\xE5\x8A\xA0\xE8\xBD\xBD\xE4\xB8\xAD... 30s"));
     m_countdownTimer->start(1000);m_timeoutTimer->start(30000);m_workerThread->start();
