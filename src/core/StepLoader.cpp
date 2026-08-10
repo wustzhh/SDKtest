@@ -70,6 +70,33 @@ void StepWorker::doWork() {
     LOG("3D", QString("stage: mesh start t=%1ms").arg(t.elapsed()));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
     LOG("3D", QString("stage: mesh done t=%1ms").arg(t.elapsed()));
+
+    // ── 自适应纠正：shape 包围盒可能被"幽灵几何"污染(如faceExtend_sector diag=9403 vs 实际60mm)，
+    //    导致 defl 远大于模型真实尺寸、三角形过少。直接用实际顶点AABB的diag对比，
+    //    若 shape diag 远大于实际 diag(>10x)，说明被污染，按真实尺寸重剖。
+    {
+        // 用实际顶点 AABB 算 diag
+        double mx=1e30,my=1e30,mz=1e30,Mx=-1e30,My=-1e30,Mz=-1e30;
+        { TopExp_Explorer fe(shape, TopAbs_FACE); for (; fe.More(); fe.Next()) {
+            TopLoc_Location loc;
+            Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(TopoDS::Face(fe.Current()), loc);
+            if (tri.IsNull()) continue;
+            for (int i=1;i<=tri->NbNodes();i++) {
+                gp_Pnt p = tri->Node(i).Transformed(loc.Transformation());
+                if (p.X()<mx)mx=p.X(); if (p.X()>Mx)Mx=p.X();
+                if (p.Y()<my)my=p.Y(); if (p.Y()>My)My=p.Y();
+                if (p.Z()<mz)mz=p.Z(); if (p.Z()>Mz)Mz=p.Z();
+            }
+        }}
+        double realDiag = (Mx>mx) ? sqrt((Mx-mx)*(Mx-mx)+(My-my)*(My-my)+(Mz-mz)*(Mz-mz)) : diag;
+        // shape diag 是实际 diag 的 10 倍以上 → 被幽灵几何污染
+        if (realDiag > 0 && diag > realDiag * 10.0) {
+            double realDefl = qMax(0.01, realDiag * 0.01);
+            LOG("MESH", QString("diag polluted(%1 vs real %2), re-mesh with defl=%3")
+                .arg(diag,0,'f',1).arg(realDiag,0,'f',1).arg(realDefl,0,'f',3));
+            BRepMesh_IncrementalMesh(shape, realDefl, Standard_False, angDefl, true).Perform();
+        }
+    }
     // ==== 平面优化：只对"真平面 + 全直边"的多边形面极粗重剖 ====
     // 1. GetType()==Plane 会把有理BSpline曲面误判为平面 → DownCast验证底层
     // 2. 曲边的平面（BSpline边界）不算纯平面 → 检查边全直线

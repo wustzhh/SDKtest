@@ -61,6 +61,17 @@ int main(int argc, char* argv[]) {
         StepLoadResult r = runStepWorker(m);
         fprintf(stderr, "=== done: ok=%d tris=%d elapsed=%dms ===\n",
                 r.ok ? 1 : 0, (int)r.tris.size() / 3, r.elapsedMs);
+        // 三角形边长统计
+        if (r.ok && !r.tris.isEmpty()) {
+            double minLen=1e30, maxLen=0, avgLen=0; int n=0;
+            for (int i=0; i+2<r.tris.size(); i+=3) {
+                QVector3D a=r.verts[r.tris[i]], b=r.verts[r.tris[i+1]], c=r.verts[r.tris[i+2]];
+                double len=((a-b).length()+(b-c).length()+(c-a).length())/3.0;
+                if(len<minLen)minLen=len; if(len>maxLen)maxLen=len; avgLen+=len; n++;
+            }
+            if(n) avgLen/=n;
+            fprintf(stderr, "  tri边: n=%d min=%.3f max=%.3f avg=%.3f mm\n", n, minLen, maxLen, avgLen);
+        }
         if (!r.ok) fail++;
     }
     return fail;
