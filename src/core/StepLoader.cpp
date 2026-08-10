@@ -70,26 +70,12 @@ void StepWorker::doWork() {
     LOG("3D", QString("stage: mesh start t=%1ms").arg(t.elapsed()));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
     LOG("3D", QString("stage: mesh done t=%1ms").arg(t.elapsed()));
-    // ==== 平面优化：只对"真平面 + 全直边"的多边形面极粗重剖 ====
-    // 1. GetType()==Plane 会把有理BSpline曲面误判为平面 → DownCast验证底层
-    // 2. 曲边的平面（BSpline边界）不算纯平面 → 检查边全直线
+    // ==== 平面优化（修改前版本）：GetType()==Plane 即极粗剖 ====
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
         BRepAdaptor_Surface ads(face);
-        if (ads.GetType() != GeomAbs_Plane) continue;
-        // 底层几何不是真 Geom_Plane → 被误判的曲面 → 不碰
-        if (ads.Surface().Surface().IsNull() || ads.Surface().Surface()->DynamicType() != STANDARD_TYPE(Geom_Plane)) continue;
-        // 所有边必须是直线，曲边平面不粗剖
-        bool allLines = true;
-        TopExp_Explorer eExp(face, TopAbs_EDGE);
-        for (; eExp.More(); eExp.Next()) {
-            TopoDS_Edge edge = TopoDS::Edge(eExp.Current());
-            if (BRep_Tool::Degenerated(edge)) continue;
-            BRepAdaptor_Curve ac(edge);
-            if (ac.GetType() != GeomAbs_Line) { allLines = false; break; }
-        }
-        if (!allLines) continue;
-        BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
+        if (ads.GetType() == GeomAbs_Plane)
+            BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
     }}
     // ==== END ====
     tMesh = stage.elapsed();
