@@ -9,6 +9,10 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Core OpenGLWidgets)
 find_package(VTK QUIET)
 find_package(OpenCASCADE QUIET)
 
+# gtest（仅测试目标使用）
+enable_testing()
+find_package(GTest QUIET)
+
 file(GLOB_RECURSE SOURCES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -24,6 +28,22 @@ if(OpenCASCADE_FOUND)
     message(STATUS "OCCT enabled")
 else()
     message(STATUS "OCCT not found - 3D placeholder")
+endif()
+
+# ── 模型加载测试目标：测 StepWorker 模型加载（不依赖 Qt Widgets/OpenGL）──
+if(OpenCASCADE_FOUND)
+    add_executable(model_load_test
+        src/core/StepLoader.cpp
+        src/core/Logger.cpp
+        tests/model_load_test.cpp
+    )
+    target_include_directories(model_load_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_compile_definitions(model_load_test PRIVATE HAS_OCC)
+    target_link_libraries(model_load_test PRIVATE
+        Qt6::Core Qt6::Gui
+        ${OpenCASCADE_LIBRARIES}
+    )
+    message(STATUS "model_load_test enabled")
 endif()
 
 if(WIN32)

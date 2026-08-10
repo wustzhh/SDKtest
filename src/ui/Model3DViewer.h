@@ -16,43 +16,7 @@
 #include <QThread>
 #include <QTimer>
 #include <TopoDS_Shape.hxx>
-
-struct EdgeLine {
-    int v0, v1;
-    QVector3D color;
-};
-
-struct FaceBBox {
-    double minX, minY, minZ;
-    double maxX, maxY, maxZ;
-};
-
-struct StepLoadResult {
-    bool ok = false;
-    QString error;
-    QVector<QVector3D> verts;
-    QVector<int> tris;
-    QVector<QVector3D> normals;
-    QVector<EdgeLine> edges;
-    QVector<int> faceIds;    // 每个三角形的面 ID（与 tris 一一对应）
-    QVector<QVector3D> faceCenters; // 每个面的中心点
-    QVector<int> faceCenterIds; // 与 faceCenters 一一对应的面 ID
-    QVector<FaceBBox> faceBBoxes; // 每个面的包围盒（与 faceCenterIds 一一对应）
-    int elapsedMs = 0;
-    TopoDS_Shape shape;
-};
-
-class StepWorker : public QObject {
-    Q_OBJECT
-public:
-    StepWorker(const QString& path) : m_path(path) {}
-    void doWork();
-signals:
-    void progress(const QString& text);
-    void finished(const StepLoadResult& result);
-private:
-    QString m_path;
-};
+#include "core/StepLoader.h"
 
 class GLViewer : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
