@@ -79,15 +79,25 @@ void StepWorker::doWork() {
         .arg(diag,0,'f',1).arg(totalFaces).arg(deflection,0,'f',3)
         .arg(angDefl*180.0/M_PI,0,'f',2));
     BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angDefl, true).Perform();
-    // ==== 平面优化：只对"底层几何真的是Geom_Plane"的面极粗重剖 ====
-    // 关键：GetType()==Plane 会把有理BSpline曲面误判为平面(faceExtend_sector类)
-    // 必须 DownCast 验证底层 surface 真的是 Geom_Plane
+    // ==== 平面优化：只对"真平面 + 全直边"的多边形面极粗重剖 ====
+    // 1. GetType()==Plane 会把有理BSpline曲面误判为平面 → DownCast验证底层
+    // 2. 曲边的平面（BSpline边界）不算纯平面 → 检查边全直线
     { TopExp_Explorer fExp(shape, TopAbs_FACE); for (; fExp.More(); fExp.Next()) {
         TopoDS_Face face = TopoDS::Face(fExp.Current());
         BRepAdaptor_Surface ads(face);
         if (ads.GetType() != GeomAbs_Plane) continue;
         // 底层几何不是真 Geom_Plane → 被误判的曲面 → 不碰
         if (Handle(Geom_Plane)::DownCast(ads.Surface()).IsNull()) continue;
+        // 所有边必须是直线，曲边平面不粗剖
+        bool allLines = true;
+        TopExp_Explorer eExp(face, TopAbs_EDGE);
+        for (; eExp.More(); eExp.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(eExp.Current());
+            if (BRep_Tool::Degenerated(edge)) continue;
+            BRepAdaptor_Curve ac(edge);
+            if (ac.GetType() != GeomAbs_Line) { allLines = false; break; }
+        }
+        if (!allLines) continue;
         BRepMesh_IncrementalMesh(face, 1e6, Standard_False, 30.0*M_PI/180.0, Standard_False).Perform();
     }}
     // ==== END ====
