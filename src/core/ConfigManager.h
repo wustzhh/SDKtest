@@ -64,6 +64,7 @@ public:
 
     // ── Profile 管理 ──
     const QVector<ExeProfile>& profiles() const { return m_profiles; }
+    QVector<ExeProfile>& profiles() { return m_profiles; }
     int activeProfile() const { return m_activeProfile; }
     const ExeProfile& currentProfile() const;
     ExeProfile& currentProfile();

@@ -1125,14 +1125,17 @@ void MainWindow::onEditConfig() {
         if (ok && !name.isEmpty()) { s.name = name; sel[0]->setText(0, name); }
     });
     connect(btnSceneDel, &QPushButton::clicked, &dlg, [&]() {
+        LOG("CFG", "btnSceneDel clicked");
         auto sel = sceneTree->selectedItems();
-        if (sel.isEmpty()) return;
+        if (sel.isEmpty()) { LOG("CFG", "  no selection"); return; }
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
         auto& scs = m_config.profiles()[currentEditIdx].scenarios;   // 编辑的profile，非currentProfile
+        LOG("CFG", QString("  del idx=%1 profileIdx=%2 scsSize=%3").arg(idx).arg(currentEditIdx).arg(scs.size()));
         if (idx < 0 || idx >= scs.size()) return;   // 越界保护
         scs.remove(idx);
         delete sel[0];
-        m_config.save();
+        bool saved = m_config.save();
+        LOG("CFG", QString("  removed, save=%1").arg(saved));
         refreshScenarioCombo();   // 同步主窗口方案下拉框（按名恢复，防索引漂移）
     });
     // 编辑筛选条件
