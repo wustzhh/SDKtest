@@ -762,6 +762,12 @@ void TestTreePanel::onFilterChanged(const QString& text) {
 }
 bool TestTreePanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
     if (!item) return false;
+    // 递归显示所有后代（清空搜索时全部恢复）
+    auto showAll = [](QTreeWidgetItem* it) {
+        if (!it) return;
+        it->setHidden(false);
+        for (int i = 0; i < it->childCount(); ++i) showAll(it->child(i));
+    };
     if (item->childCount() == 0) {
         bool match = text.isEmpty() || item->text(0).contains(text, Qt::CaseInsensitive);
         item->setHidden(!match);
@@ -769,11 +775,12 @@ bool TestTreePanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
     }
     bool selfMatch = item->text(0).contains(text, Qt::CaseInsensitive);  // 父节点自身匹配
     bool any = selfMatch;
-    for (int i = 0; i < item->childCount(); ++i) {
-        if (selfMatch)
-            item->child(i)->setHidden(false);   // 父节点匹配 → 子节点全显示
-        else if (applyFilter(item->child(i), text)) any = true;
+    if (selfMatch) {
+        showAll(item);   // 父节点匹配 → 整个子树全显示
+        return true;
     }
+    for (int i = 0; i < item->childCount(); ++i)
+        if (applyFilter(item->child(i), text)) any = true;
     item->setHidden(!any);
     return any;
 }
