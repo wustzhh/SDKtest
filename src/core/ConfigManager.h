@@ -98,6 +98,7 @@ public:
     struct UIState {
         int  windowX = -1, windowY = -1, windowW = 1280, windowH = 800;
         bool maximized = false;
+        int  screenIndex = -1;     // 窗口所在屏幕（-1=不指定）
         int  themeIndex = 0;       // 0=light 1=dark 2=high contrast
         int  splitterLeftPct = 20;   // 左面板宽度百分比
         int  splitterRightPct = 30;  // 右面板宽度百分比

@@ -29,6 +29,8 @@
 #include <QFile>
 #include <QTextStream>
 #include <QCoreApplication>
+#include <QScreen>
+#include <QGuiApplication>
 #include <QVector>
 #include <QPair>
 #include <QEventLoop>
@@ -95,6 +97,18 @@ MainWindow::MainWindow(QWidget* parent)
         if (m_leftPanel) m_leftPanel->setVisible(ui.leftPanelVisible);
         if (m_rightPanel) m_rightPanel->setVisible(ui.rightPanelVisible);
         if (ui.windowX >= 0) {
+            // 多屏定位：先移动到保存的屏幕，再设几何/最大化
+            const auto screens = QGuiApplication::screens();
+            if (ui.screenIndex >= 0 && ui.screenIndex < screens.size()) {
+                QScreen* target = screens[ui.screenIndex];
+                QRect targetGeo = target->availableGeometry();
+                // 若窗口几何不在目标屏幕内，则平移到目标屏幕
+                QRect wGeo(ui.windowX, ui.windowY, ui.windowW, ui.windowH);
+                if (!targetGeo.intersects(wGeo)) {
+                    ui.windowX = targetGeo.x() + (targetGeo.width() - ui.windowW) / 2;
+                    ui.windowY = targetGeo.y() + (targetGeo.height() - ui.windowH) / 2;
+                }
+            }
             setGeometry(ui.windowX, ui.windowY, ui.windowW, ui.windowH);
             if (ui.maximized) showMaximized();
         }
@@ -1695,6 +1709,11 @@ void MainWindow::refreshProfileCombo() {
 
 void MainWindow::saveLayout() {
     auto& ui = m_config.uiState;
+    // 记录窗口所在屏幕（多屏定位用）
+    if (QScreen* scr = screen()) {
+        const auto screens = QGuiApplication::screens();
+        ui.screenIndex = screens.indexOf(scr);
+    }
     if (isMaximized()) { ui.maximized = true; }
     else {
         ui.maximized = false;

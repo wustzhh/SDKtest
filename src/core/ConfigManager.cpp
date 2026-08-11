@@ -144,6 +144,7 @@ void ConfigManager::fromJson(const QJsonObject& obj) {
     uiState.windowW = ui["window_w"].toInt(1280);
     uiState.windowH = ui["window_h"].toInt(800);
     uiState.maximized = ui["maximized"].toBool(false);
+    uiState.screenIndex = ui["screen_index"].toInt(-1);
     uiState.themeIndex = ui["theme"].toInt(0);
     uiState.splitterLeftPct = ui["splitter_left_pct"].toInt(20);
     uiState.splitterRightPct = ui["splitter_right_pct"].toInt(30);
@@ -171,6 +172,7 @@ QJsonObject ConfigManager::toJson() const {
     ui["window_w"] = uiState.windowW;
     ui["window_h"] = uiState.windowH;
     ui["maximized"] = uiState.maximized;
+    ui["screen_index"] = uiState.screenIndex;
     ui["theme"] = uiState.themeIndex;
     ui["splitter_left_pct"] = uiState.splitterLeftPct;
     ui["splitter_right_pct"] = uiState.splitterRightPct;
