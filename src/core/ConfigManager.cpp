@@ -13,8 +13,13 @@ ConfigManager::ConfigManager() {
 }
 
 QString ConfigManager::defaultConfigPath() {
-    // 跟随 exe：exe 同目录 config/test_config.json（配置随程序分发，外传不丢）
-    return QCoreApplication::applicationDirPath() + "/config/test_config.json";
+    // 优先 D 盘，没有则 C 盘
+    QString base = "C:";
+    for (const auto& d : QDir::drives()) {
+        QString name = d.absolutePath().toUpper();
+        if (name.startsWith("D")) { base = "D:"; break; }
+    }
+    return base + "/.SDKtest/config.json";
 }
 
 const ExeProfile& ConfigManager::currentProfile() const {
