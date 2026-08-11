@@ -571,37 +571,14 @@ void MainWindow::onRunSelected() {
     QVector<TestCase> originalSel = sel;
     LOG("RUN", QString("Selected: %1 tests (discovery=%2)").arg(sel.size()).arg(m_loader.testCases().size()));
 
-    // 聚合优化：全选所有用例 → "*"；某套件全选 → "SuiteName.*"
-    bool allSelected = (sel.size() == m_loader.testCases().size());
-    if (allSelected) {
-        TestCase star; star.suiteName = "*"; star.caseName = "";
-        sel = {star};
-        LOG("RUN", "All tests selected, filter=*");
-    } else {
-        auto allCases = m_loader.groupedBySuite();
-        QMap<QString, int> selCount;
-        for (const auto& tc : sel) selCount[tc.suiteName]++;
-        QVector<TestCase> optimized;
-        for (auto it = allCases.begin(); it != allCases.end(); ++it) {
-            int selectedInSuite = selCount.value(it.key());
-            if (selectedInSuite == 0) continue;
-            if (selectedInSuite == it.value().size()) {
-                TestCase suiteAll; suiteAll.suiteName = it.key(); suiteAll.caseName = "*";
-                optimized.append(suiteAll);
-                LOG("RUN", QString("Suite '%1' fully selected (%2 tests) → %1.*").arg(it.key()).arg(it.value().size()));
-            } else {
-                for (const auto& tc : sel)
-                    if (tc.suiteName == it.key()) optimized.append(tc);
-            }
-        }
-        sel = optimized;
-    }
-
+    // 不再聚合为 "*" 或 "Suite.*"：全选也传精确名，
+    // 避免 filter="*" 在 exe 白名单未拦时穿透跑全部用例
+    // （此前全选→"*"→ exe 白名单只拦list不拦运行→跑全部2079）
     m_report = {};
     m_seenResults.clear();
     m_report.startTime = QDateTime::currentDateTime();
     m_report.testBinary = m_config.testBinary();
-    m_report.filterPattern = allSelected ? "*" : "custom";
+    m_report.filterPattern = "custom";  // 始终用精确 filter，不再用 *
 
     m_centerResultView->clear();
     m_progress->startRun(actualRunCount);
