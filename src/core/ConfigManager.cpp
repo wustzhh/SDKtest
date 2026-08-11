@@ -38,6 +38,22 @@ ExeProfile& ConfigManager::currentProfile() {
 
 // ── 旧接口兼容 ──
 QString ConfigManager::testBinary() const { return currentProfile().testBinary; }
+
+QString ConfigManager::whiteListFor(const QString& exeName) const {
+    // 读内置配置：exe 同目录 config/test_config.json（与运行时配置 D:/.SDKtest 独立）
+    QFile f(QCoreApplication::applicationDirPath() + "/config/test_config.json");
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return {};
+    QJsonParseError perr;
+    QJsonDocument doc = QJsonDocument::fromJson(f.readAll(), &perr);
+    f.close();
+    if (perr.error != QJsonParseError::NoError) return {};
+    for (const auto& v : doc.object()["profiles"].toArray()) {
+        QJsonObject po = v.toObject();
+        if (po["test_binary"].toString().trimmed().toLower() == exeName)
+            return po["white_list"].toString();
+    }
+    return {};
+}
 QString ConfigManager::workingDir() const { return currentProfile().workingDir; }
 QStringList ConfigManager::extraArgs() const { return currentProfile().extraArgs; }
 QVector<TestCategory> ConfigManager::categories() const { return currentProfile().categories; }

@@ -76,6 +76,8 @@ public:
 
     // ── 旧接口兼容 ──
     QString testBinary() const;
+    // 白名单映射：exe名 → white_list（读内置配置 exe同目录/config/test_config.json，独立于运行时配置）
+    QString whiteListFor(const QString& exeName) const;
     QString workingDir() const;
     QStringList extraArgs() const;
     QVector<TestCategory> categories() const;
