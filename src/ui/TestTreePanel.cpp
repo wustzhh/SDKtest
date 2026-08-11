@@ -767,9 +767,13 @@ bool TestTreePanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
         item->setHidden(!match);
         return match;
     }
-    bool any = false;
-    for (int i = 0; i < item->childCount(); ++i)
-        if (applyFilter(item->child(i), text)) any = true;
+    bool selfMatch = item->text(0).contains(text, Qt::CaseInsensitive);  // 父节点自身匹配
+    bool any = selfMatch;
+    for (int i = 0; i < item->childCount(); ++i) {
+        if (selfMatch)
+            item->child(i)->setHidden(false);   // 父节点匹配 → 子节点全显示
+        else if (applyFilter(item->child(i), text)) any = true;
+    }
     item->setHidden(!any);
     return any;
 }
