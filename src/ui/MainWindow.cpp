@@ -552,24 +552,13 @@ void MainWindow::onLoadTests() {
                 while (!in.atEnd()) {
                     QString line = in.readLine().trimmed();
                     if (line.isEmpty()) continue;
-                    // 特征名：取最后一段（/ 后；无 / 取 . 后）
-                    QString key = line;
-                    int slash = key.lastIndexOf('/');
-                    if (slash >= 0) key = key.mid(slash + 1);
-                    else { int dot = key.lastIndexOf('.'); if (dot >= 0) key = key.mid(dot + 1); }
-                    if (!key.isEmpty()) wlKeys.insert(key);
+                    wlKeys.insert(line);  // 整行 = 完整用例名，直接匹配
                 }
             }
             if (!wlKeys.isEmpty()) {
                 QVector<TestCase> filtered;
                 for (const auto& tc : m_loader.testCases()) {
-                    // 匹配：caseName 等于特征名，或以特征名+"/数字"（参数化后缀）
-                    bool hit = wlKeys.contains(tc.caseName);
-                    if (!hit) {
-                        for (const QString& k : wlKeys) {
-                            if (tc.caseName.startsWith(k) && tc.caseName.size() > k.size() && tc.caseName[k.size()] == '/') { hit = true; break; }
-                        }
-                    }
+                    bool hit = wlKeys.contains(tc.fullName());  // 直接比完整名
                     if (hit) filtered.append(tc);
                 }
                 LOG("LOAD", QString("Whitelist %1: %2 → %3 tests").arg(wlFile).arg(n).arg(filtered.size()));
