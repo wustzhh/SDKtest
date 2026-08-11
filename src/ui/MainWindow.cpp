@@ -541,8 +541,15 @@ void MainWindow::onLoadTests() {
         int n = m_loader.testCases().size();
         LOG("LOAD", "OK, found: " + QString::number(n) + " tests");
 
-        // ── UI 侧白名单过滤：按当前 profile 的 whitelist_file 显示特供用例 ──
-        QString wlFile = m_config.currentProfile().whitelistFile;
+        // ── UI 侧白名单过滤：exe 名匹配配置中 test_binary，命中才用 white_list ──
+        QString exeName = QFileInfo(binary).fileName().toLower();  // 实际启动的 exe 名
+        QString wlFile;
+        for (const auto& p : m_config.profiles()) {
+            if (p.testBinary.trimmed().toLower() == exeName) {
+                wlFile = p.whiteList;
+                break;
+            }
+        }
         if (!wlFile.isEmpty()) {
             QFile wf(QCoreApplication::applicationDirPath() + "/config/" + wlFile);
             QSet<QString> wlKeys;

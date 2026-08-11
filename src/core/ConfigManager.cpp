@@ -210,7 +210,7 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
         p.scenarios.push_back(s);
     }
     p.lastScenarioName = obj["last_scenario_name"].toString();
-    p.whitelistFile = obj["whitelist_file"].toString();
+    p.whiteList = obj["white_list"].toString();
     auto envObj = obj["env_vars"].toObject();
     for (auto it = envObj.begin(); it != envObj.end(); ++it)
         p.envVars[it.key()] = it.value().toString();
@@ -266,8 +266,8 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
     obj["scenarios"] = scs;
     if (!p.lastScenarioName.isEmpty())
         obj["last_scenario_name"] = p.lastScenarioName;
-    if (!p.whitelistFile.isEmpty())
-        obj["whitelist_file"] = p.whitelistFile;
+    if (!p.whiteList.isEmpty())
+        obj["white_list"] = p.whiteList;
     QJsonObject envObj;
     for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
         envObj[it.key()] = it.value();

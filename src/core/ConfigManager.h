@@ -43,7 +43,7 @@ struct ExeProfile {
     QVector<TestCategory> categories;
     QVector<TestScenario> scenarios;
     QString     lastScenarioName; // 上次选择的方案名，启动时恢复
-    QString     whitelistFile;   // 特供用例白名单文件（相对 config 目录，空=不过滤）
+    QString     whiteList;        // 白名单文件名（相对 config 目录），空=不过滤
 
     bool isValid() const { return !testBinary.isEmpty(); }
 };

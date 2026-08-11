@@ -1,51 +1,12 @@
 {
-    "test_binary": "build/Release/ybaf-mesher-test.exe",
-    "working_dir": ".",
-    "extra_args": [
-        "--gtest_also_run_disabled_tests"
-    ],
-    "categories": [
-        {
-            "name": "🧊 网格测试",
-            "prefixes": [
-                "meshhelper",
-                "MeshTest",
-                "surface"
-            ]
-        },
-        {
-            "name": "🔧 几何测试",
-            "prefixes": [
-                "FixtureTest",
-                "TestBase",
-                "ut_geometry"
-            ]
-        },
-        {
-            "name": "📐 2DM/3DM 对比",
-            "prefixes": [
-                "Compare2D3D",
-                "testhelp"
-            ]
-        },
-        {
-            "name": "📋 接口示例",
-            "prefixes": [
-                "test_example",
-                "Example"
-            ]
-        }
-    ],
-    "profiles": [
-        {
-            "name": "华为SDK",
-            "test_binary": "D:/pyProj/HUAWEISDK/test/hwGeomTests.exe",
-            "whitelist_file": "hwGeom_whitelist.txt"
-        },
-        {
-            "name": "网格mesher",
-            "test_binary": "D:/pyProj/HUAWEISDK/test/zmaingt.exe",
-            "whitelist_file": "zmaing_whitelist.txt"
-        }
-    ]
+  "profiles": [
+    {
+      "test_binary": "hwGeomTests.exe",
+      "white_list": "hwGeom_whitelist.txt"
+    },
+    {
+      "test_binary": "zmaingt.exe",
+      "white_list": "zmaing_whitelist.txt"
+    }
+  ]
 }
