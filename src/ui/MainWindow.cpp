@@ -1128,8 +1128,12 @@ void MainWindow::onEditConfig() {
         auto sel = sceneTree->selectedItems();
         if (sel.isEmpty()) return;
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
-        m_config.currentProfile().scenarios.remove(idx);
+        auto& scs = m_config.currentProfile().scenarios;
+        if (idx < 0 || idx >= scs.size()) return;   // 越界保护
+        scs.remove(idx);
         delete sel[0];
+        m_config.save();
+        refreshScenarioCombo();   // 同步主窗口方案下拉框（按名恢复，防索引漂移）
     });
     // 编辑筛选条件
     connect(btnSceneFilter, &QPushButton::clicked, &dlg, [&]() {
