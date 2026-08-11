@@ -1062,7 +1062,7 @@ void MainWindow::onEditConfig() {
         QStringList sel = m_testList->selectedTestNames();
         if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe5\x9c\xa8\xe5\xb7\xa6\xe4\xbe\xa7\xe9\x80\x89\xe6\x8b\xa9\xe7\x94\xa8\xe4\xbe\x8b")); return; }
         int idx = sceneTree->indexOfTopLevelItem(selItems[0]);
-        m_config.currentProfile().scenarios[idx].selectedTests = sel;
+        m_config.profiles()[currentEditIdx].scenarios[idx].selectedTests = sel;
         selItems[0]->setText(1, QString::number(sel.size()));
     });
     // 另存为：新建方案
@@ -1119,7 +1119,7 @@ void MainWindow::onEditConfig() {
         auto sel = sceneTree->selectedItems();
         if (sel.isEmpty()) return;
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
-        auto& s = m_config.currentProfile().scenarios[idx];
+        auto& s = m_config.profiles()[currentEditIdx].scenarios[idx];
         bool ok; QString name = QInputDialog::getText(&dlg, QString::fromUtf8("\xe9\x87\x8d\xe5\x91\xbd\xe5\x90\x8d"),
             QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88\xe5\x90\x8d"), QLineEdit::Normal, s.name, &ok);
         if (ok && !name.isEmpty()) { s.name = name; sel[0]->setText(0, name); }
@@ -1128,7 +1128,7 @@ void MainWindow::onEditConfig() {
         auto sel = sceneTree->selectedItems();
         if (sel.isEmpty()) return;
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
-        auto& scs = m_config.currentProfile().scenarios;
+        auto& scs = m_config.profiles()[currentEditIdx].scenarios;   // 编辑的profile，非currentProfile
         if (idx < 0 || idx >= scs.size()) return;   // 越界保护
         scs.remove(idx);
         delete sel[0];
@@ -1140,7 +1140,7 @@ void MainWindow::onEditConfig() {
         auto sel = sceneTree->selectedItems();
         if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
-        auto& s = m_config.currentProfile().scenarios[idx];
+        auto& s = m_config.profiles()[currentEditIdx].scenarios[idx];
         // 收集当前结果的属性键值
         QStringList propKeys;
         propKeys << "#" << QString::fromUtf8("\xe7\x8a\xb6\xe6\x80\x81")
@@ -1188,8 +1188,8 @@ void MainWindow::onEditConfig() {
         auto sel = sceneTree->selectedItems();
         if (sel.isEmpty()) { QMessageBox::information(&dlg, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe9\x80\x89\xe6\x8b\xa9\xe4\xb8\x80\xe4\xb8\xaa\xe6\x96\xb9\xe6\xa1\x88")); return; }
         int idx = sceneTree->indexOfTopLevelItem(sel[0]);
-        if (idx < 0 || idx >= m_config.currentProfile().scenarios.size()) return;
-        const auto& s = m_config.currentProfile().scenarios[idx];
+        if (idx < 0 || idx >= m_config.profiles()[currentEditIdx].scenarios.size()) return;
+        const auto& s = m_config.profiles()[currentEditIdx].scenarios[idx];
         QJsonObject obj;
         obj["name"] = s.name;
         QJsonArray tests;
