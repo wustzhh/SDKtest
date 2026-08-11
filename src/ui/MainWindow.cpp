@@ -541,13 +541,10 @@ void MainWindow::onLoadTests() {
         int n = m_loader.testCases().size();
         LOG("LOAD", "OK, found: " + QString::number(n) + " tests");
 
-        // ── UI 侧白名单过滤：按 testBinary 匹配特供 txt，只显示特供用例 ──
-        QString binLow = binary.toLower();
-        QString wlFile;
-        if (binLow.contains("hwgeomtests"))      wlFile = "config/hwGeom_whitelist.txt";
-        else if (binLow.contains("zmaingt"))     wlFile = "config/zmaing_whitelist.txt";
+        // ── UI 侧白名单过滤：按当前 profile 的 whitelist_file 显示特供用例 ──
+        QString wlFile = m_config.currentProfile().whitelistFile;
         if (!wlFile.isEmpty()) {
-            QFile wf(QCoreApplication::applicationDirPath() + "/" + wlFile);
+            QFile wf(QCoreApplication::applicationDirPath() + "/config/" + wlFile);
             QSet<QString> wlKeys;
             if (wf.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 QTextStream in(&wf);
