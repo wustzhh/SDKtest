@@ -128,6 +128,8 @@ void TestRunner::startNextBatch() {
 
     LOG("RUN", QString("Start batch %1/%2: %3 tests, filter=%4 chars")
         .arg(batchIdx+1).arg(m_batches.size()).arg(batch->cases.size()).arg(filter.length()));
+    // 诊断：打印 filter 全文（截断超长）
+    LOG("RUN", QString("  filter=[%1]").arg(filter.left(500) + (filter.length()>500 ? "..." : "")));
 
     // stdout
     connect(batch->process, &QProcess::readyReadStandardOutput, this, [this, batch]() {
@@ -198,6 +200,22 @@ void TestRunner::onBatchFinished(BatchState* batch) {
     if (m_cancelled) return;
 
     LOG("RUN", "Batch done, stdout: " + QString::number(batch->accumulatedStdout.size()) + " bytes");
+    // 诊断：统计本批 gtest 实际运行的用例数
+    {
+        int runCount = 0;
+        QRegularExpression runRe(R"(\[ *RUN *\] (\S+))");
+        auto it = runRe.globalMatch(batch->accumulatedStdout);
+        QStringList ran;
+        while (it.hasNext()) { auto m = it.next(); runCount++; if (ran.size() < 8) ran << m.captured(1); }
+        LOG("RUN", QString("  gtest实际RUN: %1 个, 样例: %2")
+            .arg(runCount).arg(ran.join(", ")));
+        QRegularExpression sumRe(R"(\[=+\] (\d+) tests? from (\d+) test suites? ran)");
+        auto sm = sumRe.match(batch->accumulatedStdout);
+        if (sm.hasMatch())
+            LOG("RUN", QString("  gtest汇总: %1 tests from %2 suites ran").arg(sm.captured(1)).arg(sm.captured(2)));
+        else
+            LOG("RUN", QString("  (stdout中未找到 gtest 汇总行, 输出前200字符: %1)").arg(batch->accumulatedStdout.left(200).simplified()));
+    }
     auto exitStatus = batch->process ? batch->process->exitStatus() : QProcess::NormalExit;
     auto exitCode   = batch->process ? batch->process->exitCode() : -1;
     LOG("RUN", QString("Batch exit: code=%1  status=%2")
