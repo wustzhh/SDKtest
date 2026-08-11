@@ -26,6 +26,9 @@
 #include <QUrl>
 #include <QSplitter>
 #include <QSet>
+#include <QFile>
+#include <QTextStream>
+#include <QCoreApplication>
 #include <QVector>
 #include <QPair>
 #include <QEventLoop>
@@ -537,6 +540,61 @@ void MainWindow::onLoadTests() {
     if (m_loader.load(binary, m_config.extraArgs(), m_config.workingDir(), m_config.currentProfile().dependencies, m_config.currentProfile().envVars)) {
         int n = m_loader.testCases().size();
         LOG("LOAD", "OK, found: " + QString::number(n) + " tests");
+
+        // ── UI 侧白名单过滤：按 testBinary 匹配特供 txt，只显示特供用例 ──
+        QString binLow = binary.toLower();
+        QString wlFile;
+        if (binLow.contains("hwgeomtests"))      wlFile = "config/hwGeom_whitelist.txt";
+        else if (binLow.contains("zmaingt"))     wlFile = "config/zmaing_whitelist.txt";
+        if (!wlFile.isEmpty()) {
+            QFile wf(QCoreApplication::applicationDirPath() + "/" + wlFile);
+            QSet<QString> wlKeys;
+            if (wf.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QTextStream in(&wf);
+                while (!in.atEnd()) {
+                    QString line = in.readLine().trimmed();
+                    if (line.isEmpty()) continue;
+                    // 特征名：取最后一段（/ 后；无 / 取 . 后）
+                    QString key = line;
+                    int slash = key.lastIndexOf('/');
+                    if (slash >= 0) key = key.mid(slash + 1);
+                    else { int dot = key.lastIndexOf('.'); if (dot >= 0) key = key.mid(dot + 1); }
+                    if (!key.isEmpty()) wlKeys.insert(key);
+                }
+            }
+            if (!wlKeys.isEmpty()) {
+                QVector<TestCase> filtered;
+                for (const auto& tc : m_loader.testCases()) {
+                    // 匹配：caseName 等于特征名，或以特征名+"/数字"（参数化后缀）
+                    bool hit = wlKeys.contains(tc.caseName);
+                    if (!hit) {
+                        for (const QString& k : wlKeys) {
+                            if (tc.caseName.startsWith(k) && tc.caseName.size() > k.size() && tc.caseName[k.size()] == '/') { hit = true; break; }
+                        }
+                    }
+                    if (hit) filtered.append(tc);
+                }
+                LOG("LOAD", QString("Whitelist %1: %2 → %3 tests").arg(wlFile).arg(n).arg(filtered.size()));
+                // 重建 suite 列表（过滤后的）
+                QSet<QString> suites;
+                for (const auto& tc : filtered) suites.insert(tc.suiteName);
+                m_suiteNames = suites.values();
+                m_testList->loadTests(filtered, m_config.categories());
+                m_centerResultView->clear();
+                m_report = {};
+                m_seenResults.clear();
+                m_testList->reapplyFilter();
+                if (m_scenarioCombo && m_scenarioCombo->currentIndex() > 0) {
+                    int scIdx = m_scenarioCombo->currentIndex() - 1;
+                    auto& scs = m_config.currentProfile().scenarios;
+                    if (scIdx < scs.size())
+                        m_testList->setSelectedTestNames(scs[scIdx].selectedTests);
+                }
+                statusBar()->showMessage(QString("Loaded %1 tests (whitelist)").arg(filtered.size()), 5000);
+                return;
+            }
+        }
+
         m_suiteNames = m_loader.groupedBySuite().keys();
         m_testList->loadTests(m_loader.testCases(), m_config.categories());
         m_centerResultView->clear();
