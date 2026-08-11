@@ -1,4 +1,5 @@
 #include "TestTreePanel.h"
+#include "core/Logger.h"
 
 #include <QHeaderView>
 #include <QVBoxLayout>
@@ -736,8 +737,22 @@ void TestTreePanel::selectAll(bool select) {
 }
 
 void TestTreePanel::onFilterChanged(const QString& text) {
+    LOG("TREE", QString("search textChanged: [%1] len=%2").arg(text).arg(text.length()));
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
         applyFilter(m_tree->topLevelItem(i), text);
+    // 诊断：清空搜索时统计可见节点
+    if (text.isEmpty()) {
+        int topVis=0, suiteVis=0, caseVis=0;
+        std::function<void(QTreeWidgetItem*,int)> cnt = [&](QTreeWidgetItem* it, int depth) {
+            if (it->isHidden()) return;
+            if (depth==0) topVis++;
+            else if (depth==1) suiteVis++;
+            else if (depth>=2) caseVis++;
+            for (int j=0;j<it->childCount();++j) cnt(it->child(j), depth+1);
+        };
+        for (int i=0;i<m_tree->topLevelItemCount();++i) cnt(m_tree->topLevelItem(i),0);
+        LOG("TREE", QString("search cleared: top=%1 suite=%2 case=%3").arg(topVis).arg(suiteVis).arg(caseVis));
+    }
     // 隐藏的项取消选中 + 向上传播更新
     std::function<void(QTreeWidgetItem*)> deselHidden = [&](QTreeWidgetItem* item) {
         for (int i = 0; i < item->childCount(); ++i) {
@@ -763,7 +778,7 @@ void TestTreePanel::onFilterChanged(const QString& text) {
 bool TestTreePanel::applyFilter(QTreeWidgetItem* item, const QString& text) {
     if (!item) return false;
     // 递归显示所有后代（清空搜索时全部恢复）
-    auto showAll = [](QTreeWidgetItem* it) {
+    std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* it) {
         if (!it) return;
         it->setHidden(false);
         for (int i = 0; i < it->childCount(); ++i) showAll(it->child(i));
