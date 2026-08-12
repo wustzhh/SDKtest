@@ -52,7 +52,7 @@ private:
     void setupConnections();
     void updateButtonStates();
     void refreshProfileCombo();
-    void refreshScenarioCombo();
+    void refreshScenarioCombo(bool applySelection = true);  // false=只刷新下拉项不应用勾选
     void refreshRestoreCombo();
     void onRestoreFromFile(int index);
     void saveLayout();

@@ -1533,7 +1533,7 @@ void MainWindow::onAllFinished() {
         if (!foundWith && !withProp.isEmpty()) { TestScenario s; s.name = QString::fromUtf8("\xe6\x9c\x89\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba"); s.selectedTests = withProp; prof.scenarios.push_back(s); }
         if (!foundWithout && !withoutProp.isEmpty()) { TestScenario s; s.name = QString::fromUtf8("\xe6\x97\xa0\xe5\x8f\x82\xe6\x95\xb0\xe8\xbe\x93\xe5\x87\xba"); s.selectedTests = withoutProp; prof.scenarios.push_back(s); }
         m_config.save();
-        refreshScenarioCombo();
+        refreshScenarioCombo(false);  // 只刷新下拉项，不应用方案勾选（避免运行完自动全选）
     }
     // ── 持久化用例数据（按配置保存，只保留最后一次） ──
     if (!m_report.results.isEmpty()) {
@@ -1686,7 +1686,14 @@ void MainWindow::refreshScenarioCombo() {
             restoreIdx = i + 1;
     }
     m_scenarioCombo->blockSignals(false);
-    m_scenarioCombo->setCurrentIndex(restoreIdx);  // 移到blockSignals之后触发加载
+    if (applySelection) {
+        m_scenarioCombo->setCurrentIndex(restoreIdx);  // 触发勾选应用（用户切换方案/启动恢复）
+    } else {
+        // 只更新下拉项显示，不应用方案勾选（如运行完刷新）
+        m_scenarioCombo->blockSignals(true);
+        m_scenarioCombo->setCurrentIndex(restoreIdx);
+        m_scenarioCombo->blockSignals(false);
+    }
     // 恢复逐个运行复选框状态（blockSignals防止触发toggle保存）
     if (m_chkSingleTest) {
         m_chkSingleTest->blockSignals(true);
