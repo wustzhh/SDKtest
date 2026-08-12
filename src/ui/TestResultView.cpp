@@ -31,6 +31,13 @@ public:
             option->fontMetrics = QFontMetrics(option->font);
         }
     }
+    // 关键：sizeHint 也用普通字体（不应用高亮加粗）→ 列宽稳定，点击不右移
+    QSize sizeHint(const QStyleOptionViewItem& option,
+                   const QModelIndex& index) const override {
+        QStyleOptionViewItem opt = option;
+        QStyledItemDelegate::initStyleOption(&opt, index);  // 基类版，不加粗
+        return QStyledItemDelegate::sizeHint(opt, index);
+    }
 };
 
 
