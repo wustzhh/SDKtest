@@ -136,6 +136,10 @@ public:
     QStringList selectedTestNames() const;
     void setSelectedTestNames(const QStringList& names);
     void selectAll(bool select);
+    // 结果状态过滤：fullName→status，按钮切换显示
+    void setResultStatus(const QString& fullName, const QString& status);
+    void setResultFilter(const QString& status);   // 空=全部，否则只显示该状态
+    void applyResultFilter();
     QVector<FilterRule> advFilters() const { return m_advFilters; }
     bool filterEnabled() const { return m_filterEnabled; }
     void setAdvFilters(const QVector<FilterRule>& f, bool enabled);
@@ -188,6 +192,12 @@ private:
     QPushButton*    m_btnSelectAll;
     QPushButton*    m_btnDeselectAll;
     QLabel*         m_lblStats;
+    QPushButton*    m_btnShowAll;      // 显示全部
+    QPushButton*    m_btnShowPassed;   // 只显示通过
+    QPushButton*    m_btnShowFailed;   // 只显示失败
+    QPushButton*    m_btnShowSkipped;  // 只显示跳过
+    QMap<QString, QString> m_resultStatus;  // fullName → PASSED/FAILED/SKIPPED
+    QString         m_resultFilter;    // 空=全部, 否则按状态过滤
     QTreeWidget*    m_tree;
     QMenu*          m_contextMenu;
     QVector<TestCase> m_allCases;
