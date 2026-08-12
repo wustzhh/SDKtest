@@ -79,10 +79,38 @@ TestResultView::TestResultView(QWidget* parent)
     });
     m_lblStats = new QLabel("", m_content);
     m_lblStats->setStyleSheet("color:#8892a6; font-size:11px;");
+    // 结果状态显示/隐藏按钮
+    m_btnAll     = new QPushButton(QString::fromUtf8("\xe5\x85\xa8\xe9\x83\xa8"), m_content);
+    m_btnPassed  = new QPushButton(QString::fromUtf8("\xe9\x80\x9a\xe8\xbf\x87"), m_content);
+    m_btnFailed  = new QPushButton(QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5"), m_content);
+    m_btnSkipped = new QPushButton(QString::fromUtf8("\xe8\xb7\xb3\xe8\xbf\x87"), m_content);
+    for (auto* b : {m_btnAll, m_btnPassed, m_btnFailed, m_btnSkipped}) {
+        b->setFixedHeight(24);
+        b->setStyleSheet("QPushButton{font-size:11px;padding:0 8px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;}"
+                         "QPushButton:checked{background:#6c5ce7;color:#fff;border-color:#6c5ce7;}");
+        b->setCheckable(true);
+    }
+    m_btnAll->setChecked(true);
+    auto btnFilter = [this](QPushButton* b, const QString& st) {
+        connect(b, &QPushButton::clicked, this, [this, b, st]() {
+            for (auto* x : {m_btnAll, m_btnPassed, m_btnFailed, m_btnSkipped})
+                if (x != b) x->setChecked(false);
+            b->setChecked(true);
+            setResultFilter(st);
+        });
+    };
+    btnFilter(m_btnAll, "");
+    btnFilter(m_btnPassed, "PASSED");
+    btnFilter(m_btnFailed, "FAILED");
+    btnFilter(m_btnSkipped, "SKIPPED");
     toolbar->addWidget(m_searchEdit, 2);
     toolbar->addWidget(m_btnExpand);
     toolbar->addWidget(m_btnCollapse);
     toolbar->addWidget(m_btnLocate);
+    toolbar->addWidget(m_btnAll);
+    toolbar->addWidget(m_btnPassed);
+    toolbar->addWidget(m_btnFailed);
+    toolbar->addWidget(m_btnSkipped);
     toolbar->addWidget(m_lblStats);
     contentLayout->addLayout(toolbar);
 
@@ -179,6 +207,42 @@ void TestResultView::showResults(const QVector<TestRunResult>& results) {
             .arg(failed > 0 ? "#f44336" : "#4CAF50"));
 
     m_tree->expandAll();
+}
+
+void TestResultView::setResultFilter(const QString& status) {
+    m_resultFilter = status;
+    applyResultFilter();
+}
+
+void TestResultView::applyResultFilter() {
+    // 遍历结果树，按 m_resultMap[fullName].status 隐藏/显示
+    std::function<void(QTreeWidgetItem*)> filter = [&](QTreeWidgetItem* item) {
+        for (int i = 0; i < item->childCount(); ++i) {
+            auto* child = item->child(i);
+            QString fullName = child->data(1, Qt::UserRole).toString();
+            if (!fullName.isEmpty() && m_resultMap.contains(fullName)) {
+                QString st = m_resultMap[fullName]->status;
+                child->setHidden(!m_resultFilter.isEmpty() && st != m_resultFilter);
+            } else if (child->childCount() > 0) {
+                filter(child);
+            }
+        }
+        // 父节点：有可见子则显示
+        bool anyVis = false;
+        for (int j = 0; j < item->childCount(); ++j)
+            if (!item->child(j)->isHidden()) { anyVis = true; break; }
+        item->setHidden(!anyVis);
+    };
+    if (m_resultFilter.isEmpty()) {
+        // 全部：显示所有
+        std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* item) {
+            item->setHidden(false);
+            for (int i = 0; i < item->childCount(); ++i) showAll(item->child(i));
+        };
+        for (int i = 0; i < m_tree->topLevelItemCount(); ++i) showAll(m_tree->topLevelItem(i));
+    } else {
+        for (int i = 0; i < m_tree->topLevelItemCount(); ++i) filter(m_tree->topLevelItem(i));
+    }
 }
 
 void TestResultView::clear() {

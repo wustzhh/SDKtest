@@ -27,6 +27,8 @@ public:
 
     // 显示所有运行结果
     void showResults(const QVector<TestRunResult>& results);
+    void setResultFilter(const QString& status);  // 空=全部, 否则按状态过滤结果树
+    void applyResultFilter();
 
     // 清空
     void clear();
@@ -68,6 +70,11 @@ private:
     QPushButton*    m_btnCollapse;
     QPushButton*    m_btnLocate;
     QLabel*         m_lblStats;
+    QPushButton*    m_btnAll;
+    QPushButton*    m_btnPassed;
+    QPushButton*    m_btnFailed;
+    QPushButton*    m_btnSkipped;
+    QString         m_resultFilter;
     QTreeWidget*    m_tree;
     QTreeWidget*    m_propTree;
 
