@@ -126,7 +126,7 @@ TestResultView::TestResultView(QWidget* parent)
     m_tree->setAlternatingRowColors(true);
     m_tree->setWordWrap(true);
     m_tree->setTextElideMode(Qt::ElideNone);
-    m_tree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);  // 固定由视图分配，避免内容变宽导致列右移
     m_tree->setStyleSheet(
         "QTreeWidget { font-size:13px; border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
         "QTreeWidget::item { padding:6px 10px; min-height:28px; border-bottom:1px solid #f1f5f9; }"
@@ -359,17 +359,14 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     Q_UNUSED(column);
     if (!item) return;
 
-    // 取消上次高亮（恢复原前景色 + 清背景）
+    // 取消上次高亮（恢复原前景色 + 清背景 + 原字体）
     if (m_lastHighlighted && m_lastHighlighted != item) {
         for (int c = 0; c < 2; c++) {
             m_lastHighlighted->setBackground(c, QBrush());
             QVariant saved = m_lastHighlighted->data(c, Qt::UserRole + 2);
             if (saved.isValid()) m_lastHighlighted->setForeground(c, saved.value<QColor>());
         }
-        // 恢复原字体（去掉加粗，避免列宽 ResizeToContents 变化导致内容右移）
-        QFont nf = m_lastHighlighted->font(1);
-        nf.setBold(false);
-        m_lastHighlighted->setFont(1, nf);
+        QFont nf = m_lastHighlighted->font(1); nf.setBold(false); m_lastHighlighted->setFont(1, nf);
     }
     // 保存当前项原前景色，然后高亮
     for (int c = 0; c < 2; c++) {
@@ -380,6 +377,7 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setBackground(c, QColor(0xe8,0xf5,0xe9));   // 淡绿背景
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
+    QFont bf = item->font(1); bf.setBold(true); item->setFont(1, bf);  // 加粗高亮（列宽固定，不再引起右移）
     m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
 
     // 点击 stdout 节点弹出完整内容
