@@ -352,43 +352,15 @@ TestTreePanel::TestTreePanel(QWidget* parent)
     m_btnReverseFilter->setStyleSheet(tbBtn + "QPushButton{padding:0 10px;font-size:13px;}");
     m_btnReverseFilter->setToolTip(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
     m_lblStats = new QLabel("0", this);
-    // 结果状态显示/隐藏按钮
-    m_btnShowAll = new QPushButton(QString::fromUtf8("\xe5\x85\xa8\xe9\x83\xa8"), this);
-    m_btnShowPassed = new QPushButton(QString::fromUtf8("\xe9\x80\x9a\xe8\xbf\x87"), this);
-    m_btnShowFailed = new QPushButton(QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5"), this);
-    m_btnShowSkipped = new QPushButton(QString::fromUtf8("\xe8\xb7\xb3\xe8\xbf\x87"), this);
-    for (auto* b : {m_btnShowAll, m_btnShowPassed, m_btnShowFailed, m_btnShowSkipped}) {
-        b->setFixedHeight(28);
-        b->setStyleSheet(tbBtn + "QPushButton{padding:0 8px;font-size:12px;}");
-        b->setCheckable(true);
-    }
-    m_btnShowAll->setChecked(true);  // 默认全部
     tb->addWidget(m_btnSelectAll);
     tb->addWidget(m_btnDeselectAll);
     tb->addWidget(m_btnReverseFilter);
-    tb->addWidget(m_btnShowAll);
-    tb->addWidget(m_btnShowPassed);
-    tb->addWidget(m_btnShowFailed);
-    tb->addWidget(m_btnShowSkipped);
     tb->addStretch();
     tb->addWidget(m_lblStats);
     layout->addWidget(m_toolbar);
     connect(m_btnSelectAll,   &QPushButton::clicked, this, &TestTreePanel::onSelectAllClicked);
     connect(m_btnDeselectAll, &QPushButton::clicked, this, &TestTreePanel::onDeselectAllClicked);
     connect(m_btnReverseFilter, &QPushButton::clicked, this, &TestTreePanel::onAdvancedFilter);
-    // 结果状态过滤按钮（互斥）
-    auto btnFilter = [this](QPushButton* b, const QString& st) {
-        connect(b, &QPushButton::clicked, this, [this, b, st]() {
-            for (auto* x : {m_btnShowAll, m_btnShowPassed, m_btnShowFailed, m_btnShowSkipped})
-                if (x != b) x->setChecked(false);
-            b->setChecked(true);
-            setResultFilter(st);
-        });
-    };
-    btnFilter(m_btnShowAll, "");
-    btnFilter(m_btnShowPassed, "PASSED");
-    btnFilter(m_btnShowFailed, "FAILED");
-    btnFilter(m_btnShowSkipped, "SKIPPED");
 
     // Tree
     m_tree = new QTreeWidget(this);
@@ -555,51 +527,6 @@ int TestTreePanel::countVisibleLeafRec(QTreeWidgetItem* item) const {
     for (int i = 0; i < item->childCount(); ++i)
         n += countVisibleLeafRec(item->child(i));
     return n;
-}
-
-void TestTreePanel::setResultStatus(const QString& fullName, const QString& status) {
-    m_resultStatus[fullName] = status;
-    if (!m_resultFilter.isEmpty()) applyResultFilter();
-}
-
-void TestTreePanel::setResultFilter(const QString& status) {
-    m_resultFilter = status;
-    applyResultFilter();
-}
-
-void TestTreePanel::applyResultFilter() {
-    if (!m_resultFilter.isEmpty()) {
-        // 只显示指定状态的用例（隐藏其他），结果状态未知的也隐藏
-        std::function<void(QTreeWidgetItem*)> filter = [&](QTreeWidgetItem* item) {
-            for (int i = 0; i < item->childCount(); ++i) {
-                auto* child = item->child(i);
-                if (child->data(0, Role_Type).toString() == "case") {
-                    QString suite = child->data(0, Role_SuiteName).toString();
-                    QString name  = child->data(0, Role_CaseName).toString();
-                    QString st = m_resultStatus.value(suite + "." + name);
-                    child->setHidden(st != m_resultFilter);
-                } else {
-                    filter(child);
-                }
-            }
-            // 父节点：有可见子则显示
-            bool anyVis = false;
-            for (int j = 0; j < item->childCount(); ++j)
-                if (!item->child(j)->isHidden()) { anyVis = true; break; }
-            item->setHidden(!anyVis);
-        };
-        for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
-            filter(m_tree->topLevelItem(i));
-    } else {
-        // 显示全部（恢复隐藏状态，由搜索/其他过滤决定）
-        std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* item) {
-            item->setHidden(false);
-            for (int i = 0; i < item->childCount(); ++i) showAll(item->child(i));
-        };
-        for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
-            showAll(m_tree->topLevelItem(i));
-    }
-    updateStats();
 }
 
 void TestTreePanel::updateStats() {

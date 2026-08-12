@@ -1453,8 +1453,6 @@ void MainWindow::onTestFinished(const TestRunResult& result) {
             LOG("PROP", "  " + it.key() + " = " + it.value());
     }
     m_report.results.append(parsed);
-    // 结果状态喂给用例树（用于 通过/失败/跳过 显示过滤）
-    m_testList->setResultStatus(fname, result.status);
 }
 
 void MainWindow::onProgressUpdated(int done, int total) {
