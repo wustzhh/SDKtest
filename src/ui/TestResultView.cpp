@@ -207,6 +207,7 @@ void TestResultView::showResults(const QVector<TestRunResult>& results) {
     m_lblStats->setText(QString("| %1").arg(results.size()));
 
     m_tree->expandAll();
+    if (!m_resultFilter.isEmpty()) applyResultFilter();  // 保持当前状态过滤
 }
 
 void TestResultView::setResultFilter(const QString& status) {
@@ -215,33 +216,18 @@ void TestResultView::setResultFilter(const QString& status) {
 }
 
 void TestResultView::applyResultFilter() {
-    // 遍历结果树，按 m_resultMap[fullName].status 隐藏/显示
-    std::function<void(QTreeWidgetItem*)> filter = [&](QTreeWidgetItem* item) {
-        for (int i = 0; i < item->childCount(); ++i) {
-            auto* child = item->child(i);
-            QString fullName = child->data(1, Qt::UserRole).toString();
-            if (!fullName.isEmpty() && m_resultMap.contains(fullName)) {
-                QString st = m_resultMap[fullName]->status;
-                child->setHidden(!m_resultFilter.isEmpty() && st != m_resultFilter);
-            } else if (child->childCount() > 0) {
-                filter(child);
-            }
+    // 顶层 item 即用例（data(1)=fullName），按 m_resultMap[fullName].status 隐藏/显示
+    // 子节点（模型树）跟随顶层隐藏状态
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i) {
+        auto* caseItem = m_tree->topLevelItem(i);
+        QString fullName = caseItem->data(1, Qt::UserRole).toString();
+        if (m_resultFilter.isEmpty()) {
+            caseItem->setHidden(false);
+        } else if (!fullName.isEmpty() && m_resultMap.contains(fullName)) {
+            caseItem->setHidden(m_resultMap[fullName]->status != m_resultFilter);
+        } else {
+            caseItem->setHidden(false);  // 无状态信息，保持显示
         }
-        // 父节点：有可见子则显示
-        bool anyVis = false;
-        for (int j = 0; j < item->childCount(); ++j)
-            if (!item->child(j)->isHidden()) { anyVis = true; break; }
-        item->setHidden(!anyVis);
-    };
-    if (m_resultFilter.isEmpty()) {
-        // 全部：显示所有
-        std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* item) {
-            item->setHidden(false);
-            for (int i = 0; i < item->childCount(); ++i) showAll(item->child(i));
-        };
-        for (int i = 0; i < m_tree->topLevelItemCount(); ++i) showAll(m_tree->topLevelItem(i));
-    } else {
-        for (int i = 0; i < m_tree->topLevelItemCount(); ++i) filter(m_tree->topLevelItem(i));
     }
 }
 
