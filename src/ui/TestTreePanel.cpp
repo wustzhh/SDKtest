@@ -712,7 +712,7 @@ void TestTreePanel::selectAll(bool select) {
         for (int i = 0; i < item->childCount(); ++i) {
             auto* child = item->child(i);
             if (child->isHidden()) {
-                setItemChecked(child, false);
+                continue;   // 隐藏项不受影响（保持原选中状态）
             } else if (child->childCount() > 0) {
                 selVis(child);
             } else {
@@ -753,25 +753,7 @@ void TestTreePanel::onFilterChanged(const QString& text) {
         for (int i=0;i<m_tree->topLevelItemCount();++i) cnt(m_tree->topLevelItem(i),0);
         LOG("TREE", QString("search cleared: top=%1 suite=%2 case=%3").arg(topVis).arg(suiteVis).arg(caseVis));
     }
-    // 隐藏的项取消选中 + 向上传播更新
-    std::function<void(QTreeWidgetItem*)> deselHidden = [&](QTreeWidgetItem* item) {
-        for (int i = 0; i < item->childCount(); ++i) {
-            auto* child = item->child(i);
-            if (child->isHidden()) {
-                setItemChecked(child, false);
-                if (child->data(0, Role_Type).toString() == "case")
-                    child->setText(0, MARK_NO + "  " + child->data(0, Role_CaseName).toString());
-            }
-            if (child->childCount() > 0) deselHidden(child);
-        }
-        if (!item->isHidden()) {
-            updateItemText(item);
-            QTreeWidgetItem* p = item->parent();
-            while (p) { updateItemText(p); p = p->parent(); }
-        }
-    };
-    for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
-        if (!m_tree->topLevelItem(i)->isHidden()) deselHidden(m_tree->topLevelItem(i));
+    // 不主动改变隐藏项的选中状态（搜索只是临时隐藏，选中保持）
     m_tree->viewport()->update();
     updateStats();
 }
