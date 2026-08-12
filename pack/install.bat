@@ -22,5 +22,7 @@ if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
 copy /y "%~dp0config.json" "D:\.SDKtest\config.json" >nul
 echo installed > "D:\.SDKtest\.installed"
 echo.
+echo [2/2] Starting...
+start "" "D:\test_runner_ui\app\test_runner_ui.exe"
 echo Done!
 pause
