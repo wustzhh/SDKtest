@@ -154,7 +154,7 @@ TestResultView::TestResultView(QWidget* parent)
     m_tree->setItemDelegate(hlDelegate);
     m_hlDelegate = hlDelegate;
     m_tree->setStyleSheet(
-        "QTreeWidget { font-size:13px; border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
+        "QTreeWidget { border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
         "QTreeWidget::item { padding:6px 10px; min-height:28px; border-bottom:1px solid #f1f5f9; }"
         "QTreeWidget::item:selected { background:#eef2ff; color:#1e293b; }"
         "QTreeWidget::item:hover { background:#f8f9fb; }"
@@ -404,11 +404,7 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
     m_tree->viewport()->update();  // 刷新 delegate 绘制加粗
-    // 只垂直滚动到 item，水平位置保持不变（避免列表右移）
-    auto* hs = m_tree->horizontalScrollBar();
-    int hpos = hs->value();
-    m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
-    hs->setValue(hpos);
+    // 点击的行本就可见，不需要 scrollToItem（它会引起水平滚动导致列表右移）
 
     // 点击 stdout 节点弹出完整内容
     if (item->text(1).startsWith("stdout") && item->toolTip(1).length() > 300) {
