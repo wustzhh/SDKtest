@@ -85,8 +85,8 @@ TestResultView::TestResultView(QWidget* parent)
     m_btnFailed  = new QPushButton(QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5"), m_content);
     m_btnSkipped = new QPushButton(QString::fromUtf8("\xe8\xb7\xb3\xe8\xbf\x87"), m_content);
     for (auto* b : {m_btnAll, m_btnPassed, m_btnFailed, m_btnSkipped}) {
-        b->setFixedHeight(24);
-        b->setStyleSheet("QPushButton{font-size:11px;padding:0 8px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;}"
+        b->setFixedHeight(22);
+        b->setStyleSheet("QPushButton{font-size:11px;padding:0 6px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;}"
                          "QPushButton:checked{background:#6c5ce7;color:#fff;border-color:#6c5ce7;}");
         b->setCheckable(true);
     }
@@ -198,13 +198,13 @@ void TestResultView::showResults(const QVector<TestRunResult>& results) {
         else if (r.status == "FAILED") failed++;
         else skipped++;
     }
-    m_lblStats->setText(
-        QString("✅ %1  ❌ %2  ⏭ %3  | 共 %4")
-            .arg(passed).arg(failed).arg(skipped).arg(results.size()));
-    m_lblStats->setStyleSheet(
-        QString("font-size: 12px; font-weight: bold; padding: 4px; "
-                "color: %1;")
-            .arg(failed > 0 ? "#f44336" : "#4CAF50"));
+    // 统计显示在按钮文本上（通过N/失败N/跳过N），不单独占空间
+    m_btnPassed->setText(QString("%1 %2").arg(QString::fromUtf8("\xe9\x80\x9a\xe8\xbf\x87"), QString::number(passed)));
+    m_btnFailed->setText(QString("%1 %2").arg(QString::fromUtf8("\xe5\xa4\xb1\xe8\xb4\xa5"), QString::number(failed)));
+    m_btnSkipped->setText(QString("%1 %2").arg(QString::fromUtf8("\xe8\xb7\xb3\xe8\xbf\x87"), QString::number(skipped)));
+    m_btnAll->setText(QString("%1 %2").arg(QString::fromUtf8("\xe5\x85\xa8\xe9\x83\xa8"), QString::number(results.size())));
+    m_lblStats->clear();   // 不再显示长统计文字
+    m_lblStats->setText(QString("| %1").arg(results.size()));
 
     m_tree->expandAll();
 }
