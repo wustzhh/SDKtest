@@ -366,6 +366,10 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
             QVariant saved = m_lastHighlighted->data(c, Qt::UserRole + 2);
             if (saved.isValid()) m_lastHighlighted->setForeground(c, saved.value<QColor>());
         }
+        // 恢复原字体（去掉加粗，避免列宽 ResizeToContents 变化导致内容右移）
+        QFont nf = m_lastHighlighted->font(1);
+        nf.setBold(false);
+        m_lastHighlighted->setFont(1, nf);
     }
     // 保存当前项原前景色，然后高亮
     for (int c = 0; c < 2; c++) {
@@ -376,7 +380,6 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setBackground(c, QColor(0xe8,0xf5,0xe9));   // 淡绿背景
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
-    QFont bf = item->font(1); bf.setBold(true); item->setFont(1, bf);
     m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
 
     // 点击 stdout 节点弹出完整内容
