@@ -22,14 +22,14 @@ public:
         : QStyledItemDelegate(parent) {}
     QTreeWidget* tree = nullptr;
     QTreeWidgetItem* highlightItem = nullptr;
-    void paint(QPainter* painter, const QStyleOptionViewItem& option,
-               const QModelIndex& index) const override {
-        QStyleOptionViewItem opt = option;
+    // paint 内部会调用 initStyleOption，在这里改字体才不会被重置
+    void initStyleOption(QStyleOptionViewItem* option,
+                         const QModelIndex& index) const override {
+        QStyledItemDelegate::initStyleOption(option, index);
         if (tree && highlightItem && tree->itemFromIndex(index) == highlightItem) {
-            opt.font.setBold(true);
-            opt.fontMetrics = QFontMetrics(opt.font);
+            option->font.setBold(true);
+            option->fontMetrics = QFontMetrics(option->font);
         }
-        QStyledItemDelegate::paint(painter, opt, index);
     }
 };
 
@@ -404,7 +404,11 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
     m_tree->viewport()->update();  // 刷新 delegate 绘制加粗
+    // 只垂直滚动到 item，水平位置保持不变（避免列表右移）
+    auto* hs = m_tree->horizontalScrollBar();
+    int hpos = hs->value();
     m_tree->scrollToItem(item, QAbstractItemView::EnsureVisible);
+    hs->setValue(hpos);
 
     // 点击 stdout 节点弹出完整内容
     if (item->text(1).startsWith("stdout") && item->toolTip(1).length() > 300) {
