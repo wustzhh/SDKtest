@@ -23,6 +23,6 @@ copy /y "%~dp0config.json" "D:\.SDKtest\config.json" >nul
 echo installed > "D:\.SDKtest\.installed"
 echo.
 echo Starting...
-start "" "D:\test_runner_ui\app\test_runner_ui.exe"
+start "" "%~dp0app\test_runner_ui.exe"
 echo Done!
 pause
