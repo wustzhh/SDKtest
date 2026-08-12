@@ -17,14 +17,10 @@ if exist "D:\.SDKtest\config.json" (
     del /q "D:\.SDKtest\config.json"
   )
 )
-echo [1/2] Copying files...
-robocopy "%~dp0app" "D:\test_runner_ui\app" /e /njh /njs /ndl /np
-robocopy "%~dp0sdk" "D:\test_runner_ui\sdk" /e /njh /njs /ndl /np
+echo [1/1] Copying config to D:\.SDKtest\...
 if not exist "D:\.SDKtest" mkdir "D:\.SDKtest"
 copy /y "%~dp0config.json" "D:\.SDKtest\config.json" >nul
 echo installed > "D:\.SDKtest\.installed"
 echo.
-echo [2/2] Starting...
-start "" "D:\test_runner_ui\app\test_runner_ui.exe"
 echo Done!
 pause

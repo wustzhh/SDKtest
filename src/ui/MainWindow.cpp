@@ -33,6 +33,14 @@
 #include <QGuiApplication>
 #include <QVector>
 #include <QPair>
+
+// 相对路径（../ 或 ./ 开头）→ 相对 exe 目录解析为绝对路径；绝对路径/其他原样。
+// 用于 pack/config.json 中 install 后相对布局的路径（../sdk/...）
+static QString resolvePath(const QString& p) {
+    if (p.startsWith("../") || p.startsWith("./") || p == "." || p == "..")
+        return QFileInfo(QCoreApplication::applicationDirPath(), p).absoluteFilePath();
+    return p;
+}
 #include <QEventLoop>
 #include <QRegularExpression>
 #include <QProgressDialog>
@@ -549,7 +557,7 @@ void MainWindow::updateButtonStates() {
 // ────────────────────────────────────────────────────────────
 
 void MainWindow::onLoadTests() {
-    QString binary = m_config.testBinary();
+    QString binary = resolvePath(m_config.testBinary());
     if (binary.isEmpty()) {
         QMessageBox::information(this, QString::fromUtf8("\xe6\x8f\x90\xe7\xa4\xba"), QString::fromUtf8("\xe8\xaf\xb7\xe5\x85\x88\xe5\x9c\xa8\xe9\x85\x8d\xe7\xbd\xae\xe4\xb8\xad\xe8\xae\xbe\xe7\xbd\xae exe \xe8\xb7\xaf\xe5\xbe\x84"));
         onEditConfig();
@@ -564,7 +572,13 @@ void MainWindow::onLoadTests() {
     statusBar()->showMessage("Loading...");
     QApplication::processEvents();
 
-    if (m_loader.load(binary, m_config.extraArgs(), m_config.workingDir(), m_config.currentProfile().dependencies, m_config.currentProfile().envVars)) {
+    // install 后相对路径解析（../sdk/... → exe目录/sdk/...）
+    QStringList deps;
+    for (const auto& d : m_config.currentProfile().dependencies) deps << resolvePath(d);
+    QMap<QString, QString> env = m_config.currentProfile().envVars;
+    for (auto it = env.begin(); it != env.end(); ++it) it.value() = resolvePath(it.value());
+
+    if (m_loader.load(binary, m_config.extraArgs(), m_config.workingDir(), deps, env)) {
         int n = m_loader.testCases().size();
         LOG("LOAD", "OK, found: " + QString::number(n) + " tests");
 
@@ -662,9 +676,14 @@ void MainWindow::onRunSelected() {
         m_config.save();
     }
     QVector<TestCase> runCases = singleMode ? originalSel : sel;
-    m_runner->run(m_config.testBinary(), runCases, m_config.extraArgs(), m_config.workingDir(),
-                  m_config.currentProfile().dependencies, m_config.currentProfile().envVars,
-                  actualRunCount, originalSel, singleMode);
+    // install 后相对路径解析（../sdk/... → exe目录/sdk/...）
+    QString binary = resolvePath(m_config.testBinary());
+    QStringList deps;
+    for (const auto& d : m_config.currentProfile().dependencies) deps << resolvePath(d);
+    QMap<QString, QString> env = m_config.currentProfile().envVars;
+    for (auto it = env.begin(); it != env.end(); ++it) it.value() = resolvePath(it.value());
+    m_runner->run(binary, runCases, m_config.extraArgs(), m_config.workingDir(),
+                  deps, env, actualRunCount, originalSel, singleMode);
     updateButtonStates();
 }
 

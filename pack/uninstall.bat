@@ -6,8 +6,6 @@ if not exist "D:\.SDKtest\.installed" (
   pause
   exit /b
 )
-echo [Remove] D:\test_runner_ui
-if exist "D:\test_runner_ui" rmdir /s /q "D:\test_runner_ui"
 echo [Remove] reports
 if exist "D:\.SDKtest\reports" rmdir /s /q "D:\.SDKtest\reports"
 echo [Remove] restore
