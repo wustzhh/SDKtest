@@ -15,9 +15,9 @@
 #include "core/ResultParser.h"
 #include "core/ReportExporter.h"
 
-#include "ui/TestTreePanel.h"
+#include "ui/CaseTreePanel.h"
 #include "ui/TestProgressPanel.h"
-#include "ui/TestResultView.h"
+#include "ui/CaseListView.h"
 
 #include "ui/Model3DViewer.h"
 class MainWindow : public QMainWindow {
@@ -68,9 +68,9 @@ private:
 
     QSplitter*        m_mainSplitter    = nullptr;
     QSplitter*        m_centerSplitter  = nullptr;
-    TestTreePanel*    m_testList        = nullptr;
+    CaseTreePanel*    m_testList        = nullptr;
     TestProgressPanel* m_progress       = nullptr;
-    TestResultView*  m_centerResultView = nullptr;  // 用例列表（中间结果）
+    CaseListView*  m_centerResultView = nullptr;  // 用例列表（中间结果）
     Model3DViewer*    m_model3D         = nullptr;
     QWidget*          m_leftPanel       = nullptr;
     QWidget*          m_rightPanel      = nullptr;

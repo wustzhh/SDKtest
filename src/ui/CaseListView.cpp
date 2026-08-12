@@ -1,5 +1,6 @@
-#include "TestResultView.h"
+#include "CaseListView.h"
 
+#include "../core/Logger.h"
 #include <QHeaderView>
 #include <QScrollBar>
 #include <QFileInfo>
@@ -50,7 +51,7 @@ static const QColor COLOR_HIGHLIGHT(0xFF, 0xFF, 0x99); // 黄色高亮
 static const QColor COLOR_SECTION(0x21, 0x96, 0xF3);  // 蓝色标题
 static const QColor COLOR_NORMAL(0x33, 0x33, 0x33);    // 深灰正文
 
-TestResultView::TestResultView(QWidget* parent)
+CaseListView::CaseListView(QWidget* parent)
     : QWidget(parent)
 {
     m_layout = new QVBoxLayout(this);
@@ -85,15 +86,15 @@ TestResultView::TestResultView(QWidget* parent)
     m_searchEdit = new QLineEdit(m_content);
     m_searchEdit->setPlaceholderText("搜索模型数据...");
     m_searchEdit->setStyleSheet("padding:2px 4px; font-size:12px;");
-    connect(m_searchEdit, &QLineEdit::textChanged, this, &TestResultView::onSearchChanged);
+    connect(m_searchEdit, &QLineEdit::textChanged, this, &CaseListView::onSearchChanged);
     QString tbBtn = "QPushButton{background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;"
                     "padding:3px 10px;font-size:12px}QPushButton:hover{background:#f1f5f9;border-color:#cbd5e1;}";
     m_btnExpand = new QPushButton("展开", m_content);
     m_btnExpand->setFixedHeight(28);m_btnExpand->setStyleSheet(tbBtn);
-    connect(m_btnExpand, &QPushButton::clicked, this, &TestResultView::onExpandAll);
+    connect(m_btnExpand, &QPushButton::clicked, this, &CaseListView::onExpandAll);
     m_btnCollapse = new QPushButton("折叠", m_content);
     m_btnCollapse->setFixedHeight(28);m_btnCollapse->setStyleSheet(tbBtn);
-    connect(m_btnCollapse, &QPushButton::clicked, this, &TestResultView::onCollapseAll);
+    connect(m_btnCollapse, &QPushButton::clicked, this, &CaseListView::onCollapseAll);
     m_btnLocate = new QPushButton("\xE2\x97\x8A", m_content);  // ◊
     m_btnLocate->setFixedSize(28,28);
     m_btnLocate->setStyleSheet(
@@ -168,8 +169,8 @@ TestResultView::TestResultView(QWidget* parent)
         "QTreeWidget{outline:none;}");
     m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_tree, &QTreeWidget::customContextMenuRequested,
-            this, &TestResultView::onResultTreeContextMenu);
-    connect(m_tree, &QTreeWidget::itemClicked, this, &TestResultView::onTreeItemClicked);
+            this, &CaseListView::onResultTreeContextMenu);
+    connect(m_tree, &QTreeWidget::itemClicked, this, &CaseListView::onTreeItemClicked);
     connect(m_btnLocate, &QPushButton::clicked, this, [this]() {
         if (m_lastHighlighted)
             m_tree->scrollToItem(m_lastHighlighted, QAbstractItemView::EnsureVisible);
@@ -208,7 +209,7 @@ TestResultView::TestResultView(QWidget* parent)
     // 属性树右键菜单
     m_propTree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_propTree, &QTreeWidget::customContextMenuRequested,
-            this, &TestResultView::onPropTreeContextMenu);
+            this, &CaseListView::onPropTreeContextMenu);
     contentLayout->addWidget(m_bottomSplit, 1);
 
     m_stack->addWidget(m_content);  // page 1
@@ -216,7 +217,7 @@ TestResultView::TestResultView(QWidget* parent)
     m_layout->addWidget(m_stack, 1);
 }
 
-void TestResultView::showResults(const QVector<TestRunResult>& results) {
+void CaseListView::showResults(const QVector<TestRunResult>& results) {
     m_results = results;
     m_resultMap.clear();
     for (auto& r : m_results)
@@ -243,12 +244,12 @@ void TestResultView::showResults(const QVector<TestRunResult>& results) {
     if (!m_resultFilter.isEmpty()) applyResultFilter();  // 保持当前状态过滤
 }
 
-void TestResultView::setResultFilter(const QString& status) {
+void CaseListView::setResultFilter(const QString& status) {
     m_resultFilter = status;
     applyResultFilter();
 }
 
-void TestResultView::applyResultFilter() {
+void CaseListView::applyResultFilter() {
     // 顶层 item 即用例（data(1)=fullName），按 m_resultMap[fullName].status 隐藏/显示
     // 子节点（模型树）跟随顶层隐藏状态
     for (int i = 0; i < m_tree->topLevelItemCount(); ++i) {
@@ -264,7 +265,7 @@ void TestResultView::applyResultFilter() {
     }
 }
 
-void TestResultView::clear() {
+void CaseListView::clear() {
     m_tree->clear();
     m_propTree->clear();
     m_results.clear();
@@ -274,7 +275,7 @@ void TestResultView::clear() {
     m_searchEdit->clear();  // 留在内容页，只是清空数据
 }
 
-void TestResultView::buildResultTree(const QVector<TestRunResult>& results) {
+void CaseListView::buildResultTree(const QVector<TestRunResult>& results) {
     m_lastHighlighted = nullptr;
     m_tree->clear();
 
@@ -303,7 +304,7 @@ void TestResultView::buildResultTree(const QVector<TestRunResult>& results) {
     }
 }
 
-void TestResultView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& node) {
+void CaseListView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& node) {
     for (const auto& child : node.children) {
         auto* item = new QTreeWidgetItem(parent);
         item->setText(0, "");
@@ -358,7 +359,7 @@ void TestResultView::addNodeToTree(QTreeWidgetItem* parent, const ResultNode& no
     }
 }
 
-void TestResultView::onSearchChanged(const QString& text) {
+void CaseListView::onSearchChanged(const QString& text) {
     // 遍历所有项，匹配的高亮+展开，不匹配的隐藏
     std::function<bool(QTreeWidgetItem*)> filter;
     filter = [&](QTreeWidgetItem* item) -> bool {
@@ -388,9 +389,14 @@ void TestResultView::onSearchChanged(const QString& text) {
     m_tree->viewport()->update();
 }
 
-void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
+void CaseListView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     Q_UNUSED(column);
     if (!item) return;
+    LOG("CLICK", QString("BEFORE click: vpW=%1 hsb=%2 col0W=%3 col1W=%4 text=%5")
+        .arg(m_tree->viewport()->width())
+        .arg(m_tree->horizontalScrollBar()->value())
+        .arg(m_tree->columnWidth(0)).arg(m_tree->columnWidth(1))
+        .arg(item->text(1).left(40)));
 
     // 取消上次高亮（恢复原前景色 + 清背景）
     if (m_lastHighlighted && m_lastHighlighted != item) {
@@ -412,6 +418,10 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     }
     m_tree->viewport()->update();  // 刷新 delegate 绘制加粗
     // 点击的行本就可见，不需要 scrollToItem（它会引起水平滚动导致列表右移）
+    LOG("CLICK", QString("AFTER click: vpW=%1 hsb=%2 col0W=%3 col1W=%4")
+        .arg(m_tree->viewport()->width())
+        .arg(m_tree->horizontalScrollBar()->value())
+        .arg(m_tree->columnWidth(0)).arg(m_tree->columnWidth(1)));
 
     // 点击 stdout 节点弹出完整内容
     if (item->text(1).startsWith("stdout") && item->toolTip(1).length() > 300) {
@@ -427,7 +437,7 @@ void TestResultView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
     }
 }
 
-void TestResultView::updateDetailPanel(const TestRunResult* result) {
+void CaseListView::updateDetailPanel(const TestRunResult* result) {
     m_propTree->clear();
     if (!result || result->properties.isEmpty()) return;
     m_propTree->expandAll();
@@ -518,11 +528,11 @@ void TestResultView::updateDetailPanel(const TestRunResult* result) {
     }
 }
 
-void TestResultView::onExpandAll() {
+void CaseListView::onExpandAll() {
     m_tree->expandAll();
 }
 
-void TestResultView::updatePropertyText(const QString& key, const QString& newText) {
+void CaseListView::updatePropertyText(const QString& key, const QString& newText) {
     // 递归搜索所有层级的 item 匹配 key
     std::function<bool(QTreeWidgetItem*)> search = [&](QTreeWidgetItem* parent) -> bool {
         for (int i = 0; i < parent->childCount(); ++i) {
@@ -539,7 +549,7 @@ void TestResultView::updatePropertyText(const QString& key, const QString& newTe
     }
 }
 
-void TestResultView::showFullOutput(const QString& title, const QString& text) {
+void CaseListView::showFullOutput(const QString& title, const QString& text) {
     auto* dlg = new QDialog(this);
     dlg->setWindowTitle(title);
     dlg->resize(800, 600);
@@ -553,12 +563,12 @@ void TestResultView::showFullOutput(const QString& title, const QString& text) {
     dlg->show();
 }
 
-int TestResultView::saveBottomSplitPos() const {
+int CaseListView::saveBottomSplitPos() const {
     auto s = m_bottomSplit->sizes();
     return s.size() >= 2 ? s[0] : 400;
 }
 
-void TestResultView::restoreBottomSplitPos(int pos) {
+void CaseListView::restoreBottomSplitPos(int pos) {
     if (pos <= 0) return;
     int total = m_bottomSplit->height();
     if (total < 50) total = pos + 80;
@@ -566,11 +576,11 @@ void TestResultView::restoreBottomSplitPos(int pos) {
     m_bottomSplit->setSizes({treeH, total - treeH});
 }
 
-void TestResultView::onCollapseAll() {
+void CaseListView::onCollapseAll() {
     m_tree->collapseAll();
 }
 
-void TestResultView::onPropTreeContextMenu(const QPoint& pos) {
+void CaseListView::onPropTreeContextMenu(const QPoint& pos) {
     QTreeWidgetItem* item = m_propTree->itemAt(pos);
     if (!item) return;
 
@@ -604,7 +614,7 @@ void TestResultView::onPropTreeContextMenu(const QPoint& pos) {
     }
 }
 
-void TestResultView::onResultTreeContextMenu(const QPoint& pos) {
+void CaseListView::onResultTreeContextMenu(const QPoint& pos) {
     QTreeWidgetItem* item = m_tree->itemAt(pos);
     if (!item) return;
     

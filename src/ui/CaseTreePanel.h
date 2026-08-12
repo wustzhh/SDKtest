@@ -124,10 +124,10 @@ private:
     QVector<FilterRule> m_rules;
 };
 
-class TestTreePanel : public QWidget {
+class CaseTreePanel : public QWidget {
     Q_OBJECT
 public:
-    explicit TestTreePanel(QWidget* parent = nullptr);
+    explicit CaseTreePanel(QWidget* parent = nullptr);
 
     void loadTests(const QVector<TestCase>& cases,
                    const QVector<TestCategory>& categories = {});

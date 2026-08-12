@@ -11,7 +11,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
-class HighlightBoldDelegate;  // 全局类，定义在 TestResultView.cpp
+class HighlightBoldDelegate;  // 全局类，定义在 CaseListView.cpp
 #include <QMap>
 #include <QSplitter>
 #include <QMenu>
@@ -22,10 +22,10 @@ class HighlightBoldDelegate;  // 全局类，定义在 TestResultView.cpp
 //  结果模型渲染视图
 //  将结构化测试结果渲染为可交互的树形模型
 // ────────────────────────────────────────────────────────────
-class TestResultView : public QWidget {
+class CaseListView : public QWidget {
     Q_OBJECT
 public:
-    explicit TestResultView(QWidget* parent = nullptr);
+    explicit CaseListView(QWidget* parent = nullptr);
 
     // 显示所有运行结果
     void showResults(const QVector<TestRunResult>& results);
