@@ -15,31 +15,6 @@
 #include <QProcess>
 #include <QStyledItemDelegate>
 
-// 高亮项 delegate：绘制时对 m_lastHighlighted 行加粗文字（不改 item 字体，
-// 避免 ResizeToContents 列宽随点击变化导致列表右移）
-class HighlightBoldDelegate : public QStyledItemDelegate {
-public:
-    explicit HighlightBoldDelegate(QObject* parent = nullptr)
-        : QStyledItemDelegate(parent) {}
-    QTreeWidget* tree = nullptr;
-    QTreeWidgetItem* highlightItem = nullptr;
-    // paint 内部会调用 initStyleOption，在这里改字体才不会被重置
-    void initStyleOption(QStyleOptionViewItem* option,
-                         const QModelIndex& index) const override {
-        QStyledItemDelegate::initStyleOption(option, index);
-        if (tree && highlightItem && tree->itemFromIndex(index) == highlightItem) {
-            option->font.setBold(true);
-            option->fontMetrics = QFontMetrics(option->font);
-        }
-    }
-    // 关键：sizeHint 也用普通字体（不应用高亮加粗）→ 列宽稳定，点击不右移
-    QSize sizeHint(const QStyleOptionViewItem& option,
-                   const QModelIndex& index) const override {
-        QStyleOptionViewItem opt = option;
-        QStyledItemDelegate::initStyleOption(&opt, index);  // 基类版，不加粗
-        return QStyledItemDelegate::sizeHint(opt, index);
-    }
-};
 
 
 // ── 颜色 ──
@@ -155,12 +130,6 @@ CaseListView::CaseListView(QWidget* parent)
     m_tree->setWordWrap(true);
     m_tree->setTextElideMode(Qt::ElideNone);
     m_tree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);  // 内容自适应，长文本显示完整
-    // 绘制期加粗高亮项，不动 item 字体 → 列宽不受点击影响
-    auto* hlDelegate = new HighlightBoldDelegate(m_tree);
-    hlDelegate->tree = m_tree;
-    hlDelegate->highlightItem = nullptr;
-    m_tree->setItemDelegate(hlDelegate);
-    m_hlDelegate = hlDelegate;
     m_tree->setStyleSheet(
         "QTreeWidget { border:1px solid #e2e8f0; border-radius:6px; background:#ffffff; }"
         "QTreeWidget::item { padding:6px 10px; min-height:28px; border-bottom:1px solid #f1f5f9; }"
@@ -411,7 +380,6 @@ void CaseListView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setData(c, Qt::UserRole + 2, item->foreground(c).color());
     }
     m_lastHighlighted = item;
-    if (m_hlDelegate) m_hlDelegate->highlightItem = item;
     for (int c = 0; c < 2; c++) {
         item->setBackground(c, QColor(0xe8,0xf5,0xe9));   // 淡绿背景
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字

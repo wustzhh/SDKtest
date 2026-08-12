@@ -520,6 +520,19 @@ void MainWindow::setupConnections() {
         else
             m_model3D->clear();
         // 高亮由包围盒属性按钮控制，不在这里用searchResultID/removeResultID
+        auto logSizes = [this]() {
+            LOG("CLICK", QString("SPLITTER sizes=%1,%2,%3 centerW=%4 centerX=%5")
+                .arg(m_mainSplitter->sizes().value(0))
+                .arg(m_mainSplitter->sizes().value(1))
+                .arg(m_mainSplitter->sizes().value(2))
+                .arg(m_centerResultView->width()).arg(m_centerResultView->x()));
+        };
+        logSizes();
+        // 多次延时采样：300ms/1s/3s/5s，捕捉可能的异步布局重排
+        QTimer::singleShot(300, this, logSizes);
+        QTimer::singleShot(1000, this, logSizes);
+        QTimer::singleShot(3000, this, logSizes);
+        QTimer::singleShot(5000, this, logSizes);
     });
 
 }

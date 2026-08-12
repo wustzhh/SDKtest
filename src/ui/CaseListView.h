@@ -10,8 +10,6 @@
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QVBoxLayout>
-
-class HighlightBoldDelegate;  // 全局类，定义在 CaseListView.cpp
 #include <QMap>
 #include <QSplitter>
 #include <QMenu>
@@ -83,7 +81,6 @@ private:
     // 数据
     QVector<TestRunResult> m_results;
     QTreeWidgetItem* m_lastHighlighted = nullptr;
-    HighlightBoldDelegate* m_hlDelegate = nullptr;  // 绘制期加粗委托
     QSplitter* m_bottomSplit = nullptr;
     QMap<QString, TestRunResult*> m_resultMap;  // fullName → result
 };
