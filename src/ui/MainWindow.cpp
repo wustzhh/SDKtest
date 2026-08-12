@@ -1658,7 +1658,7 @@ void MainWindow::onSelectionChanged(int count) {
     updateButtonStates();
 }
 
-void MainWindow::refreshScenarioCombo() {
+void MainWindow::refreshScenarioCombo(bool applySelection) {
     if (!m_scenarioCombo) return;
     // 保存当前选中的方案名（直接从combo取文本，避免索引漂移）
     QString prevName;
