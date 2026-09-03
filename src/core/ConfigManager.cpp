@@ -56,7 +56,6 @@ QString ConfigManager::whiteListFor(const QString& exeName) const {
 }
 QString ConfigManager::workingDir() const { return currentProfile().workingDir; }
 QStringList ConfigManager::extraArgs() const { return currentProfile().extraArgs; }
-QVector<TestCategory> ConfigManager::categories() const { return currentProfile().categories; }
 
 // ── Profile 管理 ──
 void ConfigManager::setProfiles(const QVector<ExeProfile>& profiles) { m_profiles = profiles; }
@@ -80,11 +79,6 @@ bool ConfigManager::load() {
             def.name = "默认";
             def.testBinary = "";
             def.workingDir = ".";
-            TestCategory c1, c2;
-            c1.name = "test_p*";
-            c1.prefixes << "test_p";
-            c2.name = "其他";
-            def.categories << c1 << c2;
             def.envVars["MODEL_DIR"] = "";
             m_profiles.append(def);
             m_activeProfile = 0;
@@ -127,11 +121,6 @@ void ConfigManager::fromJson(const QJsonObject& obj) {
         ExeProfile def;
         def.name = "默认";
         def.workingDir = ".";
-        TestCategory c1, c2;
-        c1.name = "test_p*";
-        c1.prefixes << "test_p";
-        c2.name = "其他";
-        def.categories << c1 << c2;
         def.envVars["MODEL_DIR"] = "";
         m_profiles.append(def);
     }
@@ -198,14 +187,6 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
         p.dependencies << d.toString();
     for (const auto& a : obj["extra_args"].toArray())
         p.extraArgs << a.toString();
-    for (const auto& c : obj["categories"].toArray()) {
-        QJsonObject co = c.toObject();
-        TestCategory cat;
-        cat.name = co["name"].toString();
-        for (const auto& pr : co["prefixes"].toArray())
-            cat.prefixes << pr.toString();
-        p.categories.push_back(cat);
-    }
     for (const auto& sv : obj["scenarios"].toArray()) {
         QJsonObject so = sv.toObject();
         TestScenario s; s.name = so["name"].toString();
@@ -230,6 +211,14 @@ ExeProfile ConfigManager::profileFromJson(const QJsonObject& obj) const {
             s.advancedFilters.append({ao["kw"].toString(), ao["inc"].toBool(true)});
         }
         s.filterEnabled = so["advFilterEnabled"].toBool(false);
+        s.lastFilterName = so["lastFilterName"].toString();
+        auto fmObj = so["filterMappings"].toObject();
+        for (auto it = fmObj.begin(); it != fmObj.end(); ++it) {
+            QStringList names;
+            for (const auto& v : it.value().toArray()) names << v.toString();
+            s.filterMappings[it.key()] = names;
+        }
+        s.filterSetsSignature = so["filterSetsSignature"].toString();
         p.scenarios.push_back(s);
     }
     p.lastScenarioName = obj["last_scenario_name"].toString();
@@ -252,13 +241,6 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
     QJsonArray args;
     for (const auto& a : p.extraArgs) args.append(a);
     obj["extra_args"] = args;
-    QJsonArray cats;
-    for (const auto& c : p.categories) {
-        QJsonObject co; co["name"] = c.name;
-        QJsonArray cp; for (const auto& pr : c.prefixes) cp.append(pr);
-        co["prefixes"] = cp; cats.append(co);
-    }
-    obj["categories"] = cats;
     QJsonArray scs;
     for (const auto& s : p.scenarios) {
         QJsonObject so; so["name"] = s.name;
@@ -284,6 +266,17 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
         }
         so["advFilters"] = afs;
         so["advFilterEnabled"] = s.filterEnabled;
+        if (!s.lastFilterName.isEmpty())
+            so["lastFilterName"] = s.lastFilterName;
+        QJsonObject fmOut;
+        for (auto it = s.filterMappings.begin(); it != s.filterMappings.end(); ++it) {
+            QJsonArray names;
+            for (const auto& n : it.value()) names.append(n);
+            fmOut[it.key()] = names;
+        }
+        so["filterMappings"] = fmOut;
+        if (!s.filterSetsSignature.isEmpty())
+            so["filterSetsSignature"] = s.filterSetsSignature;
         scs.append(so);
     }
     obj["scenarios"] = scs;
@@ -302,9 +295,6 @@ QJsonObject ConfigManager::profileToJson(const ExeProfile& p) const {
 void ConfigManager::setTestBinary(const QString& v) { currentProfile().testBinary = v; }
 void ConfigManager::setWorkingDir(const QString& v) { currentProfile().workingDir = v; }
 void ConfigManager::setExtraArgs(const QStringList& v) { currentProfile().extraArgs = v; }
-void ConfigManager::addCategory(const TestCategory& c) { currentProfile().categories.push_back(c); }
-void ConfigManager::removeCategory(int idx) { if (idx >= 0 && idx < currentProfile().categories.size()) currentProfile().categories.remove(idx); }
-void ConfigManager::setCategories(const QVector<TestCategory>& cats) { currentProfile().categories = cats; }
 
 void ConfigManager::addScenario(const TestScenario& s) { currentProfile().scenarios.push_back(s); }
 void ConfigManager::removeScenario(int idx) { if (idx >= 0 && idx < currentProfile().scenarios.size()) currentProfile().scenarios.remove(idx); }

@@ -53,6 +53,7 @@ static QString resolvePath(const QString& p) {
 
 #include "ui/FilterEditDialog.h"
 #include "core/Logger.h"
+#include "core/FilterMapping.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -79,6 +80,12 @@ MainWindow::MainWindow(QWidget* parent)
                 for (const auto& af : sc.advancedFilters)
                     rules.append({af.first, af.second});
                 m_testList->setAdvFilters(rules, sc.filterEnabled);
+            QStringList filterNames;
+            for (const auto& fs : sc.filterSets)
+                filterNames << fs.name;
+            m_testList->setFilterOptions(filterNames);
+            m_testList->setSelectedFilterByName(sc.lastFilterName);
+            m_testList->setFilterMappings(sc.filterMappings);
                 LOG("FILTER", QString("Startup load: %1 rules for scenario '%2'")
                     .arg(rules.size()).arg(sc.name));
             }
@@ -150,6 +157,15 @@ void MainWindow::setupUi() {
         m_leftPanel->setVisible(!m_leftPanel->isVisible());
     });
     // 筛选条件变更时保存到当前方案
+    // 筛选条件下拉选择变更 → 保存到当前方案
+    connect(m_testList, &CaseTreePanel::filterSelectionChanged, this, [this](const QString& name) {
+        auto& prof = m_config.currentProfile();
+        int idx = m_scenarioCombo->currentIndex() - 1;
+        if (idx >= 0 && idx < prof.scenarios.size()) {
+            prof.scenarios[idx].lastFilterName = name;
+            m_config.save();
+        }
+    });
     connect(m_testList, &CaseTreePanel::filtersSaved, this, [this]() {
         auto& prof = m_config.currentProfile();
         int idx = m_scenarioCombo->currentIndex() - 1;
@@ -295,6 +311,12 @@ void MainWindow::setupUi() {
             for (const auto& af : sc.advancedFilters)
                 rules.append({af.first, af.second});
             m_testList->setAdvFilters(rules, sc.filterEnabled);
+            // 加载筛选条件下拉与映射（方案切换时同步，避免沿用上一方案的选项/映射）
+            QStringList filterNames;
+            for (const auto& fs : sc.filterSets) filterNames << fs.name;
+            m_testList->setFilterOptions(filterNames);
+            m_testList->setSelectedFilterByName(sc.lastFilterName);
+            m_testList->setFilterMappings(sc.filterMappings);
             prof.lastScenarioName = sc.name;
             m_config.save();
         }
@@ -603,11 +625,7 @@ void MainWindow::onLoadTests() {
                     if (hit) filtered.append(tc);
                 }
                 LOG("LOAD", QString("Whitelist %1: %2 → %3 tests").arg(wlFile).arg(n).arg(filtered.size()));
-                // 重建 suite 列表（过滤后的）
-                QSet<QString> suites;
-                for (const auto& tc : filtered) suites.insert(tc.suiteName);
-                m_suiteNames = suites.values();
-                m_testList->loadTests(filtered, m_config.categories());
+                m_testList->loadTests(filtered);
                 m_centerResultView->clear();
                 m_report = {};
                 m_seenResults.clear();
@@ -623,8 +641,7 @@ void MainWindow::onLoadTests() {
             }
         }
 
-        m_suiteNames = m_loader.groupedBySuite().keys();
-        m_testList->loadTests(m_loader.testCases(), m_config.categories());
+        m_testList->loadTests(m_loader.testCases());
         m_centerResultView->clear();
         m_report = {};
         m_seenResults.clear();
@@ -841,18 +858,6 @@ void MainWindow::onExportReport() {
         QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
 }
 
-// 分类树编辑委托——确保内联编辑器高度足够显示全部字符
-class CatDelegate : public QStyledItemDelegate {
-public:
-    CatDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
-    QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem&, const QModelIndex&) const override {
-        auto* ed = new QLineEdit(parent);
-        ed->setFont(QFont("Microsoft YaHei UI", 13));
-        ed->setFixedHeight(34);
-        return ed;
-    }
-};
-
 void MainWindow::onEditConfig() {
     QDialog dlg(this);
     dlg.setWindowTitle(QString::fromUtf8("\xe7\xbc\x96\xe8\xbe\x91\xe9\x85\x8d\xe7\xbd\xae"));
@@ -949,72 +954,6 @@ void MainWindow::onEditConfig() {
     profileTab->setLayout(pf);
     tabs->addTab(profileTab, QString::fromUtf8("\xe9\x85\x8d\xe7\xbd\xae"));
 
-    // 分类
-    // 分类标签页（从已加载的套件列表中选择前缀）
-    auto* catTab = new QWidget;
-    auto* catLay = new QVBoxLayout(catTab);
-    auto* catTree = new QTreeWidget(catTab);
-    catTree->setHeaderLabels({QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"), QString::fromUtf8("\xe5\x8c\xb9\xe9\x85\x8d\xe5\xa5\x97\xe4\xbb\xb6")});
-    catTree->setRootIsDecorated(false);
-    catTree->setSelectionMode(QAbstractItemView::SingleSelection);
-    catTree->setStyleSheet("QTreeWidget::item{padding:8px 12px;min-height:36px;font-size:14px}");
-    catLay->addWidget(catTree, 1);
-    // 双击打开套件选择对话框
-    connect(catTree, &QTreeWidget::itemDoubleClicked, &dlg, [&](QTreeWidgetItem* item, int) {
-        if (!item) return;
-        QDialog selDlg(&dlg);
-        selDlg.setWindowTitle(QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe5\x8c\xb9\xe9\x85\x8d\xe5\xa5\x97\xe4\xbb\xb6"));
-        selDlg.resize(400, 500);
-        auto* sl = new QVBoxLayout(&selDlg);
-        auto* scroll = new QScrollArea;
-        scroll->setWidgetResizable(true);
-        auto* sw = new QWidget;
-        auto* swl = new QVBoxLayout(sw);
-        QString raw = item->text(1);
-        if (raw.startsWith(QString::fromUtf8("\xe2\x98\x91"))) raw = raw.mid(2).trimmed();
-        QStringList oldPrefs;
-        for (const auto& p : raw.split(',', Qt::SkipEmptyParts))
-            oldPrefs << p.trimmed();
-        QVector<QCheckBox*> checks;
-        for (const auto& sn : m_suiteNames) {
-            auto* cb = new QCheckBox(sn);
-            cb->setChecked(oldPrefs.contains(sn));
-            checks.append(cb);
-            swl->addWidget(cb);
-        }
-        if (m_suiteNames.isEmpty())
-            swl->addWidget(new QLabel(QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8a\xa0\xe8\xbd\xbd\xe6\xb5\x8b\xe8\xaf\x95")));
-        swl->addStretch();
-        scroll->setWidget(sw);
-        sl->addWidget(scroll, 1);
-        // 全选/取消按钮
-        auto* selAllRow = new QHBoxLayout;
-        auto* btnSelAll = new QPushButton(QString::fromUtf8("\xe5\x85\xa8\xe9\x80\x89"));
-        auto* btnSelNone = new QPushButton(QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88\xe5\x85\xa8\xe9\x80\x89"));
-        selAllRow->addWidget(btnSelAll);
-        selAllRow->addWidget(btnSelNone);
-        selAllRow->addStretch();
-        sl->addLayout(selAllRow);
-        connect(btnSelAll, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(true); });
-        connect(btnSelNone, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(false); });
-        auto* sb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-        connect(sb, &QDialogButtonBox::accepted, &selDlg, &QDialog::accept);
-        connect(sb, &QDialogButtonBox::rejected, &selDlg, &QDialog::reject);
-        sl->addWidget(sb);
-        if (selDlg.exec() == QDialog::Accepted) {
-            QStringList sel;
-            for (auto* cb : checks) if (cb->isChecked()) sel << cb->text();
-            item->setText(1, sel.join(", "));
-        }
-    });
-    auto* catBtns = new QHBoxLayout;
-    auto* btnAddCat = new QPushButton(QString::fromUtf8("\xe6\xb7\xbb\xe5\x8a\xa0"));
-    auto* btnDelCat = new QPushButton(QString::fromUtf8("\xe5\x88\xa0\xe9\x99\xa4"));
-    catBtns->addWidget(btnAddCat);
-    catBtns->addWidget(btnDelCat);
-    catBtns->addStretch();
-    catLay->addLayout(catBtns);
-
     // 加载 profile 数据
     loadProfile = [&](int idx) {
         if (idx < 0 || idx >= m_config.profiles().size()) return;
@@ -1028,13 +967,6 @@ void MainWindow::onEditConfig() {
         for (auto it = p.envVars.begin(); it != p.envVars.end(); ++it)
             envLines << it.key() + "=" + it.value();
         edEnv->setText(envLines.join("\n"));
-        catTree->clear();
-        for (const auto& c : p.categories) {
-            auto* item = new QTreeWidgetItem(catTree);
-            item->setText(0, c.name);
-            item->setText(1, c.prefixes.join(", "));
-            item->setFlags(item->flags() | Qt::ItemIsEditable);
-        }
         sceneTree->clear();
         for (const auto& sc : p.scenarios) {
             auto* item = new QTreeWidgetItem(sceneTree);
@@ -1065,7 +997,6 @@ void MainWindow::onEditConfig() {
     edEnv->setMaximumHeight(200);
     envLay->addWidget(edEnv, 1);
     tabs->addTab(envTab, QString::fromUtf8("\xe7\x8e\xaf\xe5\xa2\x83\xe5\x8f\x98\xe9\x87\x8f"));
-    tabs->addTab(catTab, QString::fromUtf8("\xe5\x88\x86\xe7\xb1\xbb"));
 
     // ── 方案标签页 ──
     auto* sceneTab = new QWidget;
@@ -1123,6 +1054,8 @@ void MainWindow::onEditConfig() {
             QString::fromUtf8("\xe6\x96\xb9\xe6\xa1\x88 %1").arg(m_config.currentProfile().scenarios.size()+1), &ok);
         if (!ok || name.isEmpty()) return;
         TestScenario s; s.name = name; s.selectedTests = sel;
+        s.filterSetsSignature.clear();
+        s.filterMappings.clear();
         m_config.addScenario(s);
         auto* item = new QTreeWidgetItem(sceneTree);
         item->setText(0, name); item->setText(1, QString::number(sel.size()));
@@ -1228,6 +1161,8 @@ void MainWindow::onEditConfig() {
         FilterEditDialog fdlg(s.filterSets, propKeys, propVals, &dlg);
         if (fdlg.exec() == QDialog::Accepted) {
             s.filterSets = fdlg.result();
+            s.filterSetsSignature.clear();
+            s.filterMappings.clear();
             sel[0]->setText(2, QString::fromUtf8("%1 \xe7\xbb\x84").arg(s.filterSets.size()));
         }
     });
@@ -1335,10 +1270,6 @@ void MainWindow::onEditConfig() {
     connect(btnNewP, &QPushButton::clicked, [&]() {
         ExeProfile p;
         p.name = QString::fromUtf8("\xe6\x96\xb0\xe9\x85\x8d\xe7\xbd\xae %1").arg(m_config.profiles().size() + 1);
-        TestCategory c1, c2;
-        c1.name = "test_p*"; c1.prefixes << "test_p";
-        c2.name = QString::fromUtf8("\xe5\x85\xb6\xe4\xbb\x96");
-        p.categories << c1 << c2;
         m_config.addProfile(p);
         m_config.setActiveProfile(m_config.profiles().size() - 1);
         currentEditIdx = m_config.activeProfile();
@@ -1357,53 +1288,7 @@ void MainWindow::onEditConfig() {
         fillMenu();
         loadProfile(currentEditIdx);
     });
-    connect(btnAddCat, &QPushButton::clicked, [&]() {
-        auto* item = new QTreeWidgetItem(catTree);
-        item->setText(0, QString::fromUtf8("\xe6\x96\xb0\xe5\x88\x86\xe7\xb1\xbb"));
-        item->setText(1, "");
-        // 自动弹出套件选择
-        QTimer::singleShot(0, [&, item]() {
-            // 触发双击逻辑（通过直接调用）
-            QDialog selDlg(&dlg);
-            selDlg.setWindowTitle(QString::fromUtf8("\xe9\x80\x89\xe6\x8b\xa9\xe5\x8c\xb9\xe9\x85\x8d\xe5\xa5\x97\xe4\xbb\xb6"));
-            selDlg.resize(400, 500);
-            auto* sl = new QVBoxLayout(&selDlg);
-            auto* scroll = new QScrollArea;
-            scroll->setWidgetResizable(true);
-            auto* sw = new QWidget;
-            auto* swl = new QVBoxLayout(sw);
-            QVector<QCheckBox*> checks;
-            for (const auto& sn : m_suiteNames) {
-                auto* cb = new QCheckBox(sn); checks.append(cb); swl->addWidget(cb);
-            }
-            if (m_suiteNames.isEmpty())
-                swl->addWidget(new QLabel(QString::fromUtf8("\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8a\xa0\xe8\xbd\xbd\xe6\xb5\x8b\xe8\xaf\x95")));
-            swl->addStretch();
-            scroll->setWidget(sw);
-            sl->addWidget(scroll, 1);
-            auto* selAllRow = new QHBoxLayout;
-            auto* btnSelAll = new QPushButton(QString::fromUtf8("\xe5\x85\xa8\xe9\x80\x89"));
-            auto* btnSelNone = new QPushButton(QString::fromUtf8("\xe5\x8f\x96\xe6\xb6\x88\xe5\x85\xa8\xe9\x80\x89"));
-            selAllRow->addWidget(btnSelAll);
-            selAllRow->addWidget(btnSelNone);
-            selAllRow->addStretch();
-            sl->addLayout(selAllRow);
-            connect(btnSelAll, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(true); });
-            connect(btnSelNone, &QPushButton::clicked, [&checks]() { for (auto* cb : checks) cb->setChecked(false); });
-            auto* sb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-            connect(sb, &QDialogButtonBox::accepted, &selDlg, &QDialog::accept);
-            connect(sb, &QDialogButtonBox::rejected, &selDlg, &QDialog::reject);
-            sl->addWidget(sb);
-            if (selDlg.exec() == QDialog::Accepted) {
-                QStringList sel;
-                for (auto* cb : checks) if (cb->isChecked()) sel << cb->text();
-                item->setText(1, sel.join(", "));
-            }
-        });
-    });
-    connect(btnDelCat, &QPushButton::clicked, [&]() {
-        for (auto* s : catTree->selectedItems()) delete s;
-    });
+
 
     lay->addWidget(tabs);
 
@@ -1432,19 +1317,6 @@ void MainWindow::onEditConfig() {
             p.dependencies = deps;
             p.workingDir = edWorkDir->text().trimmed();
             p.extraArgs = edArgs->text().trimmed().split(' ', Qt::SkipEmptyParts);
-            QVector<TestCategory> cats;
-            for (int i = 0; i < catTree->topLevelItemCount(); i++) {
-                auto* item = catTree->topLevelItem(i);
-                TestCategory c;
-                c.name = item->text(0);
-                for (const auto& pr : item->text(1).split(',', Qt::SkipEmptyParts)) {
-                    QString p = pr.trimmed();
-                    if (p.startsWith(QString::fromUtf8("\xe2\x98\x91"))) p = p.mid(2).trimmed();
-                    if (!p.isEmpty()) c.prefixes << p;
-                }
-                if (!c.name.isEmpty()) cats << c;
-            }
-            p.categories = cats;
             p.envVars.clear();
             for (const auto& line : edEnv->toPlainText().split('\n', Qt::SkipEmptyParts)) {
                 int eq = line.indexOf('=');
@@ -1455,6 +1327,17 @@ void MainWindow::onEditConfig() {
             m_config.save();
             refreshProfileCombo();
             refreshScenarioCombo();
+            // 配置保存后重载当前方案的筛选下拉与映射（编辑筛选条件会清空旧映射）
+            { int scIdx = m_scenarioCombo ? m_scenarioCombo->currentIndex() - 1 : -1;
+              auto& prof = m_config.currentProfile();
+              if (scIdx >= 0 && scIdx < prof.scenarios.size()) {
+                  const auto& sc = prof.scenarios[scIdx];
+                  QStringList filterNames;
+                  for (const auto& fs : sc.filterSets) filterNames << fs.name;
+                  m_testList->setFilterOptions(filterNames);
+                  m_testList->setSelectedFilterByName(sc.lastFilterName);
+                  m_testList->setFilterMappings(sc.filterMappings);
+              } }
         }
     }
 }
@@ -1525,8 +1408,23 @@ void MainWindow::onAllFinished() {
     // 附带当前方案的筛选条件（未选择时默认第一个）
     int sceneIdx = m_scenarioCombo && m_scenarioCombo->currentIndex() > 0
                    ? m_scenarioCombo->currentIndex() - 1 : 0;
-    if (sceneIdx >= 0 && sceneIdx < prof.scenarios.size())
+    if (sceneIdx >= 0 && sceneIdx < prof.scenarios.size()) {
         m_report.savedFilters = prof.scenarios[sceneIdx].filterSets;
+        // 运行后生成筛选条件 → 匹配用例映射并保存
+        auto& sc = prof.scenarios[sceneIdx];
+        const QString sig = FilterMapping::filterSetsSignature(sc.filterSets);
+        if (sig != sc.filterSetsSignature || m_report.savedFilters.isEmpty()) {
+            sc.filterMappings = FilterMapping::computeMappings(sc.filterSets, m_report.results);
+            sc.filterSetsSignature = sig;
+            m_config.save();
+        }
+        QStringList filterNames;
+        for (const auto& fs : sc.filterSets) filterNames << fs.name;
+        m_testList->setFilterOptions(filterNames);
+        m_testList->setFilterMappings(sc.filterMappings);
+        if (!m_testList->currentFilterName().isEmpty())
+            m_testList->setSelectedFilterByName(m_testList->currentFilterName());
+    }
     QString reportDir = QFileInfo(m_config.configPath()).absolutePath() + "/reports";
     if (!m_report.results.isEmpty()) {
         QString autoName = m_config.profiles().value(m_config.activeProfile()).name;

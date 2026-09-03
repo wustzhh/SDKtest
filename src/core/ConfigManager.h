@@ -9,13 +9,6 @@
 
 #include "models/TestResult.h"
 
-// ────────────────────────────────────────────────────────────
-//  测试分类定义（用于用例树分组）
-// ────────────────────────────────────────────────────────────
-struct TestCategory {
-    QString     name;            // 显示名  e.g. "几何算法测试"
-    QStringList prefixes;        // Suite 名前缀  e.g. ["FixtureTest", "ut_geometry"]
-};
 
 // ────────────────────────────────────────────────────────────
 //  一个 Exe 配置 Profile
@@ -31,6 +24,10 @@ struct TestScenario {
     // 高级筛选规则: keyword + include(正选/反选)
     QVector<QPair<QString,bool>> advancedFilters;
     bool        filterEnabled = false;
+    // 筛选条件下拉：上次选择的条件名/映射表/筛选条件签名
+    QString     lastFilterName;          // 上次选择的筛选条件名（空=无）
+    QMap<QString, QStringList> filterMappings;  // 条件名 -> 匹配用例完整名
+    QString     filterSetsSignature;     // 筛选条件签名，不匹配时旧映射失效
 };
 
 struct ExeProfile {
@@ -40,7 +37,6 @@ struct ExeProfile {
     QString     workingDir;       // 工作目录
     QStringList extraArgs;        // 额外参数
     QMap<QString, QString> envVars;  // 自定义环境变量
-    QVector<TestCategory> categories;
     QVector<TestScenario> scenarios;
     QString     lastScenarioName; // 上次选择的方案名，启动时恢复
     QString     whiteList;        // 白名单文件名（相对 config 目录），空=不过滤
@@ -81,13 +77,9 @@ public:
     QString whiteListFor(const QString& exeName) const;
     QString workingDir() const;
     QStringList extraArgs() const;
-    QVector<TestCategory> categories() const;
     void setTestBinary(const QString& v);
     void setWorkingDir(const QString& v);
     void setExtraArgs(const QStringList& v);
-    void addCategory(const TestCategory& c);
-    void removeCategory(int idx);
-    void setCategories(const QVector<TestCategory>& cats);
 
     // ── 方案管理 ──
     void addScenario(const TestScenario& s);

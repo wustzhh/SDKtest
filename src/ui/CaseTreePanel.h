@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <QComboBox>
 #include <QVector>
 #include <QMenu>
 #include <QTimer>
@@ -129,8 +130,7 @@ class CaseTreePanel : public QWidget {
 public:
     explicit CaseTreePanel(QWidget* parent = nullptr);
 
-    void loadTests(const QVector<TestCase>& cases,
-                   const QVector<TestCategory>& categories = {});
+    void loadTests(const QVector<TestCase>& cases);
 
     QVector<TestCase> selectedTests() const;
     QStringList selectedTestNames() const;
@@ -141,11 +141,16 @@ public:
     void setAdvFilters(const QVector<FilterRule>& f, bool enabled);
     void reapplyFilter() { setAdvFilters(m_advFilters, m_filterEnabled); }
     void applyAdvancedFilters(const QVector<FilterRule>& filtered);
+    void setFilterOptions(const QStringList& names);
+    void setSelectedFilterByName(const QString& name);
+    void setFilterMappings(const QMap<QString, QStringList>& mappings);
+    QString currentFilterName() const;
 
 signals:
     void selectionChanged(int selectedCount);
     void collapseRequested();
     void filtersSaved();
+    void filterSelectionChanged(const QString& name);
 
 private slots:
     void onFilterChanged(const QString& text);
@@ -160,12 +165,9 @@ private slots:
     void onTreeContextMenu(const QPoint& pos);
 
 private:
-    void buildTree(const QVector<TestCase>& cases,
-                   const QVector<TestCategory>& categories);
+    void buildTree(const QVector<TestCase>& cases);
     void updatePathLabel(QTreeWidgetItem* item);
-    void buildGroupTree(QTreeWidgetItem* parent,
-                        const QVector<TestCase>& cases,
-                        const QVector<TestCategory>& categories);
+    void buildGroupTree(QTreeWidgetItem* parent, const QVector<TestCase>& cases);
     void toggleItem(QTreeWidgetItem* item);
     void applyToDescendants(QTreeWidgetItem* parent, bool checked);
     void updateParentState(QTreeWidgetItem* item);
@@ -176,9 +178,12 @@ private:
     int  countVisibleLeaf() const;
     int  countVisibleLeafRec(QTreeWidgetItem* item) const;
     void updateStats();
+    void applyFilterState();
+    void onFilterComboChanged(const QString& name);
     QTreeWidgetItem* m_lastHighlighted = nullptr;
 
     QLineEdit*      m_searchEdit;
+    QComboBox*      m_filterCombo;
     QLabel*         m_pathLabel = nullptr;
     QWidget*        m_toolbar;
     QPushButton*    m_btnCollapsePanel;
@@ -193,6 +198,11 @@ private:
     QVector<TestCase> m_allCases;
     QVector<FilterRule> m_advFilters;
     bool m_filterEnabled = false;  // 当前方案的高级筛选规则
+    QStringList     m_filterOptions;
+    QString         m_selectedFilterName;
+    QMap<QString, QStringList> m_filterMappings;
+    bool            m_firstFilterInit = true;
+    int             m_rebuildVersion = 0;
 
     bool            m_updating = false;
 };

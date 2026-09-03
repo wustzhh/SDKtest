@@ -1,4 +1,5 @@
 #include "CaseTreePanel.h"
+#include <algorithm>
 #include "core/Logger.h"
 #include <QScrollBar>
 
@@ -13,7 +14,7 @@
 #include <QPainter>
 #include <QPropertyAnimation>
 
-enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName };
+enum { Role_Type = Qt::UserRole + 1, Role_SuiteName, Role_CaseName, Role_MappingHidden = Qt::UserRole + 5 };
 
 // 简易FlowLayout：自动换行的水平布局
 class FlowLayout : public QLayout {
@@ -353,9 +354,18 @@ CaseTreePanel::CaseTreePanel(QWidget* parent)
     m_btnReverseFilter->setStyleSheet(tbBtn + "QPushButton{padding:0 10px;font-size:13px;}");
     m_btnReverseFilter->setToolTip(QString::fromUtf8("\xe9\xab\x98\xe7\xba\xa7\xe7\xad\x9b\xe9\x80\x89"));
     m_lblStats = new QLabel("0", this);
+    m_filterCombo = new QComboBox(this);
+    m_filterCombo->setMinimumWidth(150);
+    m_filterCombo->setStyleSheet("QComboBox{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:2px 8px;height:26px;font-size:12px}");
+    m_filterCombo->setToolTip("筛选条件");
+    m_filterCombo->addItem("无");
+    connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+        onFilterComboChanged(idx >= 0 ? m_filterCombo->itemText(idx) : QString());
+    });
     tb->addWidget(m_btnSelectAll);
     tb->addWidget(m_btnDeselectAll);
     tb->addWidget(m_btnReverseFilter);
+    tb->addWidget(m_filterCombo);
     tb->addStretch();
     tb->addWidget(m_lblStats);
     layout->addWidget(m_toolbar);
@@ -546,8 +556,7 @@ void CaseTreePanel::updateStats() {
     m_lblStats->setText(QString("%1/%2").arg(sel).arg(total));
 }
 
-void CaseTreePanel::loadTests(const QVector<TestCase>& cases,
-                               const QVector<TestCategory>& categories)
+void CaseTreePanel::loadTests(const QVector<TestCase>& cases)
 {
     m_allCases = cases;  // 保存全部用例用于高级筛选
     m_lastHighlighted = nullptr;
@@ -559,65 +568,38 @@ void CaseTreePanel::loadTests(const QVector<TestCase>& cases,
         return;
     }
     m_updating = true;
-    buildTree(cases, categories);
+    buildTree(cases);
     m_updating = false;
+    applyFilterState();
     QTimer::singleShot(50, m_tree, &QTreeWidget::expandAll);
     updateStats();
     emit selectionChanged(0);
 }
 
 void CaseTreePanel::buildGroupTree(QTreeWidgetItem* parent,
-                                    const QVector<TestCase>& cases,
-                                    const QVector<TestCategory>& categories)
+                                    const QVector<TestCase>& cases)
 {
     QMap<QString, QVector<TestCase>> groups;
     for (const auto& tc : cases) groups[tc.suiteName].append(tc);
-    // 分类匹配：精确匹配套件名或完整用例名
-    auto catOf = [&](const QString& suite, const QVector<TestCase>& suiteCases) -> QString {
-        for (const auto& c : categories)
-            for (const auto& p : c.prefixes) {
-                // 精确匹配套件名
-                if (suite == p) return c.name;
-                // 也检查完整用例名（suite.case）
-                for (const auto& tc : suiteCases)
-                    if ((suite + "." + tc.caseName) == p) return c.name;
-            }
-        return "Other";
-    };
-    QMap<QString, QMap<QString, QVector<TestCase>>> catGroups;
-    for (auto it = groups.begin(); it != groups.end(); ++it)
-        catGroups[catOf(it.key(), it.value())][it.key()] = it.value();
-
-    for (auto ci = catGroups.begin(); ci != catGroups.end(); ++ci) {
-        int catTotal = 0;
-        auto* catItem = new QTreeWidgetItem(parent);
-        catItem->setData(0, Role_Type, "category");
-        QFont f = catItem->font(0); f.setBold(true); catItem->setFont(0, f);
-        catItem->setExpanded(true);
-        for (auto si = ci.value().begin(); si != ci.value().end(); ++si) {
-            auto* suiteItem = new QTreeWidgetItem(catItem);
-            suiteItem->setData(0, Role_Type, "suite");
-            suiteItem->setData(0, Role_SuiteName, si.key());
-            QFont sf = suiteItem->font(0); sf.setBold(true); suiteItem->setFont(0, sf);
-            for (const auto& tc : si.value()) {
-                auto* caseItem = new QTreeWidgetItem(suiteItem);
-                caseItem->setText(0, MARK_NO + "  " + tc.caseName);
-                caseItem->setData(0, Role_Type, "case");
-                caseItem->setData(0, Role_SuiteName, tc.suiteName);
-                caseItem->setData(0, Role_CaseName, tc.caseName);
-                caseItem->setToolTip(0, tc.suiteName + "." + tc.caseName);
-            }
-            int sc = si.value().size(); catTotal += sc;
-            suiteItem->setText(0, MARK_NO + "  " + si.key() + QString(" (%1)").arg(sc));
-            suiteItem->setToolTip(0, si.key());
+    for (auto it = groups.begin(); it != groups.end(); ++it) {
+        auto* suiteItem = new QTreeWidgetItem(parent);
+        suiteItem->setData(0, Role_Type, "suite");
+        suiteItem->setData(0, Role_SuiteName, it.key());
+        QFont sf = suiteItem->font(0); sf.setBold(true); suiteItem->setFont(0, sf);
+        for (const auto& tc : it.value()) {
+            auto* caseItem = new QTreeWidgetItem(suiteItem);
+            caseItem->setText(0, MARK_NO + "  " + tc.caseName);
+            caseItem->setData(0, Role_Type, "case");
+            caseItem->setData(0, Role_SuiteName, tc.suiteName);
+            caseItem->setData(0, Role_CaseName, tc.caseName);
+            caseItem->setToolTip(0, tc.suiteName + "." + tc.caseName);
         }
-        catItem->setData(0, Role_SuiteName, ci.key());
-        catItem->setText(0, MARK_NO + "  " + ci.key() + QString(" (%1)").arg(catTotal));
+        int sc = it.value().size();
+        suiteItem->setText(0, MARK_NO + "  " + it.key() + QString(" (%1)" ).arg(sc));
+        suiteItem->setToolTip(0, it.key());
     }
 }
-
-void CaseTreePanel::buildTree(const QVector<TestCase>& cases,
-                               const QVector<TestCategory>& categories)
+void CaseTreePanel::buildTree(const QVector<TestCase>& cases)
 {
     // 分参数化和非参数化
     QVector<TestCase> paramCases, normalCases;
@@ -636,7 +618,7 @@ void CaseTreePanel::buildTree(const QVector<TestCase>& cases,
         item->setData(0, Role_SuiteName, title);
         QFont f = item->font(0); f.setBold(true); item->setFont(0, f);
         item->setExpanded(true);
-        buildGroupTree(item, group, categories);
+        buildGroupTree(item, group);
         // 更新总数
         int total = 0;
         std::function<void(QTreeWidgetItem*)> cnt = [&](QTreeWidgetItem* it) {
@@ -748,9 +730,9 @@ void CaseTreePanel::selectAll(bool select) {
 }
 
 void CaseTreePanel::onFilterChanged(const QString& text) {
-    LOG("TREE", QString("search textChanged: [%1] len=%2").arg(text).arg(text.length()));
-    for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
-        applyFilter(m_tree->topLevelItem(i), text);
+    Q_UNUSED(text);
+    LOG("TREE", QString("search textChanged len=%1").arg(text.length()));
+    applyFilterState();
     // 诊断：清空搜索时统计可见节点
     if (text.isEmpty()) {
         int topVis=0, suiteVis=0, caseVis=0;
@@ -1092,5 +1074,120 @@ void CaseTreePanel::updatePathLabel(QTreeWidgetItem* item) {
         html += QString("&nbsp;&nbsp;&nbsp;&nbsp;").repeated(i) + parts[i];
     }
     m_pathLabel->setText(html);
+}
+
+void CaseTreePanel::setFilterOptions(const QStringList& names) {
+    m_filterOptions = names;
+    // 下拉项固定按字典序排列（忽略大小写），与筛选编辑对话框默认排序一致
+    QStringList sorted = names;
+    std::sort(sorted.begin(), sorted.end(), [](const QString& a, const QString& b) {
+        return a.compare(b, Qt::CaseInsensitive) < 0;
+    });
+    m_filterCombo->blockSignals(true);
+    m_filterCombo->clear();
+    m_filterCombo->addItem("无");
+    for (const auto& n : sorted)
+        m_filterCombo->addItem(n);
+    const int idx = m_filterCombo->findText(m_selectedFilterName);
+    m_filterCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+    m_filterCombo->blockSignals(false);
+    applyFilterState();
+}
+
+void CaseTreePanel::setSelectedFilterByName(const QString& name) {
+    m_selectedFilterName = name;
+    if (!m_filterCombo) return;
+    const int idx = m_filterCombo->findText(name);
+    if (idx < 0) {
+        // 方案里找不到该条件名（可能被删除/改名），回退到“无”
+        m_selectedFilterName = QString::fromUtf8("无");
+        m_filterCombo->blockSignals(true);
+        m_filterCombo->setCurrentIndex(0);
+        m_filterCombo->blockSignals(false);
+        applyFilterState();
+        return;
+    }
+    m_filterCombo->blockSignals(true);
+    m_filterCombo->setCurrentIndex(idx);
+    m_filterCombo->blockSignals(false);
+    applyFilterState();
+}
+
+QString CaseTreePanel::currentFilterName() const {
+    return m_selectedFilterName;
+}
+
+void CaseTreePanel::onFilterComboChanged(const QString& name) {
+    m_selectedFilterName = name;
+    applyFilterState();
+    emit filterSelectionChanged(name);
+}
+
+void CaseTreePanel::applyFilterState() {
+    if (!m_tree || m_tree->topLevelItemCount() == 0) return;
+    const QString& sel = m_selectedFilterName;
+    const bool isNone = (sel.isEmpty() || sel == "无");
+    std::function<void(QTreeWidgetItem*)> walk = [&](QTreeWidgetItem* item) {
+        if (!item) return;
+        const QString type = item->data(0, Role_Type).toString();
+        if (type == "case") {
+            const QString sn = item->data(0, Role_SuiteName).toString();
+            const QString cn = item->data(0, Role_CaseName).toString();
+            const QString full = sn + "." + cn;
+            // 兼容树内 suite.case 与 gtest/XML 的 suite/case 斜杠完整名
+            const QString slashFull = sn + "/" + cn;
+            bool mapHit = false;
+            if (!isNone) {
+                auto it = m_filterMappings.constFind(sel);
+                // 只有映射已存在且用例不在其中时才隐藏；尚未生成映射时显示全部
+                if (it != m_filterMappings.constEnd())
+                    mapHit = it.value().contains(full) || it.value().contains(slashFull);
+                item->setData(0, Role_MappingHidden, it == m_filterMappings.constEnd() ? false : !mapHit);
+            } else {
+                item->setData(0, Role_MappingHidden, false);
+            }
+        }
+        for (int i = 0; i < item->childCount(); ++i) walk(item->child(i));
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i) walk(m_tree->topLevelItem(i));
+    // 组合显示层：映射隐藏与搜索隐藏合并（保留父节点自匹配显示整棵子树语义）
+    const QString searchText = m_searchEdit ? m_searchEdit->text() : QString();
+    std::function<void(QTreeWidgetItem*)> showAll = [&](QTreeWidgetItem* item) {
+        if (!item) return;
+        if (item->childCount() == 0) {
+            if (!item->data(0, Role_MappingHidden).toBool()) item->setHidden(false);
+            return;
+        }
+        for (int i = 0; i < item->childCount(); ++i) showAll(item->child(i));
+        bool any = false;
+        for (int i = 0; i < item->childCount(); ++i) if (!item->child(i)->isHidden()) { any = true; break; }
+        item->setHidden(!any);
+    };
+    std::function<bool(QTreeWidgetItem*)> hide = [&](QTreeWidgetItem* item) {
+        if (!item) return false;
+        if (item->childCount() == 0) {
+            const bool mapHidden = item->data(0, Role_MappingHidden).toBool();
+            const bool searchMatch = searchText.isEmpty() || item->text(0).contains(searchText, Qt::CaseInsensitive);
+            item->setHidden(mapHidden || !searchMatch);
+            return !item->isHidden();
+        }
+        // 仅搜索非空时才用父节点自匹配展开整棵子树；搜索为空时走正常映射+子节点递归
+        if (!searchText.isEmpty() && item->text(0).contains(searchText, Qt::CaseInsensitive)) {
+            showAll(item);
+            return !item->isHidden();
+        }
+        bool any = false;
+        for (int i = 0; i < item->childCount(); ++i) if (hide(item->child(i))) any = true;
+        item->setHidden(!any);
+        return any;
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i) hide(m_tree->topLevelItem(i));
+    m_tree->viewport()->update();
+    updateStats();
+}
+
+void CaseTreePanel::setFilterMappings(const QMap<QString, QStringList>& mappings) {
+    m_filterMappings = mappings;
+    applyFilterState();
 }
 #include "CaseTreePanel.moc"
