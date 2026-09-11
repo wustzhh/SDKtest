@@ -5,6 +5,8 @@ test_runner_ui/
 *.exe
 *.dll
 *.zip
+*.7z
+*.bak
 *.lib
 *.exp
 *.obj
@@ -32,3 +34,7 @@ config.json
 cout_output.txt
 deploy/test_runner_ui_portable.7z
 deploy/test_runner_ui_portable.7z
+/pack
+/modelsInfo
+/Report
+/_temp_scripts

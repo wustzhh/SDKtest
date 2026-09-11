@@ -61,6 +61,32 @@ if(OpenCASCADE_FOUND)
         ${OpenCASCADE_LIBRARIES}
     )
     message(STATUS "model_load_test enabled")
+
+    # ── 模型统计工具：批量扫描目录下 step/igs，统计点线面体拓扑数据 ──
+    add_executable(model_stats_dump tools/model_stats_dump.cpp)
+    target_include_directories(model_stats_dump PRIVATE ${OpenCASCADE_INCLUDE_DIRS})
+    target_link_libraries(model_stats_dump PRIVATE ${OpenCASCADE_LIBRARIES})
+    if(MSVC)
+        target_compile_options(model_stats_dump PRIVATE /utf-8)
+    endif()
+    message(STATUS "model_stats_dump enabled")
+
+    # ── 共享拓扑检测工具：统计 TShape 复用/跨体共享 ──
+    add_executable(shared_topo_detect tools/shared_topo_detect.cpp)
+    target_include_directories(shared_topo_detect PRIVATE ${OpenCASCADE_INCLUDE_DIRS})
+    target_link_libraries(shared_topo_detect PRIVATE ${OpenCASCADE_LIBRARIES})
+    if(MSVC)
+        target_compile_options(shared_topo_detect PRIVATE /utf-8)
+    endif()
+    message(STATUS "shared_topo_detect enabled")
+    # ── 临时探查工具：Geom 句柄级共享 ──
+    add_executable(geom_share_probe tools/geom_share_probe.cpp)
+    target_include_directories(geom_share_probe PRIVATE ${OpenCASCADE_INCLUDE_DIRS})
+    target_link_libraries(geom_share_probe PRIVATE ${OpenCASCADE_LIBRARIES})
+    if(MSVC)
+        target_compile_options(geom_share_probe PRIVATE /utf-8)
+    endif()
+
 endif()
 
 if(WIN32)

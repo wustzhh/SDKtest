@@ -10,6 +10,8 @@
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+
+class QEvent;  // eventFilter 参数
 #include <QMap>
 #include <QSplitter>
 #include <QMenu>
@@ -57,6 +59,7 @@ private:
     void buildResultTree(const QVector<TestRunResult>& results);
     void addNodeToTree(QTreeWidgetItem* parent, const ResultNode& node);
     void updateDetailPanel(const TestRunResult* result);
+    bool eventFilter(QObject* obj, QEvent* ev) override;  // 捕获树 mousePress 瞬间状态
 
     // UI 组件
     QVBoxLayout*    m_layout;

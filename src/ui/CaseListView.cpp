@@ -14,6 +14,8 @@
 #include <QClipboard>
 #include <QProcess>
 #include <QStyledItemDelegate>
+#include <QEvent>
+#include <QTimer>
 
 
 
@@ -119,6 +121,7 @@ CaseListView::CaseListView(QWidget* parent)
 
     // Result tree
     m_tree = new QTreeWidget(m_content);
+    m_tree->viewport()->installEventFilter(this);  // 捕获 mousePress 瞬间状态
     m_tree->setHeaderLabels({"", "Node"});
     m_tree->setMinimumHeight(100);
     m_tree->setColumnWidth(0, 24);
@@ -211,6 +214,18 @@ void CaseListView::showResults(const QVector<TestRunResult>& results) {
 
     m_tree->expandAll();
     if (!m_resultFilter.isEmpty()) applyResultFilter();  // 保持当前状态过滤
+}
+
+bool CaseListView::eventFilter(QObject* obj, QEvent* ev) {
+    // 在 mousePress 瞬间（itemClicked 之前）记录状态，捕捉点击瞬间的布局变化
+    if (obj == m_tree->viewport() && ev->type() == QEvent::MouseButtonPress) {
+        LOG("CLICK", QString("PRESS: vpW=%1 vpH=%2 hsbVal=%3 hsbMax=%4 vsbVal=%5 vsbMax=%6 col1W=%7 rows=%8")
+            .arg(m_tree->viewport()->width()).arg(m_tree->viewport()->height())
+            .arg(m_tree->horizontalScrollBar()->value()).arg(m_tree->horizontalScrollBar()->maximum())
+            .arg(m_tree->verticalScrollBar()->value()).arg(m_tree->verticalScrollBar()->maximum())
+            .arg(m_tree->columnWidth(1)).arg(m_tree->topLevelItemCount()));
+    }
+    return QWidget::eventFilter(obj, ev);
 }
 
 void CaseListView::setResultFilter(const QString& status) {
@@ -384,12 +399,32 @@ void CaseListView::onTreeItemClicked(QTreeWidgetItem* item, int column) {
         item->setBackground(c, QColor(0xe8,0xf5,0xe9));   // 淡绿背景
         item->setForeground(c, QColor(0x4C,0xAF,0x50));   // 绿色字
     }
-    m_tree->viewport()->update();  // 刷新 delegate 绘制加粗
+    m_tree->viewport()->update();
     // 点击的行本就可见，不需要 scrollToItem（它会引起水平滚动导致列表右移）
     LOG("CLICK", QString("AFTER click: vpW=%1 hsb=%2 col0W=%3 col1W=%4")
         .arg(m_tree->viewport()->width())
         .arg(m_tree->horizontalScrollBar()->value())
         .arg(m_tree->columnWidth(0)).arg(m_tree->columnWidth(1)));
+
+    // 高频采样：点击后 10ms×50，捕捉瞬时布局/滚动/列宽变化（只在变化时打印）
+    auto snapshot = [this]() {
+        auto ss = m_bottomSplit->sizes();
+        return QString("vpW=%1 vpH=%2 hsb=%3/%4 vsb=%5/%6 col1W=%7 split=%8,%9")
+            .arg(m_tree->viewport()->width()).arg(m_tree->viewport()->height())
+            .arg(m_tree->horizontalScrollBar()->value()).arg(m_tree->horizontalScrollBar()->maximum())
+            .arg(m_tree->verticalScrollBar()->value()).arg(m_tree->verticalScrollBar()->maximum())
+            .arg(m_tree->columnWidth(1)).arg(ss.value(0)).arg(ss.value(1));
+    };
+    QString last = snapshot();
+    for (int i = 1; i <= 50; ++i) {
+        QTimer::singleShot(i * 10, this, [this, last, snapshot]() mutable {
+            QString cur = snapshot();
+            if (cur != last) {
+                LOG("CLICK", "SAMPLED change: " + cur);
+                last = cur;
+            }
+        });
+    }
 
     // 点击 stdout 节点弹出完整内容
     if (item->text(1).startsWith("stdout") && item->toolTip(1).length() > 300) {
