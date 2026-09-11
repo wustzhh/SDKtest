@@ -1,6 +1,7 @@
 #include "CaseTreePanel.h"
 #include <algorithm>
 #include "core/Logger.h"
+#include "core/FilterMapping.h"
 #include <QScrollBar>
 
 #include <QHeaderView>
@@ -420,13 +421,21 @@ CaseTreePanel::CaseTreePanel(QWidget* parent)
 
     m_contextMenu = new QMenu(this);
 
-    // Alt+数字 = 折叠到对应层级, Alt+Shift+数字 = 展开到对应层级
-    for (int d = 1; d <= 9; d++) {
-        auto* scCollapse = new QShortcut(QKeySequence(Qt::ALT | (Qt::Key_0 + d)), this);
-        connect(scCollapse, &QShortcut::activated, this, [this, d]() { collapseToLevel(d); });
-        auto* scExpand = new QShortcut(QKeySequence(Qt::ALT | Qt::SHIFT | (Qt::Key_0 + d)), this);
-        connect(scExpand, &QShortcut::activated, this, [this, d]() { expandToLevel(d); });
-    }
+    // 快捷键延迟挂到主窗口，避免挂在左侧子控件时受焦点/父窗口层级影响。
+    // WindowShortcut 覆盖主窗口内的搜索框、下拉框、用例树和右侧面板。
+    QTimer::singleShot(0, this, [this]() {
+        QWidget* host = window();
+        if (!host) host = this;
+        for (int d = 1; d <= 9; d++) {
+            auto* scCollapse = new QShortcut(QKeySequence(Qt::ALT | (Qt::Key_0 + d)), host);
+            scCollapse->setContext(Qt::WindowShortcut);
+            connect(scCollapse, &QShortcut::activated, this, [this, d]() { collapseToLevel(d); });
+
+            auto* scExpand = new QShortcut(QKeySequence(Qt::ALT | Qt::SHIFT | (Qt::Key_0 + d)), host);
+            scExpand->setContext(Qt::WindowShortcut);
+            connect(scExpand, &QShortcut::activated, this, [this, d]() { expandToLevel(d); });
+        }
+    });
 
     showEmptyPlaceholder();
 }
@@ -730,23 +739,8 @@ void CaseTreePanel::selectAll(bool select) {
 }
 
 void CaseTreePanel::onFilterChanged(const QString& text) {
-    Q_UNUSED(text);
     LOG("TREE", QString("search textChanged len=%1").arg(text.length()));
     applyFilterState();
-    // 诊断：清空搜索时统计可见节点
-    if (text.isEmpty()) {
-        int topVis=0, suiteVis=0, caseVis=0;
-        std::function<void(QTreeWidgetItem*,int)> cnt = [&](QTreeWidgetItem* it, int depth) {
-            if (it->isHidden()) return;
-            if (depth==0) topVis++;
-            else if (depth==1) suiteVis++;
-            else if (depth>=2) caseVis++;
-            for (int j=0;j<it->childCount();++j) cnt(it->child(j), depth+1);
-        };
-        for (int i=0;i<m_tree->topLevelItemCount();++i) cnt(m_tree->topLevelItem(i),0);
-        LOG("TREE", QString("search cleared: top=%1 suite=%2 case=%3").arg(topVis).arg(suiteVis).arg(caseVis));
-    }
-    // 不主动改变隐藏项的选中状态（搜索只是临时隐藏，选中保持）
     m_tree->viewport()->update();
     updateStats();
 }
@@ -1127,6 +1121,24 @@ void CaseTreePanel::applyFilterState() {
     if (!m_tree || m_tree->topLevelItemCount() == 0) return;
     const QString& sel = m_selectedFilterName;
     const bool isNone = (sel.isEmpty() || sel == "无");
+    auto selectedMapping = m_filterMappings.constFind(sel);
+    QStringList availableNames;
+    std::function<void(QTreeWidgetItem*)> collectNames = [&](QTreeWidgetItem* item) {
+        if (!item) return;
+        if (item->data(0, Role_Type).toString() == "case") {
+            const QString sn = item->data(0, Role_SuiteName).toString();
+            const QString cn = item->data(0, Role_CaseName).toString();
+            availableNames << sn + "." + cn << sn + "/" + cn;
+        }
+        for (int i = 0; i < item->childCount(); ++i) collectNames(item->child(i));
+    };
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i)
+        collectNames(m_tree->topLevelItem(i));
+
+    // Do not let a stale persisted mapping hide every case in the current tree.
+    const bool mappingActive = !isNone &&
+        selectedMapping != m_filterMappings.constEnd() &&
+        FilterMapping::hasAvailableMatch(selectedMapping.value(), availableNames);
     std::function<void(QTreeWidgetItem*)> walk = [&](QTreeWidgetItem* item) {
         if (!item) return;
         const QString type = item->data(0, Role_Type).toString();
@@ -1134,15 +1146,17 @@ void CaseTreePanel::applyFilterState() {
             const QString sn = item->data(0, Role_SuiteName).toString();
             const QString cn = item->data(0, Role_CaseName).toString();
             const QString full = sn + "." + cn;
-            // 兼容树内 suite.case 与 gtest/XML 的 suite/case 斜杠完整名
+            // 映射中的结果名称可能使用 suite/case，也可能使用 suite.case。
             const QString slashFull = sn + "/" + cn;
             bool mapHit = false;
-            if (!isNone) {
-                auto it = m_filterMappings.constFind(sel);
-                // 只有映射已存在且用例不在其中时才隐藏；尚未生成映射时显示全部
-                if (it != m_filterMappings.constEnd())
-                    mapHit = it.value().contains(full) || it.value().contains(slashFull);
-                item->setData(0, Role_MappingHidden, it == m_filterMappings.constEnd() ? false : !mapHit);
+            if (mappingActive) {
+                for (const auto& mappedName : selectedMapping.value()) {
+                    if (mappedName == full || mappedName == slashFull) {
+                        mapHit = true;
+                        break;
+                    }
+                }
+                item->setData(0, Role_MappingHidden, !mapHit);
             } else {
                 item->setData(0, Role_MappingHidden, false);
             }

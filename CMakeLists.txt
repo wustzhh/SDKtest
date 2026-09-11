@@ -13,6 +13,23 @@ find_package(OpenCASCADE QUIET)
 enable_testing()
 find_package(GTest QUIET)
 
+add_executable(filter_mapping_test
+    src/core/FilterMapping.cpp
+    tests/filter_mapping_test.cpp
+)
+target_include_directories(filter_mapping_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(filter_mapping_test PRIVATE Qt6::Core)
+add_test(NAME filter_mapping_test COMMAND filter_mapping_test)
+
+add_executable(test_loader_test
+    src/core/TestLoader.cpp
+    src/core/Logger.cpp
+    tests/test_loader_test.cpp
+)
+target_include_directories(test_loader_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(test_loader_test PRIVATE Qt6::Core)
+add_test(NAME test_loader_test COMMAND test_loader_test)
+
 file(GLOB_RECURSE SOURCES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

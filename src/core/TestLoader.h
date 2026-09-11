@@ -17,6 +17,9 @@ public:
               const QString& workingDir = {}, const QStringList& dependencies = {},
               const QMap<QString, QString>& envVars = {});
 
+    // Parse the canonical text format emitted by --gtest_list_tests.
+    static QVector<TestCase> parseGTestListTests(const QString& output);
+
     // 获取发现的用例
     QVector<TestCase> testCases() const { return m_cases; }
 

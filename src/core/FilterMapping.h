@@ -11,4 +11,7 @@ QMap<QString, QStringList> computeMappings(const QVector<FilterSet>& sets, const
 
 bool matches(const FilterSet& fs, const TestRunResult& r);
 
+// A persisted mapping is usable only when it still intersects the current tree.
+bool hasAvailableMatch(const QStringList& mappedNames, const QStringList& availableNames);
+
 } // namespace FilterMapping

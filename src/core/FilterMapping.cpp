@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QSet>
 
 namespace FilterMapping {
 
@@ -73,6 +74,14 @@ bool matches(const FilterSet& fs, const TestRunResult& r) {
     for (const auto& c : fs.conditions)
         if (!matchesCondition(r, c)) return false;
     return true;
+}
+
+bool hasAvailableMatch(const QStringList& mappedNames, const QStringList& availableNames) {
+    if (mappedNames.isEmpty() || availableNames.isEmpty()) return false;
+    const QSet<QString> available(availableNames.begin(), availableNames.end());
+    for (const auto& name : mappedNames)
+        if (available.contains(name)) return true;
+    return false;
 }
 
 QMap<QString, QStringList> computeMappings(const QVector<FilterSet>& sets,

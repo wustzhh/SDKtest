@@ -1,12 +1,62 @@
 #include "TestLoader.h"
 
-#include <QProcess>
-#include <QTextStream>
-#include <QFileInfo>
 #include <QDir>
+#include <QFileInfo>
+#include <QProcess>
+#include <QProcessEnvironment>
+#include <QRegularExpression>
+#include <QTextStream>
+
 #include "Logger.h"
 
 TestLoader::TestLoader() {}
+
+namespace {
+
+bool isValidGTestName(const QString& name) {
+    static const QRegularExpression pattern(QStringLiteral("^[A-Za-z_][A-Za-z0-9_/-]*$"));
+    return pattern.match(name).hasMatch();
+}
+
+QString withoutComment(const QString& line) {
+    const int hash = line.indexOf('#');
+    return (hash >= 0 ? line.left(hash) : line).trimmed();
+}
+
+}
+
+QVector<TestCase> TestLoader::parseGTestListTests(const QString& output) {
+    QVector<TestCase> cases;
+    QString currentSuite;
+    QString text = output;
+    QTextStream stream(&text);
+    QString line;
+    while (stream.readLineInto(&line)) {
+        if (line.trimmed().isEmpty()) continue;
+
+        const bool indented = line.startsWith(' ') || line.startsWith('\t');
+        const QString content = withoutComment(line.trimmed());
+        if (!indented) {
+            if (content.endsWith('.')) {
+                const QString suite = content.left(content.size() - 1);
+                currentSuite = isValidGTestName(suite) ? suite : QString();
+            } else {
+                // Non-indented text that is not a suite header is output from
+                // the test binary, not a test case.
+                currentSuite.clear();
+            }
+            continue;
+        }
+
+        if (currentSuite.isEmpty() || !isValidGTestName(content)) continue;
+
+        TestCase tc;
+        tc.suiteName = currentSuite;
+        tc.caseName = content;
+        cases.append(tc);
+    }
+    return cases;
+}
 
 bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
                        const QString& workingDir, const QStringList& dependencies,
@@ -19,7 +69,6 @@ bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
     if (!workDir.isEmpty())
         proc.setWorkingDirectory(workDir);
 
-    // 设置进程环境：PATH 优先包含依赖目录
     if (!dependencies.isEmpty()) {
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         QStringList depDirs;
@@ -32,14 +81,13 @@ bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
             }
         }
         if (!depDirs.isEmpty()) {
-            QString newPath = depDirs.join(";") + ";" + env.value("PATH");
-            env.insert("PATH", newPath);
+            env.insert("PATH", depDirs.join(';') + ";" + env.value("PATH"));
             proc.setProcessEnvironment(env);
         }
     } else {
         LOG("LDR", "  no deps configured");
     }
-    // 自定义环境变量
+
     for (auto it = envVars.begin(); it != envVars.end(); ++it) {
         QProcessEnvironment env = proc.processEnvironment();
         if (env.isEmpty()) env = QProcessEnvironment::systemEnvironment();
@@ -56,7 +104,7 @@ bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
 
     proc.start(binaryPath, args);
     if (!proc.waitForStarted(5000)) {
-        QString err = proc.errorString();
+        const QString err = proc.errorString();
         LOG("LDR", "START FAILED", err);
         m_lastError = QString("Cannot start '%1': %2").arg(binaryPath, err);
         return false;
@@ -67,8 +115,8 @@ bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
         return false;
     }
 
-    QString errOut = QString::fromLocal8Bit(proc.readAllStandardError());
-    QString output = QString::fromLocal8Bit(proc.readAllStandardOutput());
+    const QString errOut = QString::fromLocal8Bit(proc.readAllStandardError());
+    const QString output = QString::fromLocal8Bit(proc.readAllStandardOutput());
 
     LOG("LDR", "Exit code: " + QString::number(proc.exitCode()));
     LOG("LDR", "Stdout size: " + QString::number(output.size()) + " bytes");
@@ -76,40 +124,7 @@ bool TestLoader::load(const QString& binaryPath, const QStringList& extraArgs,
         LOG("LDR", "Stderr: " + errOut.left(500));
     LOG("LDR", "Stdout preview: " + output.left(300));
 
-    // ── 解析 gtest_list_tests 输出 ──
-    //    TestSuite.
-    //      TestCase1
-    //      TestCase2
-    //    TestSuite2.
-    //      TestCase1  # comment
-    QString currentSuite;
-    QTextStream stream(&output);
-    QString line;
-    while (stream.readLineInto(&line)) {
-        // 跳过空行和全局行
-        if (line.trimmed().isEmpty()) continue;
-
-        // 套间行：以 "." 结尾且不缩进
-        if (!line.startsWith(' ') && !line.startsWith('\t') && line.endsWith('.')) {
-            currentSuite = line.trimmed();
-            if (currentSuite.endsWith('.'))
-                currentSuite.chop(1);
-        }
-        // 用例行：缩进
-        else if (!currentSuite.isEmpty()) {
-            QString name = line.trimmed();
-            // 去掉行尾注释
-            int hash = name.indexOf('#');
-            if (hash >= 0) name = name.left(hash).trimmed();
-            if (name.isEmpty()) continue;
-
-            TestCase tc;
-            tc.suiteName = currentSuite;
-            tc.caseName  = name;
-            m_cases.append(tc);
-        }
-    }
-
+    m_cases = parseGTestListTests(output);
     if (m_cases.isEmpty()) {
         m_lastError = "No test cases found. Output:\n" + output;
         return false;
